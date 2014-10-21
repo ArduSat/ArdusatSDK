@@ -18,7 +18,7 @@ void loop(void)
 	readTemperature(&temp);
 
 	Serial.print("temp: \t");
-	Serial.println(temperatureToText(&temp));
+	Serial.println(temperatureToJSON(&temp));
 
 	delay(1000);
 }

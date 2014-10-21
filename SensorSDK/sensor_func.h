@@ -1,3 +1,6 @@
+// external (basic) functions for obtaining values from the SDK
+// to be configured via manifest
+
 #ifndef SENSORFUNC_H_
 #define SENSORFUNC_H_
 
@@ -10,7 +13,8 @@ extern "C" {
 boolean setupAccelerationSensor();
 void readAcceleration(acceleration_t * accel);
 
-boolean setupTemperatureSensor();
+// TODO : returning a struct with the sensor id somehow, to read sensors of several types
+boolean setupTemperatureSensor(); // uint16_t id);
 void readTemperature(temperature_t * temp);
 
 boolean setupOrientationSensor();

@@ -15,8 +15,8 @@
 extern "C" {
 #endif
 
-boolean mlx90614_init();
-float mlx90614_getTempCelsius();
+boolean mlx90614_init();			// initialize the driver/sensor
+float mlx90614_getTempCelsius();	// obtain temperature
 
 #ifdef __cplusplus
 } // extern "C"

@@ -18,7 +18,7 @@ void loop(void)
 	readLuminosity(&lum);
 
 	Serial.print("lum: \t");
-	Serial.println(luminosityToText(&lum));
+	Serial.println(luminosityToJSON(&lum));
 
 	delay(1000);
 }

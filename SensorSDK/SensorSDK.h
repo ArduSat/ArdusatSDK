@@ -3,7 +3,9 @@
 
 #include "sensor_data.h"
 #include "sensor_func.h"
-#include "text.h"
+#include "output_csv.h"
+#include "output_json.h"
+#include "cc_wire.h"
 
 
 #endif /* SENSORSDK_H_ */

@@ -20,8 +20,8 @@ void cc_wire_beginTransmission(uint8_t a) {
 		Wire.beginTransmission(a);
 }
 
-uint8_t cc_wire_endTransmission(void) {
-	Wire.endTransmission();
+uint8_t cc_wire_endTransmission(boolean b) {
+	Wire.endTransmission(b);
 }
 
 uint8_t cc_wire_requestFrom(uint8_t a, uint8_t l) {
@@ -51,3 +51,9 @@ int16_t cc_wire_peek(void) {
 void cc_wire_flush(void) {
 	Wire.flush();
 }
+
+void cc_serial_printFloat(float f) {
+	Serial.print("float: ");
+	Serial.println(f);
+}
+

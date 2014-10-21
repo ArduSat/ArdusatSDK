@@ -15,8 +15,8 @@
 extern "C" {
 #endif
 
-boolean tmp102_init();
-float tmp102_getTempCelsius();
+boolean tmp102_init();				// initialize the driver/sensor
+float tmp102_getTempCelsius();		// obtain temperature
 
 #ifdef __cplusplus
 } // extern "C"

@@ -3,6 +3,10 @@
 
 #define SENSORDATA_HEADER_VERSION	 1
 
+// the data header is encapsulated at the beginning of every "packet" structure
+// it provides the information necessary to analyse the content of the structure
+// when read in its binary form (useful for sending/receiving data)
+
 struct _data_header_v1 {
 	uint8_t version;		// version of the data packet (for compatibility mgt)
 	uint8_t length;			// len of the data packet (256 is enough ?)
@@ -22,7 +26,7 @@ typedef struct {
 
 typedef struct {
 	_data_header_t header;
-	float yaw,pitch,roll;
+	float roll,pitch,heading;
 } orientation_t;
 
 typedef struct {

@@ -349,7 +349,7 @@ uint16_t _tsl2561_read16(uint8_t reg) {
 	int8_t t_ret;
 	uint16_t out = 0;	// output value of the function
 
-	t_ret = obcl_readWordFromRegAddr(_tsl2561_addr, reg, &out, false);
+	t_ret = obcl_readWordFromRegAddr(_tsl2561_addr, reg, &out, true);
 	return(out);
 }
 

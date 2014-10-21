@@ -56,7 +56,7 @@ int8_t obcl_sendReg_recvBufLen(int filed, uint8_t reg, uint8_t * buffer, uint8_t
 	cc_wire_beginTransmission(filed);
 	if (cc_wire_write(reg) < 1)
 		return (I2C_COMM_ERRORNOWRITE);
-	int8_t t_ret = cc_wire_endTransmission();
+	int8_t t_ret = cc_wire_endTransmission(false);
 
 	if (t_ret < 0) {
 		return (obcl_endTransmissionErrorCode(t_ret, 1));
@@ -78,7 +78,7 @@ int8_t obcl_sendReg_recvBufLen(int filed, uint8_t reg, uint8_t * buffer, uint8_t
 		buffer[obtainedData++] = cc_wire_read();
 	}
 
-	t_ret = cc_wire_endTransmission();         // end transmission
+	t_ret = cc_wire_endTransmission(true);         // end transmission
 
 	if (recdlen != NULL)
 		recdlen[0] = obtainedData;
@@ -107,7 +107,7 @@ int8_t obcl_recvBufLen(int filed, uint8_t * buffer, uint8_t len,
 		buffer[obtainedData++] = cc_wire_read();
 	}
 
-	t_ret = cc_wire_endTransmission();         // end transmission
+	t_ret = cc_wire_endTransmission(true);         // end transmission
 
 	if (recdlen != NULL)
 		recdlen[0] = obtainedData;
@@ -124,7 +124,7 @@ int8_t obcl_sendCmdVal_recvBufLen(int filed, uint8_t cmd, uint8_t val,
 	cc_wire_beginTransmission(filed);
 	cc_wire_write(cmd);
 	cc_wire_write(val);
-	int8_t t_ret = cc_wire_endTransmission();
+	int8_t t_ret = cc_wire_endTransmission(false);
 
 	if (t_ret < 0) {
 		return (obcl_endTransmissionErrorCode(t_ret, 2));
@@ -146,7 +146,7 @@ int8_t obcl_sendCmdVal_recvBufLen(int filed, uint8_t cmd, uint8_t val,
 		buffer[obtainedData++] = cc_wire_read();
 	}
 
-	t_ret = cc_wire_endTransmission();         // end transmission
+	t_ret = cc_wire_endTransmission(true);         // end transmission
 
 	if (recdlen != NULL)
 		recdlen[0] = obtainedData;
@@ -239,7 +239,7 @@ int8_t obcl_sendBuffer(uint8_t devAddr, uint8_t * buffer,
 	 }
 	 */
 
-	byte t_ret = cc_wire_endTransmission();
+	byte t_ret = cc_wire_endTransmission(true);
 	return (obcl_endTransmissionErrorCode(t_ret, sentCount));
 }
 
@@ -277,7 +277,14 @@ int8_t obcl_readWordFromRegAddr(uint8_t devAddr, uint8_t regaddr,
 	if ((t_ret = obcl_switchAddress(devAddr)) < 0)
 		return (I2C_COMM_ERRORNACKADDR);
 
-	return (obcl_sendReg_recvBufLen(_obcl_filed, regaddr, (uint8_t *) receivedIntPtr, 2, NULL));
+	uint8_t * array = (uint8_t *)receivedIntPtr;
+	t_ret = obcl_sendReg_recvBufLen(_obcl_filed, regaddr, (uint8_t *) array, 2, NULL);
+	if (!order) {
+		uint8_t t_b = array[0];
+		array[0] = array[1];
+		array[1] = t_b;
+	}
+	return(t_ret);
 }
 
 // *** Accel, Gyro, InfraTherm, Geiger

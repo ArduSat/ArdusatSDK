@@ -2,11 +2,17 @@
 #include "sensor_func.h"
 #include "sensor_ids.h"
 #include "units.h"
-#include "driver_tsl2561.h"
+#include "cc_wire.h"
 #include "config.h"
+#include "config_incdrivers.h"
+#include "driver_9dof.h"
 
 boolean setupAccelerationSensor() {
+#if defined(LOAD_DRIVER_ADAFRUIT9DOF)
+	return(adafruit9dof_init());
+#else
 	return(false);
+#endif
 }
 
 void readAcceleration(acceleration_t * output) {
@@ -56,7 +62,11 @@ void readTemperature(temperature_t * output) {
 }
 
 boolean setupOrientationSensor() {
+#if defined(LOAD_DRIVER_ADAFRUIT9DOF)
+	return(adafruit9dof_init());
+#else
 	return(false);
+#endif
 }
 
 void readOrientation(orientation_t * output) {
@@ -69,12 +79,15 @@ void readOrientation(orientation_t * output) {
 	output->header.celltype = DATA_CELLTYPE_FLOAT;
 	output->header.unit = DATA_UNIT_RADIAN;
 	output->header.timestamp = millis();
-	output->header.sensor_id = SENSORID_ADAFRUIT9DOFIMU; // TODO : LOCAL_*_SENSOR_ID;
 
 	// TODO : real sensor
-	output->yaw = 0.1;
-	output->pitch = 0.2;
-	output->roll = 0.3;
+#if defined(LOAD_DRIVER_ADAFRUIT9DOF)
+	output->header.sensor_id = SENSORID_ADAFRUIT9DOFIMU;
+	adafruit9dof_getRPH(&(output->roll),&(output->pitch),&(output->heading));
+	//output->t = mlx90614_getTempCelsius();
+#else
+	output->header.sensor_id = SENSORID_NULL;
+#endif
 }
 
 boolean setupInfraredTemperatureSensor() {

@@ -17,9 +17,9 @@
 extern "C" {
 #endif
 
-boolean tsl2561_init();
-float tsl2561_getLux();
-uint16_t tsl2561_getLuminosity(int8_t ch);
+boolean tsl2561_init();						// initialize the driver/sensor
+float tsl2561_getLux();						// get lux
+uint16_t tsl2561_getLuminosity(int8_t ch); 	// get raw luminosity
 
 #ifdef __cplusplus
 } // extern "C"
