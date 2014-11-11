@@ -39,6 +39,10 @@ typedef struct {
 	float lux;
 } luminosity_t;
 
+typedef struct {
+	_data_header_t header;
+	float uvindex;
+} uvlight_t;
 
 
 #ifdef USELESS

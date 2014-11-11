@@ -11,36 +11,24 @@
 #define SENSORSDK_OUTPUT_JSON
 
 
-// LUMINOSITY
+// ***************
+// *** DRIVERS ***
+// ***************
 
 #define LOAD_DRIVER_TSL2561
-#define DRIVER_TSL2561_ADDR		0x39
-
 #define LOAD_DRIVER_TMP102
-#define DRIVER_TMP102_ADDR		0x48
-
 #define LOAD_DRIVER_MLX90614
-#define DRIVER_MLX90614_ADDR	0x5A
-
 #define LOAD_DRIVER_ADAFRUIT9DOF
+#define LOAD_DRIVER_SI1145
 
-// DRIVER_TSL2561
 
-#if defined(LOAD_DRIVER_TSL2561)
-#define SENSOR_LUMINOSITY
-#endif
+// *****************
+// *** ADDRESSES ***
+// *****************
 
-#if defined(LOAD_DRIVER_TMP102)
-#define SENSOR_TEMPERATURE
-#endif
-
-#if defined(LOAD_DRIVER_MLX90614)
-#define SENSOR_IRTHERM
-#endif
-
-#if defined(LOAD_DRIVER_ADAFRUIT9DOF)
-#define SENSOR_ACCELERATION
-#define SENSOR_ORIENTATION
-#endif
+#define DRIVER_TSL2561_ADDR		0x39
+#define DRIVER_TMP102_ADDR		0x48
+#define DRIVER_MLX90614_ADDR	0x5A
+#define DRIVER_SI1145_ADDR		0x60
 
 #endif /* CONFIG_H_ */

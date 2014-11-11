@@ -6,6 +6,6 @@
 #include "output_csv.h"
 #include "output_json.h"
 #include "cc_wire.h"
-
+#include "obcl.h"
 
 #endif /* SENSORSDK_H_ */

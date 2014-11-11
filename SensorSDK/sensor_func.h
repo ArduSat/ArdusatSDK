@@ -10,21 +10,26 @@
 extern "C" {
 #endif
 
-boolean setupAccelerationSensor();
-void readAcceleration(acceleration_t * accel);
-
 // TODO : returning a struct with the sensor id somehow, to read sensors of several types
 boolean setupTemperatureSensor(); // uint16_t id);
 void readTemperature(temperature_t * temp);
-
-boolean setupOrientationSensor();
-void readOrientation(orientation_t * orient);
 
 boolean setupInfraredTemperatureSensor();
 void readInfraredTemperature(temperature_t * temp);
 
 boolean setupLuminositySensor();
 void readLuminosity(luminosity_t * lum);
+
+boolean setupUVLightSensor();
+void readUVLight(uvlight_t * uv);
+
+boolean setupAccelerationSensor();
+void readAcceleration(acceleration_t * accel);
+
+boolean setupOrientationSensor();
+void readOrientation(orientation_t * orient);
+
+
 
 #ifdef __cplusplus
 } // extern "C"

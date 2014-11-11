@@ -13,6 +13,9 @@ const char * accelerationToJSON(acceleration_t * input);
 const char * temperatureToJSON(temperature_t * input);
 const char * orientationToJSON(orientation_t * input);
 const char * luminosityToJSON(luminosity_t * input);
+const char * uvlightToJSON(uvlight_t * input);
+
+const char * anythingFloatToJSON(const char * sensorname, const char * unit, float value, int precision);
 
 #ifdef __cplusplus
 } // extern "C"

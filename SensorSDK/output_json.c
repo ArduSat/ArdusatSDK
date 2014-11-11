@@ -108,6 +108,11 @@ boolean _output_json_appendValue(const char * sensorname, const char * unit, flo
 		return(false);
 }
 
+const char * anythingFloatToJSON(const char * sensorname, const char * unit, float value, int precision) {
+	_json_buffer_reset();
+	_output_json_appendValue(sensorname, unit, value, precision);
+	return(_json_buffer);
+}
 
 const char * accelerationToJSON(acceleration_t * input) {
 	if (input == NULL)
@@ -161,59 +166,20 @@ const char * luminosityToJSON(luminosity_t * input) {
 	return (_json_buffer);
 }
 
+const char * uvlightToJSON(uvlight_t * input) {
+	if (input == NULL)
+		return (NULL);
+
+	_json_buffer_reset();
+
+	// TODO : use buffer exception ?
+	_output_json_appendValue("uvindex", "index", input->uvindex, 2);
+
+	return (_json_buffer);
+}
+
 void _json_buffer_reset() {
 	memset(_json_buffer, 0, JSON_TEXTBUFFER_MAXSIZE);
 	len = 0;
 }
 
-
-/*
-
- class PrintBuffer {
- private:
- char _buffer[16];
-
- public:
- void reset() {
- memset(_buffer, '\0', 16);
- }
- void print(int8_t val) {
- reset();
- itoa(val, _buffer, 10);
- }
- void print(int16_t val) {
- reset();
- itoa(val, _buffer, 10);
- }
- void print(int32_t val) {
- reset();
- ltoa(val, _buffer, 10);
- }
- void print(uint8_t val) {
- reset();
- utoa(val, _buffer, 10);
- }
- void print(uint16_t val) {
- reset();
- utoa(val, _buffer, 10);
- }
- void print(uint32_t val) {
- reset();
- ultoa(val, _buffer, 10);
- }
- void print(float val) {
- reset();
- dtostrf(val, 2, 3, _buffer);
- }
- void print(double val) {
- reset();
- dtostrf(val, 2, 3, _buffer);
- }
- int getLength() {
- return(strlen(_buffer));
- }
- const char * get() {
- return(_buffer);
- }
- };
- */

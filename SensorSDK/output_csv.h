@@ -13,6 +13,7 @@ const char * accelerationToCSV(acceleration_t * input);
 const char * temperatureToCSV(temperature_t * input);
 const char * orientationToCSV(orientation_t * input);
 const char * luminosityToCSV(luminosity_t * input);
+const char * uvlightToCSV(uvlight_t * input);
 
 #ifdef __cplusplus
 } // extern "C"

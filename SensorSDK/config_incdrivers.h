@@ -26,6 +26,9 @@
 #include "driver_9dof.h"
 #endif
 
+#if defined(LOAD_DRIVER_SI1145)
+#include "driver_si1145.h"
+#endif
 
 
 

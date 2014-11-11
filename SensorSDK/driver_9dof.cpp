@@ -37,17 +37,21 @@ void adafruit9dof_getRPH(float * roll, float * pitch, float * heading) {
 
 	/* Calculate pitch and roll from the raw accelerometer data */
 	accel.getEvent(&accel_event);
-	if (dof.accelGetOrientation(&accel_event, &orientation)) {
+	mag.getEvent(&mag_event);
+	if (dof.fusionGetOrientation(&accel_event, &mag_event, &orientation)) {
 		/* 'orientation' should have valid .roll and .pitch fields */
 		*roll = orientation.roll;
 		*pitch = orientation.pitch;
-	}
-
-	/* Calculate the heading using the magnetometer */
-	mag.getEvent(&mag_event);
-	if (dof.magGetOrientation(SENSOR_AXIS_Z, &mag_event, &orientation)) {
 		*heading = orientation.heading;
 	}
 }
 
+void adafruit9dof_getACCEL(float * x, float * y, float * z) {
+	sensors_event_t accel_event;
 
+	/* Calculate pitch and roll from the raw accelerometer data */
+	accel.getEvent(&accel_event);
+	*x = accel_event.acceleration.x;
+	*y = accel_event.acceleration.y;
+	*z = accel_event.acceleration.z;
+}

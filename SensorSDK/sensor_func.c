@@ -5,33 +5,11 @@
 #include "cc_wire.h"
 #include "config.h"
 #include "config_incdrivers.h"
-#include "driver_9dof.h"
 
-boolean setupAccelerationSensor() {
-#if defined(LOAD_DRIVER_ADAFRUIT9DOF)
-	return(adafruit9dof_init());
-#else
-	return(false);
-#endif
-}
 
-void readAcceleration(acceleration_t * output) {
-	if (output == NULL)
-		return;
-
-	output->header.version = SENSORDATA_HEADER_VERSION;
-	output->header.length = sizeof(acceleration_t);
-	output->header.dimensionality = 3;
-	output->header.celltype = DATA_CELLTYPE_FLOAT;
-	output->header.unit = DATA_UNIT_METERPERSECONDSQUARE;
-	output->header.timestamp = millis();
-	output->header.sensor_id = SENSORID_ADAFRUIT9DOFIMU; // TODO : LOCAL_*_SENSOR_ID;
-
-	// TODO : real sensor
-	output->x = 9.7;
-	output->y = 0.2;
-	output->z = 0.1;
-}
+// ***************************
+// *** TEMPERATURE (SOLID) ***
+// ***************************
 
 boolean setupTemperatureSensor() {
 #if defined(LOAD_DRIVER_TMP102)
@@ -61,34 +39,12 @@ void readTemperature(temperature_t * output) {
 #endif
 }
 
-boolean setupOrientationSensor() {
-#if defined(LOAD_DRIVER_ADAFRUIT9DOF)
-	return(adafruit9dof_init());
-#else
-	return(false);
-#endif
-}
 
-void readOrientation(orientation_t * output) {
-	if (output == NULL)
-		return;
 
-	output->header.version = SENSORDATA_HEADER_VERSION;
-	output->header.length = sizeof(orientation_t);
-	output->header.dimensionality = 3;
-	output->header.celltype = DATA_CELLTYPE_FLOAT;
-	output->header.unit = DATA_UNIT_RADIAN;
-	output->header.timestamp = millis();
 
-	// TODO : real sensor
-#if defined(LOAD_DRIVER_ADAFRUIT9DOF)
-	output->header.sensor_id = SENSORID_ADAFRUIT9DOFIMU;
-	adafruit9dof_getRPH(&(output->roll),&(output->pitch),&(output->heading));
-	//output->t = mlx90614_getTempCelsius();
-#else
-	output->header.sensor_id = SENSORID_NULL;
-#endif
-}
+// ************************
+// *** TEMPERATURE (IR) ***
+// ************************
 
 boolean setupInfraredTemperatureSensor() {
 #if defined(LOAD_DRIVER_MLX90614)
@@ -118,6 +74,10 @@ void readInfraredTemperature(temperature_t * output) {
 #endif
 }
 
+
+// ******************
+// *** LUMINOSITY ***
+// ******************
 
 boolean setupLuminositySensor() {
 #ifdef SENSOR_LUMINOSITY
@@ -156,3 +116,106 @@ void readLuminosity(luminosity_t * output) {
 #endif
 }
 
+
+// *******************
+// *** ULTRAVIOLET ***
+// *******************
+
+boolean setupUVLightSensor() {
+#ifdef SENSOR_UVINDEX
+#if defined(LOAD_DRIVER_SI1145)
+	return(si1145_init());
+#endif
+#else	// SENSOR_UVINDEX
+	return(false);
+#endif
+}
+
+void readUVLight(uvlight_t * output) {
+	if (output == NULL)
+		return;
+
+	output->header.version = SENSORDATA_HEADER_VERSION;
+	output->header.length = sizeof(temperature_t);
+	output->header.dimensionality = 1;
+	output->header.celltype = DATA_CELLTYPE_FLOAT;
+	output->header.unit = DATA_UNIT_NONE;
+	output->header.timestamp = millis();
+
+#ifdef SENSOR_UVINDEX
+#if defined(LOAD_DRIVER_TSL2561)
+	output->header.sensor_id = SENSORID_SI1145;
+	output->uvindex = si1145_getUVIndex();
+#endif
+#else	// SENSOR_UVINDEX
+	output->header.sensor_id = SENSORID_NULL;
+	output->uvindex = 0.0;
+#endif
+}
+
+
+// ********************
+// *** ACCELERATION ***
+// ********************
+
+boolean setupAccelerationSensor() {
+#if defined(LOAD_DRIVER_ADAFRUIT9DOF)
+	return(adafruit9dof_init());
+#else
+	return(false);
+#endif
+}
+
+void readAcceleration(acceleration_t * output) {
+	if (output == NULL)
+		return;
+
+	output->header.version = SENSORDATA_HEADER_VERSION;
+	output->header.length = sizeof(acceleration_t);
+	output->header.dimensionality = 3;
+	output->header.celltype = DATA_CELLTYPE_FLOAT;
+	output->header.unit = DATA_UNIT_METERPERSECONDSQUARE;
+	output->header.timestamp = millis();
+
+	// TODO : real sensor
+#if defined(LOAD_DRIVER_ADAFRUIT9DOF)
+	output->header.sensor_id = SENSORID_ADAFRUIT9DOFIMU;
+	adafruit9dof_getACCEL(&(output->x),&(output->y),&(output->z));
+#else
+	output->header.sensor_id = SENSORID_NULL;
+#endif
+}
+
+
+// *******************
+// *** ORIENTATION ***
+// *******************
+
+boolean setupOrientationSensor() {
+#if defined(LOAD_DRIVER_ADAFRUIT9DOF)
+	return(adafruit9dof_init());
+#else
+	return(false);
+#endif
+}
+
+void readOrientation(orientation_t * output) {
+	if (output == NULL)
+		return;
+
+	output->header.version = SENSORDATA_HEADER_VERSION;
+	output->header.length = sizeof(orientation_t);
+	output->header.dimensionality = 3;
+	output->header.celltype = DATA_CELLTYPE_FLOAT;
+	output->header.unit = DATA_UNIT_RADIAN;
+	output->header.timestamp = millis();
+
+	// TODO : real sensor
+#if defined(LOAD_DRIVER_ADAFRUIT9DOF)
+	output->header.sensor_id = SENSORID_ADAFRUIT9DOFIMU;
+	adafruit9dof_getRPH(&(output->roll),&(output->pitch),&(output->heading));
+	//output->t = mlx90614_getTempCelsius();
+#else
+	output->header.sensor_id = SENSORID_NULL;
+#endif
+}

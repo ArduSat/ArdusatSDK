@@ -21,6 +21,8 @@ int16_t cc_wire_read(void);							// Wire.read()
 int16_t cc_wire_peek(void);							// Wire.peek()
 void cc_wire_flush(void);							// Wire.flush()
 
+void cc_wire_scanI2CBUS(void);
+
 void cc_serial_printFloat(float);
 
 

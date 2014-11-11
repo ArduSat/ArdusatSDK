@@ -11,6 +11,19 @@
 #include <Arduino.h>
 #include "config.h"
 
+// ***************************
+// *** DRIVER CAPABILITIES ***
+// ***************************
+
+#ifndef SENSOR_TEMPERATURE
+#define SENSOR_TEMPERATURE
+#endif
+
+
+// ************************
+// *** DRIVER FUNCTIONS ***
+// ************************
+
 #ifdef __cplusplus
 extern "C" {
 #endif

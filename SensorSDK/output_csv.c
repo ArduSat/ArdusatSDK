@@ -99,6 +99,19 @@ const char * luminosityToCSV(luminosity_t * input) {
 	return (_csv_buffer);
 }
 
+const char * uvlightToCSV(uvlight_t * input) {
+	if (input == NULL)
+		return (NULL);
+
+	headerToCSV((_data_header_t*) input);// warning : resets the internal buffer
+
+	dtostrf(input->uvindex, 2, 3, _csv_buffer + len);
+	len = strlen(_csv_buffer);
+	_csv_buffer[len++] = CSV_SEPARATOR;
+
+	return (_csv_buffer);
+}
+
 void _csv_buffer_reset() {
 	memset(_csv_buffer, 0, CSV_TEXTBUFFER_MAXSIZE);
 	len = 0;

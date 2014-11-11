@@ -11,7 +11,18 @@
 #include <Arduino.h>
 #include "config.h"
 
-#ifdef LOAD_DRIVER_TSL2561
+// ***************************
+// *** DRIVER CAPABILITIES ***
+// ***************************
+
+#ifndef SENSOR_LUMINOSITY
+#define SENSOR_LUMINOSITY
+#endif
+
+
+// ************************
+// *** DRIVER FUNCTIONS ***
+// ************************
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,6 +36,5 @@ uint16_t tsl2561_getLuminosity(int8_t ch); 	// get raw luminosity
 } // extern "C"
 #endif
 
-#endif // LUMINOSITY_TSL2561
 
 #endif /* DRIVER_TSL2561_H_ */

@@ -6,18 +6,18 @@ void setup(void)
 {
   Serial.begin(9600);
 
-  if (!setupOrientationSensor()) {
+  if (!setupAccelerationSensor()) {
     Serial.println("can't init IMU");
   }
 }
 
 void loop(void)
 {
-  orientation_t orient;
+  acceleration_t accel;
 
-  readOrientation(&orient);
+  readAcceleration(&accel);
 
-  Serial.println(orientationToJSON(&orient));
+  Serial.println(accelerationToJSON(&accel));
 
   delay(1000);
 }

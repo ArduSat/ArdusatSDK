@@ -176,6 +176,10 @@ uint8_t obcl_sendExit() {
 	return (obcl_sendMessage(msg));
 }
 
+void obcl_scan() {
+	cc_wire_scanI2CBUS();
+}
+
 // *** everywhere
 boolean obcl_begin() {
 	return(obcl_beginAs(I2C_COMM_BEGINASMASTER));

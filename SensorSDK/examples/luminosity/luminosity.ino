@@ -7,19 +7,18 @@ void setup(void)
   Serial.begin(9600);
 
   if (!setupLuminositySensor()) {
-	  Serial.println("can't init luminosity sensor");
+    Serial.println("can't init luminosity sensor");
   }
 }
 
 void loop(void)
 {
-	luminosity_t lum;
+  luminosity_t lum;
 
-	readLuminosity(&lum);
+  readLuminosity(&lum);
 
-	Serial.print("lum: \t");
-	Serial.println(luminosityToJSON(&lum));
+  Serial.print("lum: \t");
+  Serial.println(luminosityToJSON(&lum));
 
-	delay(1000);
+  delay(1000);
 }
-

@@ -11,6 +11,8 @@
 
 #define SENSORADDR_MLX90614			0x51    // IR thermometer (bottomplate)
 
+#define SENSORADDR_SI1145			0x60	// UV sensor SI1145
+
 #define I2C_ADD_ASSV_1          0x04     // master arduino
 
 #endif /* SENSORADDR_H_ */

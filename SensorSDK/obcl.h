@@ -23,6 +23,7 @@ void obcl_flushWrite();	// *** (needed in geiger_sensor_poller.ino, dunno why)
 void obcl_flushRead();	// *** (needed in geiger_sensor_poller.ino, dunno why)
 int8_t obcl_sendBuffer(uint8_t devAddr, uint8_t * buffer, int size);
 
+void obcl_scan();	// scans the I2C bus
 boolean obcl_begin(); // by default, begin as master of the I2C bus
 boolean obcl_beginAs(uint8_t localAddr);
 uint8_t obcl_getAddress();
