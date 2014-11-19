@@ -121,9 +121,9 @@ const char * accelerationToJSON(acceleration_t * input) {
 	_json_buffer_reset();
 
 	// TODO : use buffer exception ?
-	_output_json_appendValue("accelerationX", "m/s^2", input->x, 3);
-	_output_json_appendValue("accelerationY", "m/s^2", input->y, 3);
-	_output_json_appendValue("accelerationZ", "m/s^2", input->z, 3);
+	_output_json_appendValue("accelerometerX", "m/s^2", input->x, 3);
+	_output_json_appendValue("accelerometerY", "m/s^2", input->y, 3);
+	_output_json_appendValue("accelerometerZ", "m/s^2", input->z, 3);
 
 	return (_json_buffer);
 }
@@ -135,7 +135,7 @@ const char * temperatureToJSON(temperature_t * input) {
 	_json_buffer_reset();
 
 	// TODO : use buffer exception ?
-	_output_json_appendValue("temperature", "°C", input->t, 2);	// TODO : use precision in config file ?
+	_output_json_appendValue("temperature", "C", input->t, 2);	// TODO : use precision in config file ?
 
 	return (_json_buffer);
 }
@@ -147,9 +147,9 @@ const char * orientationToJSON(orientation_t * input) {
 	_json_buffer_reset();
 
 	// TODO : use buffer exception ?
-	_output_json_appendValue("orientationROLL", "degrees", input->roll, 3);
-	_output_json_appendValue("orientationPITCH", "degrees", input->pitch, 3);
-	_output_json_appendValue("orientationHEADING", "degrees", input->heading, 3);
+	_output_json_appendValue("gyroRoll", "degrees", input->roll, 3);
+	_output_json_appendValue("gyroPitch", "degrees", input->pitch, 3);
+	_output_json_appendValue("gyroHeading", "degrees", input->heading, 3);
 
 	return (_json_buffer);
 }
@@ -173,7 +173,7 @@ const char * uvlightToJSON(uvlight_t * input) {
 	_json_buffer_reset();
 
 	// TODO : use buffer exception ?
-	_output_json_appendValue("uvindex", "index", input->uvindex, 2);
+	_output_json_appendValue("uv", "mW/cm^2", input->uvindex, 2);
 
 	return (_json_buffer);
 }
