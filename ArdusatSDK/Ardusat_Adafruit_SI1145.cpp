@@ -15,7 +15,7 @@
   BSD license, all text above must be included in any redistribution
  ****************************************************/
 
-#include "Adafruit_SI1145.h"
+#include "Ardusat_Adafruit_SI1145.h"
 #include "cc_wire.h"
 #include "obcl.h"
 

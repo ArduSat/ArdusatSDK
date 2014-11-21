@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <SensorSDK.h>
+#include <ArdusatSDK.h>
 
 void setup(void)
 {
@@ -17,7 +17,7 @@ void loop(void)
 
   readOrientation(&orient);
 
-  Serial.println(orientationToJSON(&orient));
+  Serial.println(orientationToJSON("orientation", &orient));
 
   delay(1000);
 }

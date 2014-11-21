@@ -22,7 +22,7 @@
 #include "cc_wire.h"
 
 #include "driver_si1145.h"
-#include "Adafruit_SI1145.h"
+#include "Ardusat_Adafruit_SI1145.h"
 
 Adafruit_SI1145 uv = Adafruit_SI1145(DRIVER_SI1145_ADDR);
 

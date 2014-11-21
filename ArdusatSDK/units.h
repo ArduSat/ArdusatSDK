@@ -4,14 +4,15 @@
 
 // Scientific Units
 #define DATA_UNIT_NONE	0
-#define DATA_UNIT_METERPERSECONDSQUARE	1	// accelerometer
-#define DATA_UNIT_RADIANPERSECOND		2	// gyroscope
+#define DATA_UNIT_METER_PER_SECONDSQUARED	1	//haccelerometer
+#define DATA_UNIT_RADIAN_PER_SECOND		2	// gyroscope
 #define DATA_UNIT_MICROTESLA			3	// magnetometer
-#define DATA_UNIT_DEGREESCELSIUS		4	// temperature
-#define DATA_UNIT_DEGREESFAHRENHEIT		5	// temperature
-#define DATA_UNIT_METERPERSECOND		6	// speed, somehow
+#define DATA_UNIT_DEGREES_CELSIUS		4	// temperature
+#define DATA_UNIT_DEGREES_FAHRENHEIT		5	// temperature
+#define DATA_UNIT_METER_PER_SECOND		6	// speed, somehow
 #define DATA_UNIT_LUX					7	// luminosity
 #define DATA_UNIT_RADIAN				8	// IMU
+#define DATA_UNIT_MILLIWATT_PER_CMSQUARED 9
 
 
 // schema for these constants is 			0000XXLL XX for type, LL for len-1
@@ -44,5 +45,6 @@
 #define DATA_CELLTYPE_USHORTINT	0x09	// (UINT2)
 #define DATA_CELLTYPE_BYTE		0x00	// (HEX1)
 
+const char * unit_to_str(uint8_t);
 
 #endif /* UNITS_H_ */

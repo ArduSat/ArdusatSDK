@@ -23,7 +23,7 @@
 #include <limits.h>
 #include <math.h>
 
-#include "Adafruit_9DOF.h"
+#include "Ardusat_Adafruit_9DOF.h"
 #include "obcl.h"
 
 #define PI  (3.14159265F);

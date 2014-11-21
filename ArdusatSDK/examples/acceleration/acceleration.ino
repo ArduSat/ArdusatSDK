@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <SensorSDK.h>
+#include <ArdusatSDK.h>
 
 void setup(void)
 {
@@ -17,7 +17,7 @@ void loop(void)
 
   readAcceleration(&accel);
 
-  Serial.println(accelerationToJSON(&accel));
+  Serial.println(accelerationToJSON("acceleration", &accel));
 
   delay(1000);
 }

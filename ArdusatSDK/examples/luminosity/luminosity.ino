@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <SensorSDK.h>
+#include <ArdusatSDK.h>
 
 void setup(void)
 {
@@ -18,7 +18,7 @@ void loop(void)
   readLuminosity(&lum);
 
   Serial.print("lum: \t");
-  Serial.println(luminosityToJSON(&lum));
+  Serial.println(luminosityToJSON("luminosity", &lum));
 
   delay(1000);
 }

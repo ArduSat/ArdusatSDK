@@ -27,7 +27,7 @@ void readTemperature(temperature_t * output) {
 	output->header.length = sizeof(temperature_t);
 	output->header.dimensionality = 1;
 	output->header.celltype = DATA_CELLTYPE_FLOAT;
-	output->header.unit = DATA_UNIT_DEGREESCELSIUS;
+	output->header.unit = DATA_UNIT_DEGREES_CELSIUS;
 	output->header.timestamp = millis();
 
 #if defined(LOAD_DRIVER_TMP102)
@@ -62,7 +62,7 @@ void readInfraredTemperature(temperature_t * output) {
 	output->header.length = sizeof(temperature_t);
 	output->header.dimensionality = 1;
 	output->header.celltype = DATA_CELLTYPE_FLOAT;
-	output->header.unit = DATA_UNIT_DEGREESCELSIUS;
+	output->header.unit = DATA_UNIT_DEGREES_CELSIUS;
 	output->header.timestamp = millis();
 
 #if defined(LOAD_DRIVER_MLX90614)
@@ -139,7 +139,7 @@ void readUVLight(uvlight_t * output) {
 	output->header.length = sizeof(temperature_t);
 	output->header.dimensionality = 1;
 	output->header.celltype = DATA_CELLTYPE_FLOAT;
-	output->header.unit = DATA_UNIT_NONE;
+	output->header.unit = DATA_UNIT_MILLIWATT_PER_CMSQUARED;
 	output->header.timestamp = millis();
 
 #ifdef SENSOR_UVINDEX
@@ -174,7 +174,7 @@ void readAcceleration(acceleration_t * output) {
 	output->header.length = sizeof(acceleration_t);
 	output->header.dimensionality = 3;
 	output->header.celltype = DATA_CELLTYPE_FLOAT;
-	output->header.unit = DATA_UNIT_METERPERSECONDSQUARE;
+	output->header.unit = DATA_UNIT_METER_PER_SECONDSQUARED;
 	output->header.timestamp = millis();
 
 	// TODO : real sensor

@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_LSM303_U.h>
-#include <Adafruit_9DOF.h>
+#include <Ardusat_Adafruit_Sensor.h>
+#include <Ardusat_Adafruit_LSM303_U.h>
+#include <Ardusat_Adafruit_9DOF.h>
 #include "config.h"
 #include "driver_9dof.h"
 

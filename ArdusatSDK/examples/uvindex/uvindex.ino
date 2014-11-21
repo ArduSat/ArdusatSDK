@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <SensorSDK.h>
+#include <ArdusatSDK.h>
 
 void setup(void)
 {
@@ -17,7 +17,7 @@ void loop(void)
 
 	readUVLight(&uv);
 
-	Serial.println(uvlightToJSON(&uv));
+	Serial.println(uvlightToJSON("uv", &uv));
 
 	delay(1000);
 }

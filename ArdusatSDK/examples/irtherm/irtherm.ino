@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <SensorSDK.h>
+#include <ArdusatSDK.h>
 
 void setup(void)
 {
@@ -18,7 +18,7 @@ void loop(void)
   readInfraredTemperature(&temp);
 
   Serial.print("temp: \t");
-  Serial.println(temperatureToJSON(&temp));
+  Serial.println(temperatureToJSON("infared", &temp));
 
   delay(1000);
 }
