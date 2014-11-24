@@ -30,7 +30,7 @@ boolean adafruit9dof_init() {
 	return(true);
 }
 
-void adafruit9dof_getRPH(float * roll, float * pitch, float * heading) {
+void adafruit9dof_getOrientation(float * roll, float * pitch, float * heading) {
 	sensors_event_t accel_event;
 	sensors_event_t mag_event;
 	sensors_vec_t orientation;
@@ -46,7 +46,7 @@ void adafruit9dof_getRPH(float * roll, float * pitch, float * heading) {
 	}
 }
 
-void adafruit9dof_getACCEL(float * x, float * y, float * z) {
+void adafruit9dof_getAccel(float * x, float * y, float * z) {
 	sensors_event_t accel_event;
 
 	/* Calculate pitch and roll from the raw accelerometer data */
@@ -54,4 +54,14 @@ void adafruit9dof_getACCEL(float * x, float * y, float * z) {
 	*x = accel_event.acceleration.x;
 	*y = accel_event.acceleration.y;
 	*z = accel_event.acceleration.z;
+}
+
+void adafruit9dof_getMag(float * x, float * y, float * z) {
+	sensors_event_t mag_event;
+
+	/* Calculate pitch and roll from the raw accelerometer data */
+	accel.getEvent(&mag_event);
+	*x = mag_event.magnetic.x;
+	*y = mag_event.magnetic.y;
+	*z = mag_event.magnetic.z;
 }

@@ -125,6 +125,8 @@ boolean setupUVLightSensor() {
 #ifdef SENSOR_UVINDEX
 #if defined(LOAD_DRIVER_SI1145)
 	return(si1145_init());
+#elif defined(LOAD_DRIVER_ML8511)
+	return ml8511_init();
 #endif
 #else	// SENSOR_UVINDEX
 	return(false);
@@ -143,9 +145,12 @@ void readUVLight(uvlight_t * output) {
 	output->header.timestamp = millis();
 
 #ifdef SENSOR_UVINDEX
-#if defined(LOAD_DRIVER_TSL2561)
+#if defined(LOAD_DRIVER_SI1145)
 	output->header.sensor_id = SENSORID_SI1145;
 	output->uvindex = si1145_getUVIndex();
+#elif defined(LOAD_DRIVER_ML8511)
+	output->header.sensor_id = SENSORID_ML8511;
+	output->uvindex = ml8511_getUV();
 #endif
 #else	// SENSOR_UVINDEX
 	output->header.sensor_id = SENSORID_NULL;
@@ -180,7 +185,38 @@ void readAcceleration(acceleration_t * output) {
 	// TODO : real sensor
 #if defined(LOAD_DRIVER_ADAFRUIT9DOF)
 	output->header.sensor_id = SENSORID_ADAFRUIT9DOFIMU;
-	adafruit9dof_getACCEL(&(output->x),&(output->y),&(output->z));
+	adafruit9dof_getAccel(&(output->x),&(output->y),&(output->z));
+#else
+	output->header.sensor_id = SENSORID_NULL;
+#endif
+}
+
+// ********************
+// ***** MAGNETI  *****
+// ********************
+
+boolean setupMagneticSensor() {
+#if defined(LOAD_DRIVER_ADAFRUIT9DOF)
+	return(adafruit9dof_init());
+#else
+	return(false);
+#endif
+}
+
+void readMagnetic(magnetic_t * output) {
+	if (output == NULL)
+		return;
+
+	output->header.version = SENSORDATA_HEADER_VERSION;
+	output->header.length = sizeof(acceleration_t);
+	output->header.dimensionality = 3;
+	output->header.celltype = DATA_CELLTYPE_FLOAT;
+	output->header.unit = DATA_UNIT_MICROTESLA;
+	output->header.timestamp = millis();
+
+#if defined(LOAD_DRIVER_ADAFRUIT9DOF)
+	output->header.sensor_id = SENSORID_ADAFRUIT9DOFIMU;
+	adafruit9dof_getMag(&(output->x),&(output->y),&(output->z));
 #else
 	output->header.sensor_id = SENSORID_NULL;
 #endif
@@ -213,7 +249,7 @@ void readOrientation(orientation_t * output) {
 	// TODO : real sensor
 #if defined(LOAD_DRIVER_ADAFRUIT9DOF)
 	output->header.sensor_id = SENSORID_ADAFRUIT9DOFIMU;
-	adafruit9dof_getRPH(&(output->roll),&(output->pitch),&(output->heading));
+	adafruit9dof_getOrientation(&(output->roll),&(output->pitch),&(output->heading));
 	//output->t = mlx90614_getTempCelsius();
 #else
 	output->header.sensor_id = SENSORID_NULL;

@@ -26,6 +26,11 @@ typedef struct {
 
 typedef struct {
 	_data_header_t header;
+	float x,y,z;
+} magnetic_t;
+
+typedef struct {
+	_data_header_t header;
 	float roll,pitch,heading;
 } orientation_t;
 

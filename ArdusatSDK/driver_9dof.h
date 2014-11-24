@@ -21,8 +21,9 @@ extern "C" {
 #endif
 
 boolean adafruit9dof_init();			// initialize the driver/sensor
-void adafruit9dof_getRPH(float * roll, float * pitch, float * heading);	// obtain data
-void adafruit9dof_getACCEL(float * x, float * y, float * z);
+void adafruit9dof_getOrientation(float * roll, float * pitch, float * heading);	// obtain data
+void adafruit9dof_getAccel(float * x, float * y, float * z);
+void adafruit9dof_getMag(float * x, float * y, float * z);
 
 #ifdef __cplusplus
 } // extern "C"

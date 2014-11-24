@@ -30,6 +30,8 @@
 #include "driver_si1145.h"
 #endif
 
-
+#if defined(LOAD_DRIVER_ML8511)
+#include "driver_ml8511.h"
+#endif
 
 #endif /* CONFIG_DRIVERS_H_ */

@@ -29,7 +29,8 @@ void readAcceleration(acceleration_t * accel);
 boolean setupOrientationSensor();
 void readOrientation(orientation_t * orient);
 
-
+boolean setupMagneticSensor();
+void readMagnetic(magnetic_t * mag);
 
 #ifdef __cplusplus
 } // extern "C"

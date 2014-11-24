@@ -68,6 +68,7 @@ void setup() {
   setupLuminositySensor();
   setupUVLightSensor();
   setupOrientationSensor();
+  setupMagneticSensor();
   
   // initialize the digital pins as outputs for the LEDs
   pinMode(LED_TMP102, OUTPUT);
@@ -97,6 +98,7 @@ void loop() {
   luminosity_t luminosity;
   uvlight_t uv_light;
   acceleration_t accel;
+  magnetic_t mag;
   orientation_t orientation;
   byte byteRead;
   float temp_val;
@@ -127,11 +129,11 @@ void loop() {
   Serial.println(valueToJSON("accelerometerY", accel.header.unit, accel.y));
   Serial.println(valueToJSON("accelerometerZ", accel.header.unit, accel.z));
 
-#if 0
   // Read Magnetometer
-  readMagnetometer(&magnet);
-  Serial.println(magnetToJSON("magnetometer", &magnet));
-#endif 
+  readMagnetic(&mag);
+  Serial.println(valueToJSON("magneticX", mag.header.unit, mag.x));
+  Serial.println(valueToJSON("magneticY", mag.header.unit, mag.y));
+  Serial.println(valueToJSON("magneticZ", mag.header.unit, mag.z));
   
   // Read Gyro
   readOrientation(&orientation);
