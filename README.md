@@ -24,20 +24,20 @@ After the SDK is imported, the basic I/O functions and sensor drivers should be 
 
 ## Initializing Sensors
 
-Sensors in the SDK should be initialized before use. To initialize sensors, a number of `setup`
+Sensors in the SDK should be initialized before use. To initialize sensors, a number of `begin`
 functions are provided, which should be called in the Arduino `setup` function. These functions are
 listed below.
 
 Function | Sensor | Config Arguments
 --- | --- | ---
-**setupTemperatureSensor** | TMP102 | None
-**setupInfraredTemperatureSensor** | MLX90614 | None
-**setupLuminositySensor** | TSL2561 | None
-**setupAccelerationSensor** | LSM303 (9DOF breakout) | None
-**setupOrientationSensor** | L3GD20 (9DOF breakout) | None
-**setupUVLightSensor** | SI1145 | None
+**beginTemperatureSensor** | TMP102 | None
+**beginInfraredTemperatureSensor** | MLX90614 | None
+**beginLuminositySensor** | TSL2561 | None
+**beginAccelerationSensor** | LSM303 (9DOF breakout) | None
+**beginOrientationSensor** | L3GD20 (9DOF breakout) | None
+**beginUVLightSensor** | SI1145 | None
 
-`setup` functions return `true` on success or `false` on failure.
+`begin` functions return `true` on success or `false` on failure.
 
 ## Reading Sensor Data
 
@@ -59,7 +59,7 @@ Usage example:
 
 Serial.begin(9600);
 temperature_t temp_data;
-if (!setupTemperatureSensor()) {
+if (!beginTemperatureSensor()) {
   Serial.println("There was a problem initializing the temperature sensor.");
   while (1);
 }
