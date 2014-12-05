@@ -8,9 +8,10 @@ satellite systems. It builds on top of popular open source libraries provided by
 [Adafruit](https://github.com/adafruit) and others.
 
 # Installing the SDK
-Installing the SDK is easy. Just download (click on the link on the right) or clone this repository
+Installing the SDK is easy - it works like any other third party Arduino library. Just download 
+the SDK at https://s3-us-west-2.amazonaws.com/ardusatweb/ArdusatSDK.zip or clone this repository
 to your hard drive, then open the Arduino IDE, go to Sketch -> Import Library -> Add Library and
-navigate to the directory where you downloaded or cloned the Ardusat SDK to. You now should be able
+navigate to your download (zip file or the directory cloned with git). You now should be able
 to use the SDK in your sketches.
 
 # Using the SDK
