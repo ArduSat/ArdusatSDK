@@ -275,6 +275,27 @@ const char * accelerationToCSV(acceleration_t * input) {
   return (_output_buffer);
 }
 
+const char * magneticToCSV(magnetic_t * input) {
+  if (input == NULL)
+    return (NULL);
+
+  _headerToCSV((_data_header_t*) input);
+
+  dtostrf(input->x, 2, 3, _output_buffer + _output_buf_len);
+  _output_buf_len = strlen(_output_buffer);
+  _output_buffer[_output_buf_len++] = CSV_SEPARATOR;
+
+  dtostrf(input->y, 2, 3, _output_buffer + _output_buf_len);
+  _output_buf_len = strlen(_output_buffer);
+  _output_buffer[_output_buf_len++] = CSV_SEPARATOR;
+
+  dtostrf(input->z, 2, 3, _output_buffer + _output_buf_len);
+  _output_buf_len = strlen(_output_buffer);
+  _output_buffer[_output_buf_len++] = CSV_SEPARATOR;
+
+  return (_output_buffer);
+}
+
 const char * temperatureToCSV(temperature_t * input) {
   if (input == NULL)
     return (NULL);
@@ -373,6 +394,24 @@ const char * accelerationToJSON(const char *sensor_name, acceleration_t *acceler
   sprintf(nameBuf, "%sZ", sensor_name);
   _writeJSONValue(&_output_buffer[_output_buf_len], nameBuf,
 		  unit_to_str(acceleration->header.unit), acceleration->z);
+  return _output_buffer;
+}
+
+const char * magneticToJSON(const char *sensor_name, magnetic_t *mag)
+{
+  int nameLength = strlen(sensor_name);
+  char nameBuf[nameLength + 2];
+  _output_buffer_reset();	
+
+  sprintf(nameBuf, "%sX", sensor_name);
+  _writeJSONValue(_output_buffer, nameBuf, unit_to_str(mag->header.unit),
+		  mag->x);
+  sprintf(nameBuf, "%sY", sensor_name);
+  _writeJSONValue(&_output_buffer[_output_buf_len], nameBuf,
+		  unit_to_str(mag->header.unit), mag->y);
+  sprintf(nameBuf, "%sZ", sensor_name);
+  _writeJSONValue(&_output_buffer[_output_buf_len], nameBuf,
+		  unit_to_str(mag->header.unit), mag->z);
   return _output_buffer;
 }
 

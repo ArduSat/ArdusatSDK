@@ -157,6 +157,7 @@ void readMagnetic(magnetic_t * mag);
  * toCSV output functions create a string representation of the data in CSV format.
  */
 const char * accelerationToCSV(acceleration_t * input);
+const char * magneticToCSV(magnetic_t *input);
 const char * temperatureToCSV(temperature_t * input);
 const char * orientationToCSV(orientation_t * input);
 const char * luminosityToCSV(luminosity_t * input);
@@ -171,6 +172,7 @@ const char * uvlightToCSV(uvlight_t * input);
  */
 const char * valueToJSON(const char *sensor_name, uint8_t unit, float value);
 const char * accelerationToJSON(const char *sensor_name, acceleration_t * input);
+const char * magneticToJSON(const char *sensor_name, magnetic_t * input);
 const char * temperatureToJSON(const char *sensor_name, temperature_t * input);
 const char * orientationToJSON(const char *sensor_name, orientation_t * input);
 const char * luminosityToJSON(const char *sensor_name, luminosity_t * input);
