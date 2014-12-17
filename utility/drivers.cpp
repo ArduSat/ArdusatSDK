@@ -19,12 +19,10 @@
  * @param reg Register address
  * @param val pointer to byte array to read into
  * @param length number of bytes to read
- * @param byteOrder Reverse byte order after read
  *
  * @return 0 on success, other on failure
  */
-int _readFromRegAddr(uint8_t devAddr, uint8_t reg, uint8_t *val, 
-		     int length, boolean byteOrder)
+int _readFromRegAddr(uint8_t devAddr, uint8_t reg, void *val, int length)
 {
   uint8_t *byteArray = (uint8_t *) val;
   int ret;
@@ -39,8 +37,8 @@ int _readFromRegAddr(uint8_t devAddr, uint8_t reg, uint8_t *val,
     return ret;
   }
 
-  if (byteArray == NULL)
-    return -1;
+  if (byteArray == NULL || length == 0)
+    return 0;
 
   Wire.beginTransmission(devAddr);
   Wire.requestFrom((byte) devAddr, (byte) length);
@@ -53,64 +51,225 @@ int _readFromRegAddr(uint8_t devAddr, uint8_t reg, uint8_t *val,
     return ret;
   }
 
-  if (!byteOrder) {
-    uint8_t tmp_b = byteArray[0];
-    byteArray[0] = byteArray[1];
-    byteArray[1] = tmp_b;
+  return 0;
+}
+
+/**
+ * Generic I2C Write function
+ *
+ * @param devAddr I2C Device address
+ * @param reg Register address
+ * @param val pointer to byte array to write from
+ * @param length number of bytes to write
+ *
+ * @return 0 on success, other on failure
+ */
+int _writeToRegAddr(uint8_t devAddr, uint8_t reg, void *val, int length)
+{
+  uint8_t *byteArray = (uint8_t *) val;
+  int ret;
+
+  Wire.beginTransmission(devAddr);
+
+  if (Wire.write(reg) < 1)
+    return -1;
+
+  for (int i=0; i < length; ++i) {
+    if (Wire.write(byteArray[i]) < 1)
+      return -1;
   }
+
+  if ((ret = Wire.endTransmission()) != 0) {
+    return ret;
+  }
+
   return 0;
 }
 
 /*
- * 9DOF Sensor
+ * L3GD20 Gyro Sensor
  */
-// Assign a unique ID to the sensors 
-Adafruit_9DOF dof = Adafruit_9DOF();
-Adafruit_LSM303_Accel_Unified accel = Adafruit_LSM303_Accel_Unified(30301);
-Adafruit_LSM303_Mag_Unified mag = Adafruit_LSM303_Mag_Unified(30302);
+boolean l3gd20h_init() {
+  uint8_t buf;
+  Wire.begin();
+  
+  // Check WHO_AM_I register
+  if (_readFromRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_WHO_AM_I, &buf, 1) ||
+      ((buf != L3GD20_ID) && buf != L3GD20H_ID)) {
+    return false;
+  }
 
-boolean adafruit9dof_init() {
-  if (!accel.begin()) {
-    Serial.println(F("Ooops, no LSM303 detected ... Check your wiring!"));
-    while (1);
+  // Sets switch to normal mode & enables 3 channels
+  buf = 0x00;
+  if (_writeToRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_CTRL_REG1, &buf, 1)) {
+    return false;
   }
-  if (!mag.begin()) {
-    Serial.println("Ooops, no LSM303 detected ... Check your wiring!");
-    while (1);
+
+  buf = 0x0F;
+  if (_writeToRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_CTRL_REG1, &buf, 1)) {
+    return false;
   }
-  return(true);
+
+  //Adjust gyro range
+  //0x00 = 250DPS
+  //0x10 = 500DPS
+  //0x20 = 2000DPS
+  buf = 0x00;
+  if (_writeToRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_CTRL_REG4, &buf, 1)) 
+    return false;
+
+  return true;
 }
 
-void adafruit9dof_getOrientation(float * roll, float * pitch, float * heading) {
-  sensors_event_t accel_event;
-  sensors_event_t mag_event;
-  sensors_vec_t orientation;
+int _2bit_xyz_read(uint8_t addr, uint8_t reg, int16_t *x, int16_t *y, int16_t *z, 
+                   bool reverse_bits) {
+  uint8_t buf[6];
+  uint8_t *hi;
+  uint8_t *low;
+  int ret;
 
-  accel.getEvent(&accel_event);
-  mag.getEvent(&mag_event);
-  if (dof.fusionGetOrientation(&accel_event, &mag_event, &orientation)) {
-    *roll = orientation.roll;
-    *pitch = orientation.pitch;
-    *heading = orientation.heading;
+  if (!(ret = _readFromRegAddr(addr, reg, buf, 6))) {
+    if (reverse_bits) {
+      low = buf + 1;
+      hi = buf;
+    } else {
+      low = buf;
+      hi = low + 1;
+    }
+    *x = (int16_t)(*low | (((int16_t) *hi) << 8));
+    low = low + 2;
+    hi = hi + 2;
+    *y = (int16_t)((*low) | (((int16_t) *hi) << 8));
+    low = low + 2;
+    hi = hi + 2;
+    *z = (int16_t)((*low) | (((int16_t) *hi) << 8));
+    return 0;
+  }
+
+  return ret;
+}
+
+void l3gd20h_getOrientation(float *x, float *y, float *z) {
+  int16_t vals[3];
+  if (_2bit_xyz_read(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_OUT_X_L | 0x80, 
+                     &vals[0], &vals[1], &vals[2], false) == 0) {
+
+    // Need different compensation values here if we give ability to adjust gyro range
+    *x = vals[0] * L3GD20_GYRO_SENSITIVITY_250DPS * SENSORS_DPS_TO_RADS;  
+    *y = vals[1] * L3GD20_GYRO_SENSITIVITY_250DPS * SENSORS_DPS_TO_RADS;
+    *z = vals[2] * L3GD20_GYRO_SENSITIVITY_250DPS * SENSORS_DPS_TO_RADS;
   }
 }
 
-void adafruit9dof_getAccel(float * x, float * y, float * z) {
-  sensors_event_t accel_event;
+/*
+ * LSM303 Accel + Mag Sensor
+ */
+int _lsm303_set_mag_gain(lsm303MagGain gain)
+{
+  int new_xy;
+  int new_z;
+  int ret;
 
-  accel.getEvent(&accel_event);
-  *x = accel_event.acceleration.x;
-  *y = accel_event.acceleration.y;
-  *z = accel_event.acceleration.z;
+  switch(gain) {
+    case LSM303_MAGGAIN_1_3:
+      new_xy = 1100;
+      new_z  = 980;
+      break;
+    case LSM303_MAGGAIN_1_9:
+      new_xy = 855;
+      new_z  = 760;
+      break;
+    case LSM303_MAGGAIN_2_5:
+      new_xy = 670;
+      new_z  = 600;
+      break;
+    case LSM303_MAGGAIN_4_0:
+      new_xy = 450;
+      new_z  = 400;
+      break;
+    case LSM303_MAGGAIN_4_7:
+      new_xy = 400;
+      new_z  = 255;
+      break;
+    case LSM303_MAGGAIN_5_6:
+      new_xy = 330;
+      new_z  = 295;
+      break;
+    case LSM303_MAGGAIN_8_1:
+      new_xy = 230;
+      new_z  = 205;
+      break;
+    default:
+      return -1;
+  }
+
+  if ((ret = _writeToRegAddr(LSM303_ADDRESS_MAG, LSM303_REGISTER_MAG_CRB_REG_M,
+                             (uint8_t *) &gain, 1)) == 0) {
+    _lsm303Mag_Gauss_LSB_XY = new_xy;
+    _lsm303Mag_Gauss_LSB_Z = new_z;
+    return 0;
+  } else {
+    return ret;
+  }
 }
 
-void adafruit9dof_getMag(float * x, float * y, float * z) {
-  sensors_event_t mag_event;
+boolean lsm303_accel_init() {
+  uint8_t res = 0x57;
 
-  accel.getEvent(&mag_event);
-  *x = mag_event.magnetic.x;
-  *y = mag_event.magnetic.y;
-  *z = mag_event.magnetic.z;
+  Wire.begin();
+  if (_writeToRegAddr(LSM303_ADDRESS_ACCEL, LSM303_REGISTER_ACCEL_CTRL_REG1_A, &res, 1)) {
+    return false; }
+
+  //verify connected to sensor
+  if (_readFromRegAddr(LSM303_ADDRESS_ACCEL, LSM303_REGISTER_ACCEL_CTRL_REG1_A, &res, 1) ||
+      res != 0x57) {
+    return false;
+  }
+  return true;
+}
+
+boolean lsm303_mag_init() {
+  uint8_t res;
+
+  Wire.begin();
+  res = 0x00;
+  if (_writeToRegAddr(LSM303_ADDRESS_MAG, LSM303_REGISTER_MAG_MR_REG_M, &res, 1)) {
+    return false;
+  }
+
+  //verify connected to sensor
+  if (_readFromRegAddr(LSM303_ADDRESS_MAG, LSM303_REGISTER_MAG_CRA_REG_M, &res, 1) ||
+      res != 0x10) {
+    return false;
+  }
+
+  return _lsm303_set_mag_gain(LSM303_MAGGAIN_1_3) == 0;
+}
+
+void lsm303_getAccel(float *x, float *y, float *z)
+{
+  int16_t vals[3];
+  if (_2bit_xyz_read(LSM303_ADDRESS_ACCEL, LSM303_REGISTER_ACCEL_OUT_X_L_A | 0x80, 
+                     &vals[0], &vals[1], &vals[2], false) == 0) {
+    *x = (vals[0] >> 4) * _lsm303Accel_MG_LSB * SENSORS_GRAVITY_STANDARD;
+    *y = (vals[1] >> 4) * _lsm303Accel_MG_LSB * SENSORS_GRAVITY_STANDARD;
+    *z = (vals[2] >> 4) * _lsm303Accel_MG_LSB * SENSORS_GRAVITY_STANDARD;
+  }
+}
+
+void lsm303_getMag(float *x, float *y, float *z)
+{
+  int16_t vals[3];
+  
+  //For some reason, y & z are "flipped" in the raw data coming out of the mag.
+  //(z values are read before y values)
+  //use indexes to flip them back
+  if (_2bit_xyz_read(LSM303_ADDRESS_MAG, LSM303_REGISTER_MAG_OUT_X_H_M, 
+                     &vals[0], &vals[2], &vals[1], true) == 0) {
+    *x = vals[0] / _lsm303Mag_Gauss_LSB_XY * SENSORS_GAUSS_TO_MICROTESLA;
+    *y = vals[1] / _lsm303Mag_Gauss_LSB_XY * SENSORS_GAUSS_TO_MICROTESLA;
+    *z = vals[2] / _lsm303Mag_Gauss_LSB_Z * SENSORS_GAUSS_TO_MICROTESLA;
+  }
 }
 
 /*
@@ -170,6 +329,7 @@ float ml8511_getUV()
   return map_float(scaled_uv_v, 0.99, 2.9, 0.0, 15.0);
 }
 
+
 /*
  * SI1145 UV/Light
  */
@@ -209,6 +369,7 @@ uint16_t _mlx90614_read16(uint8_t a) {
 float _mlx90614_readTemp(uint8_t reg) {
   float temp;
 
+  //TODO: re-write to leverage _read function
   temp = _mlx90614_read16(reg);
   temp *= .02;
   temp -= 273.15;
@@ -254,7 +415,7 @@ float tmp102_getTempCelsius() {
   uint16_t val;
   float tmp;
 
-  _readFromRegAddr(DRIVER_TMP102_ADDR, 0x00, (uint8_t *) &val, 2, false);
+  _readFromRegAddr(DRIVER_TMP102_ADDR, 0x00, (uint8_t *) &val, 2);
 
   tmp = (val >> 4) * 0.0625;
   return tmp;

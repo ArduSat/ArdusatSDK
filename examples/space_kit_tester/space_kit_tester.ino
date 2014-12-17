@@ -124,23 +124,15 @@ void loop() {
 
   // Read Accelerometer
   readAcceleration(&accel);
-  //Serial.println(accelerationToJSON("accelerometer", &accel));
-  Serial.println(valueToJSON("accelerometerX", accel.header.unit, accel.x));
-  Serial.println(valueToJSON("accelerometerY", accel.header.unit, accel.y));
-  Serial.println(valueToJSON("accelerometerZ", accel.header.unit, accel.z));
+  Serial.println(accelerationToJSON("accelerometer", &accel));
 
   // Read Magnetometer
   readMagnetic(&mag);
-  Serial.println(valueToJSON("magneticX", mag.header.unit, mag.x));
-  Serial.println(valueToJSON("magneticY", mag.header.unit, mag.y));
-  Serial.println(valueToJSON("magneticZ", mag.header.unit, mag.z));
+  Serial.println(magneticToJSON("magnetic", &mag));
   
   // Read Gyro
   readOrientation(&orientation);
-  //Serial.println(orientationToJSON("gyro", &orientation));
-  Serial.println(valueToJSON("gyroRoll", orientation.header.unit, orientation.roll));
-  Serial.println(valueToJSON("gyroPitch", orientation.header.unit, orientation.pitch));
-  Serial.println(valueToJSON("gyroHeading", orientation.header.unit, orientation.heading));
+  Serial.println(orientationToJSON("gyro", &orientation));
 
   // Read Temp from TMP102 (default in celcius)
   readTemperature(&temp);

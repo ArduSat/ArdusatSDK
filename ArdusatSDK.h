@@ -8,8 +8,8 @@
 #define ARDUSATSDK_H_
 
 #include <Arduino.h>
-
 #include <utility/drivers.h>
+#include <avr/pgmspace.h>
 
 /**
  * Unique numeric id for each physical sensor
@@ -77,10 +77,10 @@
  */
 #define SENSORDATA_HEADER_VERSION	 1
 struct _data_header_v1 {
-	uint8_t version;		// version of the data packet (for compatibility mgt)
-	uint8_t length;			// len of the data packet (256 is enough ?)
-	uint8_t dimensionality;	// size of the cell array
-	uint8_t celltype;		// type of the cell (0 = byte, 1 = float, etc…)
+	//uint8_t version;		// version of the data packet (for compatibility mgt)
+	//uint8_t length;			// len of the data packet (256 is enough ?)
+	//uint8_t dimensionality;	// size of the cell array
+	//uint8_t celltype;		// type of the cell (0 = byte, 1 = float, etc…)
 	uint8_t unit;			// unit (standard) of the values (e.g. meter, m/s^2, etc.)
 	uint8_t sensor_id;		// id of the sensor that generated this data
 	uint32_t timestamp;		// millis for timestamping the data
@@ -103,7 +103,7 @@ typedef struct {
 
 typedef struct {
 	_data_header_t header;
-	float roll,pitch,heading;
+	float x,y,z;
 } orientation_t;
 
 typedef struct {
@@ -158,12 +158,12 @@ void readMagnetic(magnetic_t * mag);
 /**
  * toCSV output functions create a string representation of the data in CSV format.
  */
-const char * accelerationToCSV(acceleration_t * input);
-const char * magneticToCSV(magnetic_t *input);
-const char * temperatureToCSV(temperature_t * input);
-const char * orientationToCSV(orientation_t * input);
-const char * luminosityToCSV(luminosity_t * input);
-const char * uvlightToCSV(uvlight_t * input);
+const char * accelerationToCSV(const char *sensorName, acceleration_t * input);
+const char * magneticToCSV(const char *sensorName, magnetic_t *input);
+const char * orientationToCSV(const char *sensorName, orientation_t * input);
+const char * temperatureToCSV(const char *sensorName, temperature_t * input);
+const char * luminosityToCSV(const char *sensorName, luminosity_t * input);
+const char * uvlightToCSV(const char *sensorName, uvlight_t * input);
 
 /**
  * toJSON output functions create a string representation of the data in a JSON format
