@@ -1,19 +1,13 @@
 /**
- * @file   ArdusatSDK.c
+ * @file   ArdusatSDK.cpp
  * @Author Ben Peters (ben@ardusat.com)
  * @date   December 3, 2014
  * @brief  Implements ArdusatSDK generic sensor read & configuration functions
  */
 
-#include "ArdusatSDK.h"
 #include <stdio.h>
-
-#include "Ardusat_Adafruit_Sensor.h"
-#include "Ardusat_Adafruit_LSM303_U.h"
-#include "Ardusat_Adafruit_L3GD20_U.h"
-#include "Ardusat_Adafruit_9DOF.h"
-#include "Ardusat_Adafruit_SI1145.h"
-#include "drivers.h"
+#include <string.h>
+#include "ArdusatSDK.h"
 
 char _output_buffer[OUTPUT_BUFFER_MAXSIZE];
 int _output_buf_len = 0;

@@ -18,6 +18,12 @@
 #define DRIVERS_H_
 
 #include <Arduino.h>
+#include <utility/Adafruit_Sensor.h>
+#include <utility/Adafruit_LSM303_U.h>
+#include <utility/Adafruit_L3GD20_U.h>
+#include <utility/Adafruit_9DOF.h>
+#include <utility/Adafruit_SI1145.h>
+#include <utility/TSL2561.h>
 
 #define DRIVER_TSL2561_ADDR		0x39
 #define DRIVER_TMP102_ADDR		0x48

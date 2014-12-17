@@ -28,7 +28,7 @@
  #include "WProgram.h"
 #endif
 
-#include <Ardusat_Adafruit_Sensor.h>
+#include <utility/Adafruit_Sensor.h>
 #include <Wire.h>
 
 /*=========================================================================

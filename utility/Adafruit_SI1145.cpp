@@ -19,7 +19,7 @@
  * Modified by Ben Peters (Ardusat) to avoid namespace collisions 
  */
 
-#include "Ardusat_Adafruit_SI1145.h"
+#include "Adafruit_SI1145.h"
 
 Adafruit_SI1145::Adafruit_SI1145() {
   _addr = SI1145_ADDR;

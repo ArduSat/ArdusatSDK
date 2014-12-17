@@ -10,12 +10,6 @@
 
 #include <Arduino.h>
 #include <Wire.h>
-#include <Ardusat_Adafruit_Sensor.h>
-#include <Ardusat_Adafruit_LSM303_U.h>
-#include <Ardusat_Adafruit_9DOF.h>
-#include <Ardusat_Adafruit_SI1145.h>
-#include <Ardusat_TSL2561.h>
-
 #include "drivers.h"
 
 /**

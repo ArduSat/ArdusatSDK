@@ -9,6 +9,8 @@
 
 #include <Arduino.h>
 
+#include <utility/drivers.h>
+
 /**
  * Unique numeric id for each physical sensor
  */

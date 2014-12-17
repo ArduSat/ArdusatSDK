@@ -27,9 +27,9 @@
  #include "WProgram.h"
 #endif
 
-#include <Ardusat_Adafruit_Sensor.h>
-#include <Ardusat_Adafruit_LSM303_U.h>
-#include <Ardusat_Adafruit_L3GD20_U.h>
+#include <utility/Adafruit_Sensor.h>
+#include <utility/Adafruit_LSM303_U.h>
+#include <utility/Adafruit_L3GD20_U.h>
 #include <Wire.h>
 
 /** Sensor axis */
