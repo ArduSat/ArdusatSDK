@@ -8,6 +8,12 @@
 #define ARDUSATSDK_H_
 
 #include <Arduino.h>
+#include <utility/SdFat.h>
+#include <utility/drivers.h>
+#include <avr/pgmspace.h>
+#include <utility/SdVolume.h>
+#include <utility/MemoryFree.h>
+#include <utility/BinaryDataFmt.h>
 
 /**
  * Unique numeric id for each physical sensor
@@ -20,7 +26,7 @@
 #define SENSORID_SI1145			0x05
 #define SENSORID_ML8511 		0x06 
 
-#define OUTPUT_BUFFER_MAXSIZE 256
+#define OUTPUT_BUFFER_MAXSIZE 128
 
 /**
  * Unit definitions
@@ -75,10 +81,10 @@
  */
 #define SENSORDATA_HEADER_VERSION	 1
 struct _data_header_v1 {
-	uint8_t version;		// version of the data packet (for compatibility mgt)
-	uint8_t length;			// len of the data packet (256 is enough ?)
-	uint8_t dimensionality;	// size of the cell array
-	uint8_t celltype;		// type of the cell (0 = byte, 1 = float, etc…)
+	//uint8_t version;		// version of the data packet (for compatibility mgt)
+	//uint8_t length;			// len of the data packet (256 is enough ?)
+	//uint8_t dimensionality;	// size of the cell array
+	//uint8_t celltype;		// type of the cell (0 = byte, 1 = float, etc…)
 	uint8_t unit;			// unit (standard) of the values (e.g. meter, m/s^2, etc.)
 	uint8_t sensor_id;		// id of the sensor that generated this data
 	uint32_t timestamp;		// millis for timestamping the data
@@ -101,7 +107,7 @@ typedef struct {
 
 typedef struct {
 	_data_header_t header;
-	float roll,pitch,heading;
+	float x,y,z;
 } orientation_t;
 
 typedef struct {
@@ -156,11 +162,12 @@ void readMagnetic(magnetic_t * mag);
 /**
  * toCSV output functions create a string representation of the data in CSV format.
  */
-const char * accelerationToCSV(acceleration_t * input);
-const char * temperatureToCSV(temperature_t * input);
-const char * orientationToCSV(orientation_t * input);
-const char * luminosityToCSV(luminosity_t * input);
-const char * uvlightToCSV(uvlight_t * input);
+const char * accelerationToCSV(const char *sensorName, acceleration_t * input);
+const char * magneticToCSV(const char *sensorName, magnetic_t *input);
+const char * orientationToCSV(const char *sensorName, orientation_t * input);
+const char * temperatureToCSV(const char *sensorName, temperature_t * input);
+const char * luminosityToCSV(const char *sensorName, luminosity_t * input);
+const char * uvlightToCSV(const char *sensorName, uvlight_t * input);
 
 /**
  * toJSON output functions create a string representation of the data in a JSON format
@@ -171,10 +178,42 @@ const char * uvlightToCSV(uvlight_t * input);
  */
 const char * valueToJSON(const char *sensor_name, uint8_t unit, float value);
 const char * accelerationToJSON(const char *sensor_name, acceleration_t * input);
+const char * magneticToJSON(const char *sensor_name, magnetic_t * input);
 const char * temperatureToJSON(const char *sensor_name, temperature_t * input);
 const char * orientationToJSON(const char *sensor_name, orientation_t * input);
 const char * luminosityToJSON(const char *sensor_name, luminosity_t * input);
 const char * uvlightToJSON(const char *sensor_name, uvlight_t * input);
+
+/**
+ * Write functions take care of persisting data to an SD card
+ *
+ * Data can be written in any format, including a custom binary format for 
+ * space efficiency, by using the writeBytes function that takes a byte array.
+ *
+ * The individual helpers write functions automate the process of saving data
+ * for each individual value, but write in CSV format, which is easier to consume
+ * after the experiment, but takes up more space.
+ *
+ * Finally, binaryWrite functions write optimized binary representations of the 
+ * data. This helps save SD card space, but means that the data must be decoded
+ * after download before it can be used.
+ */
+bool beginDataLog(int chipSelectPin, const char *fileNamePrefix, bool csvData);
+
+int writeBytes(const uint8_t *buffer, uint8_t numBytes); 
+int writeAcceleration(const char *sensorName, acceleration_t *data);
+int writeMagnetic(const char *sensorName, magnetic_t *data);
+int writeOrientation(const char *sensorName, orientation_t *data);
+int writeTemperature(const char *sensorName, temperature_t *data);
+int writeLuminosity(const char *sensorName, luminosity_t *data);
+int writeUVLight(const char *sensorName, uvlight_t *data);
+
+int binaryWriteAcceleration(const uint8_t sensorId, acceleration_t *data);
+int binaryWriteMagnetic(const uint8_t sensorId, magnetic_t *data);
+int binaryWriteOrientation(const uint8_t sensorId, orientation_t *data);
+int binaryWriteTemperature(const uint8_t sensorId, temperature_t *data);
+int binaryWriteLuminosity(const uint8_t sensorId, luminosity_t *data);
+int binaryWriteUVLight(const uint8_t sensorId, uvlight_t *data);
 
 #ifdef __cplusplus
 } // extern "C"

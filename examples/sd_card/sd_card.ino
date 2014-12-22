@@ -1,30 +1,17 @@
-/*
- * =====================================================================================
+/**
+ * @file   sd_card.c
+ * @Author Ben Peters (ben@ardusat.com)
+ * @date   December 21, 2014
+ * @brief  Example saving sensor data to a SD card.
  *
- *       Filename:  space_kit_tester.ino
+ *         This utility reads data from all the sensors in the space kit, then logs it
+ *         it to the SD card in either CSV or binary format (see define flags).
  *
- *    Description:  Simple driver for all the sensors included in the Ardusat
- *                  Space Kit. Outputs all sensor values at a configurable 
- *                  interval in JSON format that can be read by the Ardusat 
- *                  demo app (https://demo.ardusat.com).
- *
- *                  This example uses many third-party libraries available from
- *                  Adafruit (https://github.com/adafruit). These libraries are
- *                  mostly under an Apache License, Version 2.0.
- *
- *                  http://www.apache.org/licenses/LICENSE-2.0
- *
- *        Version:  1.0
- *        Created:  10/29/2014 02:50:13
- *       Revision:  none
- *       Compiler:  Arduino
- *
- *         Author:  Ben Peters (ben@ardusat.com)
- *   Organization:  Ardusat
- *
- * =====================================================================================
+ *         Data is stored in the /DATA directory on the FAT32 formated SD card. The filename
+ *         of a datalog is /DATA/PREFIX0.CSV for CSV data or /DATA/PREFIX0.BIN for binary
+ *         data. See the docs for more information about binary formats. Note that 
+ *         prefix will be truncated to 7 character or less if a longer filename is given.
  */
-
 /*-----------------------------------------------------------------------------
  *  Includes
  *-----------------------------------------------------------------------------*/
@@ -35,7 +22,7 @@
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
-#define READ_INTERVAL 250 // interval, in ms, to wait between readings
+#define READ_INTERVAL 10000 // interval, in ms, to wait between readings
 
 // Pin Definitions
 // 3 LEDs can be turned on/off based on sensor values. These constants define the pins
@@ -50,6 +37,11 @@
 #define UVOUT A0 //Output from the UV sensor
 #define REF_3V3 A1 // 3.3V power on the Arduino board
 
+#define SD_CS_PIN 10 //CS pin used for SD card reader. Reader should be wired to DIO
+                     //10, 11, 12, 13 
+static char LOG_FILE_PREFIX[] = "MYLOG";
+static bool LOG_CSV_DATA = true;
+
 /* 
  * ===  FUNCTION  ======================================================================
  *         Name:  setup
@@ -60,7 +52,11 @@
  */
 void setup() {
   Serial.begin(9600);
-  Serial.println("Ardusat Space Kit tester"); 
+
+  if (!beginDataLog(SD_CS_PIN, LOG_FILE_PREFIX, LOG_CSV_DATA)) {
+    Serial.println("Failed to initialize SD card...");
+    while (true);
+  }
 
   beginAccelerationSensor();
   beginTemperatureSensor();
@@ -103,6 +99,7 @@ void loop() {
   byte byteRead;
   float temp_val;
   float infrared_temp;
+  int bytesWritten;
 
   // To test sending serial data from the computer, we can turn the Serial Read
   // LED on or off
@@ -172,6 +169,29 @@ void loop() {
   // Read MP8511 UV 
   readUVLight(&uv_light);
   Serial.println(uvlightToJSON("uv", &uv_light));
+
+if (LOG_CSV_DATA) {
+  bytesWritten = writeAcceleration("accelerometer", &accel);
+  bytesWritten += writeMagnetic("magnetic", &mag);
+  bytesWritten += writeOrientation("gyro", &orientation);
+  bytesWritten += writeTemperature("temp", &temp);
+  bytesWritten += writeLuminosity("luminosity", &luminosity);
+  bytesWritten += writeUVLight("uv", &uv_light);
+} else {
+  bytesWritten = binaryWriteAcceleration(0, &accel);
+  bytesWritten += binaryWriteMagnetic(1, &mag);
+  bytesWritten += binaryWriteOrientation(2, &orientation);
+  bytesWritten += binaryWriteTemperature(3, &temp);
+  bytesWritten += binaryWriteLuminosity(4, &luminosity);
+  bytesWritten += binaryWriteUVLight(5, &uv_light);
+}
+
+  Serial.print("Wrote ");
+  Serial.print(bytesWritten);
+  Serial.println(" bytes.");
+
+  Serial.print("Free Memory: ");
+  Serial.println(freeMemory());
 
   delay(READ_INTERVAL);
 }

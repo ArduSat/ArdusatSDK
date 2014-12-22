@@ -38,7 +38,7 @@
 #include <util/delay.h>
 #include <stdlib.h>
 
-#include "Ardusat_TSL2561.h"
+#include "TSL2561.h"
 
 TSL2561::TSL2561(uint8_t addr) {
   _addr = addr;

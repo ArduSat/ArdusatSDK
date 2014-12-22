@@ -18,6 +18,12 @@
 #define DRIVERS_H_
 
 #include <Arduino.h>
+#include <utility/mlx90614.h>
+#include <utility/Adafruit_Sensor.h>
+#include <utility/Adafruit_LSM303_U.h>
+#include <utility/Adafruit_L3GD20_U.h>
+#include <utility/Adafruit_SI1145.h>
+#include <utility/TSL2561.h>
 
 #define DRIVER_TSL2561_ADDR		0x39
 #define DRIVER_TMP102_ADDR		0x48
@@ -25,25 +31,6 @@
 #define DRIVER_SI1145_ADDR		0x60
 #define DRIVER_ML8511_UV_PIN A0
 #define DRIVER_ML8511_REF_PIN A1
-
-// RAM
-#define MLX90614_RAWIR1 0x04
-#define MLX90614_RAWIR2 0x05
-#define MLX90614_TA 0x06
-#define MLX90614_TOBJ1 0x07
-#define MLX90614_TOBJ2 0x08
-// EEPROM
-#define MLX90614_TOMAX 0x20
-#define MLX90614_TOMIN 0x21
-#define MLX90614_PWMCTRL 0x22
-#define MLX90614_TARANGE 0x23
-#define MLX90614_EMISS 0x24
-#define MLX90614_CONFIG 0x25
-#define MLX90614_ADDR 0x0E
-#define MLX90614_ID1 0x3C
-#define MLX90614_ID2 0x3D
-#define MLX90614_ID3 0x3E
-#define MLX90614_ID4 0x3F
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,10 +42,12 @@ extern "C" {
  *
  * http://www.adafruit.com/product/1714
  */
-boolean adafruit9dof_init();			// initialize the driver/sensor
-void adafruit9dof_getOrientation(float * roll, float * pitch, float * heading);	// obtain data
-void adafruit9dof_getAccel(float * x, float * y, float * z);
-void adafruit9dof_getMag(float * x, float * y, float * z);
+boolean l3gd20h_init();
+boolean lsm303_accel_init();
+boolean lsm303_mag_init();
+void l3gd20h_getOrientation(float *x, float *y, float *z);
+void lsm303_getAccel(float * x, float * y, float * z);
+void lsm303_getMag(float * x, float * y, float * z);
 
 /**
  * ML8511 breakout board contains an MP8511 UV light sensor

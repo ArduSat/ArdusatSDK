@@ -12,23 +12,13 @@
   Written by Kevin Townsend for Adafruit Industries.  
   BSD license, all text above must be included in any redistribution
  ***************************************************************************/
-
 /*
- * Modified by Ben Peters (Ardusat) to avoid namespace collisions when in included
- * in the Ardusat SDK package
+ * Modified by Ben Peters (Ardusat) to remove everything but constant definitions
+ * for use in the Ardusat SDK package
  */
 
 #ifndef __LSM303_H__
 #define __LSM303_H__
-
-#if (ARDUINO >= 100)
- #include "Arduino.h"
-#else
- #include "WProgram.h"
-#endif
-
-#include <Ardusat_Adafruit_Sensor.h>
-#include <Wire.h>
 
 /*=========================================================================
     I2C ADDRESS/BITS
@@ -109,75 +99,14 @@
     } lsm303MagGain;	
 /*=========================================================================*/
 
-/*=========================================================================
-    INTERNAL MAGNETOMETER DATA TYPE
-    -----------------------------------------------------------------------*/
-    typedef struct lsm303MagData_s
-    {
-        float x;
-        float y;
-        float z;
-      float orientation;
-    } lsm303MagData;
-/*=========================================================================*/
+static float _lsm303Accel_MG_LSB     = 0.001F;   // 1, 2, 4 or 12 mg per lsb
+static float _lsm303Mag_Gauss_LSB_XY = 1100.0F;  // Varies with gain
+static float _lsm303Mag_Gauss_LSB_Z  = 980.0F;   // Varies with gain
 
-/*=========================================================================
-    INTERNAL ACCELERATION DATA TYPE
-    -----------------------------------------------------------------------*/
-    typedef struct lsm303AccelData_s
-    {
-      float x;
-      float y;
-      float z;
-    } lsm303AccelData;
-/*=========================================================================*/
-	
 /*=========================================================================
     CHIP ID
     -----------------------------------------------------------------------*/
     #define LSM303_ID                     (0b11010100)
 /*=========================================================================*/
-
-/* Unified sensor driver for the accelerometer */
-class Adafruit_LSM303_Accel_Unified : public Adafruit_Sensor
-{
-  public:
-    Adafruit_LSM303_Accel_Unified(int32_t sensorID = -1);
-  
-    bool begin(void);
-    void getEvent(sensors_event_t*);
-    void getSensor(sensor_t*);
-
-  private:
-    lsm303AccelData _accelData;   // Last read accelerometer data will be available here
-    int32_t         _sensorID;
-    
-    void write8(byte address, byte reg, byte value);
-    byte read8(byte address, byte reg);
-    void read(void);
-};
-
-/* Unified sensor driver for the magnetometer */
-class Adafruit_LSM303_Mag_Unified : public Adafruit_Sensor
-{
-  public:
-    Adafruit_LSM303_Mag_Unified(int32_t sensorID = -1);
-  
-    bool begin(void);
-    void enableAutoRange(bool enable);
-    void setMagGain(lsm303MagGain gain);
-    void getEvent(sensors_event_t*);
-    void getSensor(sensor_t*);
-
-  private:
-    lsm303MagGain   _magGain;
-    lsm303MagData   _magData;     // Last read magnetometer data will be available here
-    int32_t         _sensorID;
-    bool            _autoRangeEnabled;
-    
-    void write8(byte address, byte reg, byte value);
-    byte read8(byte address, byte reg);
-    void read(void);
-};
 
 #endif
