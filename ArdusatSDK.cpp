@@ -707,70 +707,64 @@ int writeUVLight(const char *sensorName, uvlight_t *data)
   write_if_init(uvlightToCSV(sensorName, data))
 }
 
-#define init_data_struct(type) type bin_data; \
-			       bin_data.length = sizeof(type); \
-			       bin_data.id = sensorId; \
-			       bin_data.timestamp = data->header.timestamp;
-#define _write_binary_data_struct return writeBytes((uint8_t *) &bin_data, bin_data.length);
-/*
- * Convert float value to 16 bit int
- */
-void _float_to_uint16(const float val, const float min, const float max, 
-		      uint16_t *int_val)
-{
-  *int_val = (uint16_t) ((val - min) / (max - min));
-}
+#define init_data_struct(type_def, type_enum) \
+  type_def bin_data; \
+  bin_data.type = type_enum; \
+  bin_data.id = sensorId; \
+  bin_data.timestamp = data->header.timestamp;
+
+#define _write_binary_data_struct(type) return writeBytes((uint8_t *) &bin_data, sizeof(type));
 
 int binaryWriteAcceleration(const uint8_t sensorId, acceleration_t *data)
 {
-  init_data_struct(acceleration_bin_t)
-  _float_to_uint16(data->x, BIN_ACCEL_MIN, BIN_ACCEL_MAX, &(bin_data.x));
-  _float_to_uint16(data->y, BIN_ACCEL_MIN, BIN_ACCEL_MAX, &(bin_data.y));
-  _float_to_uint16(data->z, BIN_ACCEL_MIN, BIN_ACCEL_MAX, &(bin_data.z));
+  init_data_struct(acceleration_bin_t, ARDUSAT_SENSOR_TYPE_ACCELERATION)
+  bin_data.x = data->x;
+  bin_data.y = data->y;
+  bin_data.z = data->z;
 
-  _write_binary_data_struct
+  _write_binary_data_struct(acceleration_bin_t)
 }
 
 int binaryWriteMagnetic(const uint8_t sensorId, magnetic_t *data)
 {
-  init_data_struct(magnetic_bin_t)
-  _float_to_uint16(data->x, BIN_MAG_MIN, BIN_MAG_MAX, &(bin_data.x));
-  _float_to_uint16(data->y, BIN_MAG_MIN, BIN_MAG_MAX, &(bin_data.y));
-  _float_to_uint16(data->z, BIN_MAG_MIN, BIN_MAG_MAX, &(bin_data.z));
+  init_data_struct(magnetic_bin_t, ARDUSAT_SENSOR_TYPE_MAGNETIC)
+  bin_data.x = data->x;
+  bin_data.y = data->y;
+  bin_data.z = data->z;
 
-  _write_binary_data_struct
+  _write_binary_data_struct(magnetic_bin_t)
 }
 
 int binaryWriteOrientation(const uint8_t sensorId, orientation_t *data)
 {
-  init_data_struct(orientation_bin_t)
-  _float_to_uint16(data->x, BIN_ORIENTATION_MIN, BIN_ORIENTATION_MAX, &(bin_data.x));
-  _float_to_uint16(data->y, BIN_ORIENTATION_MIN, BIN_ORIENTATION_MAX, &(bin_data.y));
-  _float_to_uint16(data->z, BIN_ORIENTATION_MIN, BIN_ORIENTATION_MAX, &(bin_data.z));
+  init_data_struct(orientation_bin_t, ARDUSAT_SENSOR_TYPE_ORIENTATION)
+  bin_data.x = data->x;
+  bin_data.y = data->y;
+  bin_data.z = data->z;
 
-  _write_binary_data_struct
+  _write_binary_data_struct(orientation_bin_t)
 }
 
 int binaryWriteTemperature(const uint8_t sensorId, temperature_t *data)
 {
-  init_data_struct(temperature_bin_t)
-  _float_to_uint16(data->t, BIN_TEMPERATURE_MIN, BIN_TEMPERATURE_MAX, &(bin_data.temp));
+  init_data_struct(temperature_bin_t, ARDUSAT_SENSOR_TYPE_TEMPERATURE)
+  bin_data.temp = data->t;
 
-  _write_binary_data_struct
+  _write_binary_data_struct(temperature_bin_t)
 }
 
 int binaryWriteLuminosity(const uint8_t sensorId, luminosity_t *data)
 {
-  init_data_struct(luminosity_bin_t)
-  _float_to_uint16(data->lux, BIN_LUMINOSITY_MIN, BIN_LUMINOSITY_MAX, &(bin_data.luminosity));
+  init_data_struct(luminosity_bin_t, ARDUSAT_SENSOR_TYPE_LUMINOSITY)
+  bin_data.luminosity = data->lux;
 
-  _write_binary_data_struct
+  _write_binary_data_struct(luminosity_bin_t)
 }
 
 int binaryWriteUVLight(const uint8_t sensorId, uvlight_t *data)
 {
-  init_data_struct(uv_light_bin_t)
-  _float_to_uint16(data->uvindex, BIN_UV_MIN, BIN_UV_MAX, &(bin_data.uv));
+  init_data_struct(uv_light_bin_t, ARDUSAT_SENSOR_TYPE_UV)
+  bin_data.uv = data->uvindex;
 
-  _write_binary_data_struct
+  _write_binary_data_struct(uv_light_bin_t)
 }

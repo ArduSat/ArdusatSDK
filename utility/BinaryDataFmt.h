@@ -13,48 +13,52 @@
  * Binary data structures are designed to be as space-efficient as possible, 
  * given the sensor's native resolution.
  */
-#define _bin_data_header uint8_t length; uint8_t id; uint32_t timestamp;
+typedef enum {
+  ARDUSAT_SENSOR_TYPE_ACCELERATION = 0,
+  ARDUSAT_SENSOR_TYPE_MAGNETIC,
+  ARDUSAT_SENSOR_TYPE_ORIENTATION,
+  ARDUSAT_SENSOR_TYPE_TEMPERATURE,
+  ARDUSAT_SENSOR_TYPE_LUMINOSITY,
+  ARDUSAT_SENSOR_TYPE_UV,
+} ardusat_sensor_types_e;
+
+#define _bin_data_header uint8_t type; uint8_t id; uint32_t timestamp;
 
 typedef struct {
 	_bin_data_header
-	uint16_t x;
-	uint16_t y;
-	uint16_t z;
+	float x;
+	float y;
+	float z;
 } acceleration_bin_t;
 
 typedef struct {
 	_bin_data_header
-	uint16_t x;
-	uint16_t y;
-	uint16_t z;
+	float x;
+	float y;
+	float z;
 } magnetic_bin_t;
 
 typedef struct {
 	_bin_data_header
-	uint16_t x;
-	uint16_t y;
-	uint16_t z;
+	float x;
+	float y;
+	float z;
 } orientation_bin_t;
 
 typedef struct {
 	_bin_data_header
-	uint16_t temp;
+	float temp;
 } temperature_bin_t;
 
 typedef struct {
 	_bin_data_header
-	uint16_t luminosity;
+	float luminosity;
 } luminosity_bin_t;
 
 typedef struct {
 	_bin_data_header
-	uint16_t uv;
+	float uv;
 } uv_light_bin_t;
-
-typedef struct {
-	float min;
-	float max;
-} bin_range_t;
 
 //To translate from floating point representations into
 //2 byte integer representations we need to choose an effective
