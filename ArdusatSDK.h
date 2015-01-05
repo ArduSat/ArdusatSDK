@@ -26,7 +26,7 @@
 #define SENSORID_SI1145			0x05
 #define SENSORID_ML8511 		0x06 
 
-#define OUTPUT_BUFFER_MAXSIZE 128
+#define OUTPUT_BUFFER_MAXSIZE 500
 
 /**
  * Unit definitions
