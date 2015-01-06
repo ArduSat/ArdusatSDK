@@ -413,9 +413,15 @@ boolean tmp102_init() {
 
 float tmp102_getTempCelsius() {
   uint16_t val;
+  uint8_t * bytes = (uint8_t *) &val;
+  uint8_t temp_byte;
   float tmp;
 
-  _readFromRegAddr(DRIVER_TMP102_ADDR, 0x00, (uint8_t *) &val, 2);
+  _readFromRegAddr(DRIVER_TMP102_ADDR, 0x00, bytes, 2);
+
+  temp_byte = bytes[0];
+  bytes[0] = bytes[1];
+  bytes[1] = temp_byte;
 
   tmp = (val >> 4) * 0.0625;
   return tmp;

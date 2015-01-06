@@ -15,10 +15,10 @@ void loop(void)
 {
   temperature_t temp;
 
-  readTemperature("ambient_temp", &temp);
+  readTemperature(&temp);
 
   Serial.print("temp: \t");
-  Serial.println(temperatureToJSON(&temp));
+  Serial.println(temperatureToJSON("ambient_temp", &temp));
 
   delay(1000);
 }
