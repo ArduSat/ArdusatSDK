@@ -61,7 +61,7 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 10, 11);
  * =====================================================================================
  */
 void setup() {
-  serialConnection.begin(57600);
+  serialConnection.begin(9600);
   serialConnection.println("Ardusat Space Kit tester"); 
 
   beginAccelerationSensor();
