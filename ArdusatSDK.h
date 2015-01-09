@@ -14,6 +14,7 @@
 #include <utility/SdVolume.h>
 #include <utility/MemoryFree.h>
 #include <utility/BinaryDataFmt.h>
+#include <utility/serial.h>
 
 /**
  * Unique numeric id for each physical sensor
