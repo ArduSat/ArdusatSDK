@@ -112,6 +112,51 @@ Example:
   >> 123,acceleration,0.1,0.3,9.81
 ```
 
+### Serial Library
+The regular Arduino `Serial` library works fine with the SDK. However, sometimes when connecting to
+XBee or other wireless modules, it is useful to be able to wire serial connections that leave the
+main Arduino USB Serial free for programming. To do this, the SDK leverages the `SoftwareSerial`
+library in a new class called `ArdusatSerial`. This class has the same interface as both `Serial`
+and `SoftwareSerial`, but can be configured to output on hardware serial (`Serial`), software
+serial, or both.
+
+If a software serial mode is selected, the `ArdusatSerial` constructor must be supplied with
+arguments for `softwareReceivePin` and `softwareTransmitPin`:
+
+```
+ArdusatSerial(serialMode mode, uint8_t softwareReceivePin, uint8_t softwareTransmitPin);
+```
+
+Usage:
+```
+ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 10, 11);
+
+void setup()
+{
+  serialConnection.begin(9600);
+  serialConnection.println("This message will go out on hardware serial and software serial!");
+  beginTemperatureSensor();
+}
+
+void loop()
+{
+  temperature_t temp_data;
+  readTemperature(&temp_data);
+  serialConnection.println(temperatureToCSV("temperature", &temp_data));
+}
+
+```
+
+#### Serial Modes
+Name | Description
+--- | ---
+**SERIAL_MODE_HARDWARE** | Output serial data on built-in USB hardware serial
+**SERIAL_MODE_SOFTWARE** | Output serial data on software serial (must specify transmit & receive pins in the constructor, see arguments in example above)
+**SERIAL_MODE_HARDWARE_AND_SOFTWARE** | Output to both hardware and software serial interfaces
+
+#### Limitations
+SoftwareSerial does not appear to work reliably above 57600 baud. 
+
 ## Logging Sensor Data
 Data can be logged to an SD card to allow gathering data without an active connection to a computer.
 To do this, an external SD card adapter breakout board is required; these are available from

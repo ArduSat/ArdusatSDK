@@ -32,6 +32,8 @@
 #include <Wire.h>
 #include <ArdusatSDK.h>
 
+ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 10, 11);
+
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
@@ -59,8 +61,8 @@
  * =====================================================================================
  */
 void setup() {
-  Serial.begin(9600);
-  Serial.println("Ardusat Space Kit tester"); 
+  serialConnection.begin(57600);
+  serialConnection.println("Ardusat Space Kit tester"); 
 
   beginAccelerationSensor();
   beginTemperatureSensor();
@@ -81,7 +83,7 @@ void setup() {
   pinMode(REF_3V3, INPUT);
   
   /* We're ready to go! */
-  Serial.println("");
+  serialConnection.println("");
 }
 
 /* 
@@ -107,11 +109,11 @@ void loop() {
   // To test sending serial data from the computer, we can turn the Serial Read
   // LED on or off
   // Entering 1 will turn ON, 0 or any other number turns OFF
-  if (Serial.available()) {
-    byteRead = Serial.read();
+  if (serialConnection.available()) {
+    byteRead = serialConnection.read();
 
     // Echo the value read back on the serial port
-    Serial.write(byteRead);
+    serialConnection.write(byteRead);
     if (byteRead == 49) // Equals 1 / ON
     {
       digitalWrite(LED_SERIAL, HIGH);   // turn the LED on (HIGH is the voltage level)
@@ -124,19 +126,19 @@ void loop() {
 
   // Read Accelerometer
   readAcceleration(&accel);
-  Serial.println(accelerationToJSON("accelerometer", &accel));
+  serialConnection.println(accelerationToJSON("accelerometer", &accel));
 
   // Read Magnetometer
   readMagnetic(&mag);
-  Serial.println(magneticToJSON("magnetic", &mag));
+  serialConnection.println(magneticToJSON("magnetic", &mag));
   
   // Read Gyro
   readOrientation(&orientation);
-  Serial.println(orientationToJSON("gyro", &orientation));
+  serialConnection.println(orientationToJSON("gyro", &orientation));
 
   // Read Temp from TMP102 (default in celcius)
   readTemperature(&temp);
-  Serial.println(temperatureToJSON("temp", &temp));
+  serialConnection.println(temperatureToJSON("temp", &temp));
   temp_val = temp.t;
 
   // Logic to turn on the temperature LED based on detected temp above ~29.5 C / 85 F
@@ -148,7 +150,7 @@ void loop() {
   
   // Read MLX Infrared temp sensor
   readInfraredTemperature(&temp);
-  Serial.println(temperatureToJSON("infraredTemp", &temp));
+  serialConnection.println(temperatureToJSON("infraredTemp", &temp));
   infrared_temp = temp.t;
 
   if (infrared_temp > 29.5) {
@@ -159,7 +161,7 @@ void loop() {
         
   // Read TSL2561 Luminosity
   readLuminosity(&luminosity);
-  Serial.println(luminosityToJSON("luminosity", &luminosity));
+  serialConnection.println(luminosityToJSON("luminosity", &luminosity));
 
   if (luminosity.lux) {
     if (luminosity.lux < 100) {
@@ -171,7 +173,7 @@ void loop() {
   
   // Read MP8511 UV 
   readUVLight(&uv_light);
-  Serial.println(uvlightToJSON("uv", &uv_light));
+  serialConnection.println(uvlightToJSON("uv", &uv_light));
 
   delay(READ_INTERVAL);
 }

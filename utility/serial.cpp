@@ -1,0 +1,221 @@
+/**
+ * @file   serial.cpp
+ * @Author Ben Peters (ben@ardusat.com)
+ * @date   January 7, 2015
+ * @brief  Ardusat SDK Unified serial library to wrap software and hardware 
+ *         serial libraries under one interface.
+ */
+
+#include <stdlib.h>
+
+#include <ArdusatSDK.h>
+#include "serial.h"
+
+prog_char no_software_params_err_msg[] PROGMEM = "Uh oh, you specified a software serial mode but didn't specify transmit/recieve pins! Halting program...";
+prog_char xbee_cmd_mode[] PROGMEM = "+++";
+prog_char xbee_cmd_ack[] PROGMEM = "OK";
+prog_char xbee_cmd_baud[] PROGMEM = "ATBD ";
+prog_char xbee_cmd_write[] PROGMEM = "ATWR";
+prog_char xbee_cmd_close[] PROGMEM = "ATCN";
+prog_char xbee_baud_success[] PROGMEM = "Set XBEE baud rate to ";
+
+#define send_to_serial(function) \
+  if (_mode == SERIAL_MODE_HARDWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) { \
+    Serial.function; \
+  } \
+  if (_soft_serial && (_mode == SERIAL_MODE_SOFTWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE)) { \
+    _soft_serial->function; \
+  }
+
+#define return_serial_function(fxn) \
+  if (_mode == SERIAL_MODE_SOFTWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) { \
+    return _soft_serial->fxn; \
+  } else { \
+    return Serial.fxn; \
+  } 
+
+/**
+ * If only a mode is specified to the constructor, we need to be using hardware serial.
+ *
+ * Prints error message and halts execution if software serial with no options is requested.
+ */
+ArdusatSerial::ArdusatSerial(serialMode mode)
+{
+  // If no other arguments (pins) are given, we can't initialize a software serial 
+  // connection.
+  _mode = SERIAL_MODE_HARDWARE;
+}
+
+/**
+ * Constructor with serial mode and connection params for software serial.
+ */
+ArdusatSerial::ArdusatSerial(serialMode mode, uint8_t softwareReceivePin, 
+                             uint8_t softwareTransmitPin, bool softwareInverseLogic)
+{
+  if (mode == SERIAL_MODE_SOFTWARE || mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
+    _soft_serial = new SoftwareSerial(softwareReceivePin, softwareTransmitPin, 
+                                      softwareInverseLogic);
+  }
+
+  _mode = mode;
+}
+
+ArdusatSerial::~ArdusatSerial()
+{
+  if (_soft_serial != NULL) {
+    delete _soft_serial;
+  }
+}
+
+void ArdusatSerial::begin(unsigned long baud)
+{
+  if (_mode == SERIAL_MODE_HARDWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
+    Serial.begin(baud);
+  }
+
+  if (_mode == SERIAL_MODE_SOFTWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
+    set_xbee_baud_rate(_soft_serial, baud);
+    _soft_serial->end();
+    _soft_serial->begin(baud);
+  }
+}
+
+void ArdusatSerial::end()
+{
+  send_to_serial(end())
+}
+
+int ArdusatSerial::peek()
+{
+  return_serial_function(peek())
+}
+
+int ArdusatSerial::read()
+{
+  return_serial_function(read())
+}
+
+int ArdusatSerial::available()
+{
+  return_serial_function(available())
+}
+
+void ArdusatSerial::flush()
+{
+  send_to_serial(flush())
+}
+
+size_t ArdusatSerial::write(uint8_t b) {
+  size_t ret = 1;
+
+  if (_soft_serial != NULL && 
+      ( _mode == SERIAL_MODE_SOFTWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE)) {
+    ret = ret & _soft_serial->write(b);
+  }
+
+  if (_mode == SERIAL_MODE_HARDWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
+    ret = ret & Serial.write(b);
+  }
+
+  return ret;
+}
+
+/**
+ * Enters command mode on the xbee by trying various speeds until one is found that
+ * works.
+ *
+ * @returns 0 if successful, -1 if unsuccessful
+ */
+int _enter_xbee_cmd_mode(SoftwareSerial *serial, unsigned long speed)
+{
+  char buf[4];
+  int i;
+  unsigned long rates[] = {  9600, 19200, 38400, 57600, 115200, 4800, 2400, 1200 };
+  strcpy_P(buf, xbee_cmd_mode);
+
+  serial->end();
+  serial->begin(speed); 
+  serial->print(buf);
+  delay(1200);
+  if (!serial->available()) {
+    for (i = 0; i < 8; ++i) {
+      serial->end();
+      serial->begin(rates[i]);
+      serial->print(buf);
+      delay(1200);
+      if (serial->available()) {
+        break;
+      }
+
+      // if we get here we have no more speeds to try...
+      if (i == 7) {
+        return -1;
+      }
+    }
+  }
+
+  for (i = 0; i < 2; ++i) {
+    buf[i] = serial->read();
+    if (buf[i] == -1) {
+      break;
+    }
+  }
+
+  strcpy_P(buf+2, xbee_cmd_ack);
+  //HACK: at higher baud rates (57600+), we don't get proper "OK" ack codes
+  //      back from the xbee chip. But, we can still successfully write to the 
+  //      xbee. For now, ignore check on ack, and just go ahead with trying to
+  //      change the speed if we get serial->available() at the given speed.
+  //return strncmp(buf, buf+2, 2);
+  return 0;
+}
+
+void set_xbee_baud_rate(Stream *serial, unsigned long speed)
+{
+  char buf [30];
+  uint8_t rate;
+
+  if (_enter_xbee_cmd_mode((SoftwareSerial *) serial, speed) == 0) {
+    switch(speed) {
+      case 1200:
+        rate = 0;
+        break;
+      case 2400:
+        rate = 1;
+        break;
+      case 4800:
+        rate = 2;
+        break;
+      case 9600:
+        rate = 3;
+        break;
+      case 19200:
+        rate = 4;
+        break;
+      case 38400:
+        rate = 5;
+        break;
+      case 57600:
+        rate = 6;
+        break;
+      case 115200:
+        rate = 7;
+        break;
+      default:
+        //default to 57600 if no valid rate specified
+        //(fastest bug-free software serial rate)
+        rate = 6;
+        break;
+    }
+    strcpy_P(buf, xbee_cmd_baud);
+    serial->print(buf);
+    serial->println(rate);
+    strcpy_P(buf, xbee_cmd_write);
+    serial->println(buf);
+    strcpy_P(buf, xbee_cmd_close);
+    serial->println(buf);
+    strcpy_P(buf, xbee_baud_success);
+    Serial.print(buf);
+    Serial.println(speed);
+  }
+}
