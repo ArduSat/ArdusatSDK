@@ -69,7 +69,7 @@ void setup() {
   beginInfraredTemperatureSensor();
   beginLuminositySensor();
   beginUVLightSensor();
-  beginOrientationSensor();
+  beginGyroSensor();
   beginMagneticSensor();
   
   // initialize the digital pins as outputs for the LEDs
@@ -101,7 +101,7 @@ void loop() {
   uvlight_t uv_light;
   acceleration_t accel;
   magnetic_t mag;
-  orientation_t orientation;
+  gyro_t orientation;
   byte byteRead;
   float temp_val;
   float infrared_temp;
@@ -133,8 +133,8 @@ void loop() {
   serialConnection.println(magneticToJSON("magnetic", &mag));
   
   // Read Gyro
-  readOrientation(&orientation);
-  serialConnection.println(orientationToJSON("gyro", &orientation));
+  readGyro(&orientation);
+  serialConnection.println(gyroToJSON("gyro", &orientation));
 
   // Read Temp from TMP102 (default in celcius)
   readTemperature(&temp);

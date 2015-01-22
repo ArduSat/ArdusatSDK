@@ -63,7 +63,7 @@ void setup() {
   beginInfraredTemperatureSensor();
   beginLuminositySensor();
   beginUVLightSensor();
-  beginOrientationSensor();
+  beginGyroSensor();
   beginMagneticSensor();
   
   // initialize the digital pins as outputs for the LEDs
@@ -95,7 +95,7 @@ void loop() {
   uvlight_t uv_light;
   acceleration_t accel;
   magnetic_t mag;
-  orientation_t orientation;
+  gyro_t orientation;
   byte byteRead;
   float temp_val;
   float infrared_temp;
@@ -128,8 +128,8 @@ void loop() {
   Serial.println(magneticToJSON("magnetic", &mag));
   
   // Read Gyro
-  readOrientation(&orientation);
-  Serial.println(orientationToJSON("gyro", &orientation));
+  readGyro(&orientation);
+  Serial.println(gyroToJSON("gyro", &orientation));
 
   // Read Temp from TMP102 (default in celcius)
   readTemperature(&temp);
@@ -173,14 +173,14 @@ void loop() {
 if (LOG_CSV_DATA) {
   bytesWritten = writeAcceleration("accelerometer", &accel);
   bytesWritten += writeMagnetic("magnetic", &mag);
-  bytesWritten += writeOrientation("gyro", &orientation);
+  bytesWritten += writeGyro("gyro", &orientation);
   bytesWritten += writeTemperature("temp", &temp);
   bytesWritten += writeLuminosity("luminosity", &luminosity);
   bytesWritten += writeUVLight("uv", &uv_light);
 } else {
   bytesWritten = binaryWriteAcceleration(0, &accel);
   bytesWritten += binaryWriteMagnetic(1, &mag);
-  bytesWritten += binaryWriteOrientation(2, &orientation);
+  bytesWritten += binaryWriteGyro(2, &orientation);
   bytesWritten += binaryWriteTemperature(3, &temp);
   bytesWritten += binaryWriteLuminosity(4, &luminosity);
   bytesWritten += binaryWriteUVLight(5, &uv_light);

@@ -245,16 +245,16 @@ void readMagnetic(magnetic_t * output) {
 /*
  * Orientation
  */
-boolean beginOrientationSensor() {
+boolean beginGyroSensor() {
   start_sensor_or_err(orientation_sensor_name, l3gd20h_init())
 }
 
-void readOrientation(orientation_t * output) {
+void readGyro(gyro_t * output) {
   if (output == NULL)
     return;
 
   //output->header.version = SENSORDATA_HEADER_VERSION;
-  //output->header.length = sizeof(orientation_t);
+  //output->header.length = sizeof(gyro_t);
   //output->header.dimensionality = 3;
   //output->header.celltype = DATA_CELLTYPE_FLOAT;
   output->header.unit = DATA_UNIT_RADIAN_PER_SECOND;
@@ -356,7 +356,7 @@ const char * temperatureToCSV(const char *sensorName, temperature_t * input) {
   return _output_buffer;
 }
 
-const char * orientationToCSV(const char *sensorName, orientation_t * input) {
+const char * gyroToCSV(const char *sensorName, gyro_t * input) {
   if (input == NULL)
     return (NULL);
 
@@ -464,7 +464,7 @@ const char * magneticToJSON(const char *sensor_name, magnetic_t *mag)
   return _output_buffer;
 }
 
-const char * orientationToJSON(const char *sensor_name, orientation_t *orient)
+const char * gyroToJSON(const char *sensor_name, gyro_t *orient)
 {
   int nameLength = strlen(sensor_name);
   char nameBuf[nameLength + 8];
@@ -659,13 +659,13 @@ int writeMagnetic(const char *sensorName, magnetic_t *data)
  * Writes a line of CSV formatted orientation data to the SD card.
  *
  * @param sensorName of this sensor
- * @param data orientation_t data to write
+ * @param data gyro_t data to write
  *
  * @return number of bytes written
  */
-int writeOrientation(const char *sensorName, orientation_t *data)
+int writeGyro(const char *sensorName, gyro_t *data)
 {
-  write_if_init(orientationToCSV(sensorName, data))
+  write_if_init(gyroToCSV(sensorName, data))
 }
 
 /**
@@ -735,14 +735,14 @@ int binaryWriteMagnetic(const uint8_t sensorId, magnetic_t *data)
   _write_binary_data_struct(magnetic_bin_t)
 }
 
-int binaryWriteOrientation(const uint8_t sensorId, orientation_t *data)
+int binaryWriteGyro(const uint8_t sensorId, gyro_t *data)
 {
-  init_data_struct(orientation_bin_t, ARDUSAT_SENSOR_TYPE_ORIENTATION)
+  init_data_struct(gyro_bin_t, ARDUSAT_SENSOR_TYPE_GYRO)
   bin_data.x = data->x;
   bin_data.y = data->y;
   bin_data.z = data->z;
 
-  _write_binary_data_struct(orientation_bin_t)
+  _write_binary_data_struct(gyro_bin_t)
 }
 
 int binaryWriteTemperature(const uint8_t sensorId, temperature_t *data)

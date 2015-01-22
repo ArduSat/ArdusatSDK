@@ -16,6 +16,7 @@
 typedef enum {
   ARDUSAT_SENSOR_TYPE_ACCELERATION = 0,
   ARDUSAT_SENSOR_TYPE_MAGNETIC,
+  ARDUSAT_SENSOR_TYPE_GYRO,
   ARDUSAT_SENSOR_TYPE_ORIENTATION,
   ARDUSAT_SENSOR_TYPE_TEMPERATURE,
   ARDUSAT_SENSOR_TYPE_LUMINOSITY,
@@ -43,7 +44,7 @@ typedef struct {
 	float x;
 	float y;
 	float z;
-} orientation_bin_t;
+} gyro_bin_t;
 
 typedef struct {
 	_bin_data_header
