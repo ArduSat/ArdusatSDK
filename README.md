@@ -72,7 +72,7 @@ Serial.println(temp_data.t);
 
 ## Different Output Formats
 The Ardusat SDK can output sensor data in both JSON and CSV format to allow interfacing with
-external systems such as the [Demo Ardusat App](http://demo.ardusat.com). To use these functions,
+external systems such as the [Ardusat Experiment Platform](http://experiments.ardusat.com). To use these functions,
 call the `ToJSON` or `ToCSV` family of functions:
 
 ### JSON Format
