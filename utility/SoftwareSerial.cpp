@@ -125,7 +125,31 @@ const int XMIT_START_ADJUSTMENT = 6;
 
 #else
 
-#error This version of SoftwareSerial supports only 20, 16 and 8MHz processors
+#warning This version of SoftwareSerial supports only 20, 16 and 8MHz processors
+#warning SEIRAL_MODE_SOFTWARE and SERIAL_MODE_HARDWARE_AND_SOFTWARE will NOT work!!!!
+
+//HACK: This is not a real delay table - just copied over from the 20 mhz version so that 
+//      compilation works...
+static const DELAY_TABLE PROGMEM table[] =
+{
+  //  baud    rxcenter    rxintra    rxstop  tx
+  { 115200,   3,          21,        21,     18,     },
+  { 57600,    20,         43,        43,     41,     },
+  { 38400,    37,         73,        73,     70,     },
+  { 31250,    45,         89,        89,     88,     },
+  { 28800,    46,         98,        98,     95,     },
+  { 19200,    71,         148,       148,    145,    },
+  { 14400,    96,         197,       197,    194,    },
+  { 9600,     146,        297,       297,    294,    },
+  { 4800,     296,        595,       595,    592,    },
+  { 2400,     592,        1189,      1189,   1186,   },
+  { 1200,     1187,       2379,      2379,   2376,   },
+  { 600,      2379,       4759,      4759,   4755,   },
+  { 300,      4759,       9523,      9523,   9520,   },
+};
+
+const int XMIT_START_ADJUSTMENT = 6;
+
 
 #endif
 
