@@ -194,6 +194,14 @@ or CSV format (can be read by a wide variety of software, but takes up more spac
 Binary formatted logs end in `.BIN`, CSV formatted logs end in `.CSV`. `beginDataLog` will return
 `true` if the log system was started successfully, `false` otherwise.
 
+If a Real Time Clock (RTC) chip is connected to the Arduino and set properly, the logging system
+will automatically read the current POSIX time (seconds since 1/1/1970) from the RTC, as well as the
+milliseconds since the Arduino started (`millis()`) and log both these values to the beginning of
+the log file. Since all subsequent values log milliseconds since the Arduino started (again, using
+`millis()`), this offset line can be used to translate these relative timestamps into absolute
+datetimes. The RTC chip used is the DS1307, and should be wired up on the I2C bus using `SDA` and
+`SCL` pins.
+
 After the logging system is started, the `writeX` and `binaryWriteX` functions can be used to
 actually write the binary data much like the `ToJSON` and `ToCSV` functions listed above. Binary and
 CSV formats are described below.

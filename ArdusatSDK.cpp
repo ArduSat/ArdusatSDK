@@ -10,6 +10,8 @@
 
 #include "ArdusatSDK.h"
 
+RTC_DS1307 RTC;
+
 SdVolume vol;
 #define _output_buffer vol.cacheAddress()->output_buf
 int _output_buf_len = 0;
@@ -31,6 +33,8 @@ char CSV_SEPARATOR = ',';
 char JSON_PREFIX = '~';
 char JSON_SUFFIX = '|';
 prog_char json_format[] PROGMEM = "%c{\"sensorName\":\"%s\", \"unit\":\"%s\", \"value\": %s}%c\n";
+
+prog_char csv_header_fmt[] PROGMEM = "timestamp: %lu at millis %lu\n";
 
 /**
  * Convert an enumerated unit code to a string representation.
@@ -503,74 +507,6 @@ const char * uvlightToJSON(const char *sensor_name, uvlight_t *input)
   return _output_buffer;
 }
 
-/**
- * Function starts the SD card service and makes sure that the appropriate directory
- * structure exists, then creates the file to use for logging data. Data will be logged
- * to a file called fileNamePrefix_0.csv or fileNamePrefix_0.bin (number will be incremented
- * for each new log file)
- * 
- * @param chipSelectPin Arduino pin SD card reader CS pin is attached to
- * @param fileNamePrefix string to prefix at beginning of data file
- * @param csvData boolean flag whether we are writing csv data or binary data (used for filename)
- *
- * @return true if successful, false if failed
- */
-bool beginDataLog(int chipSelectPin, const char *fileNamePrefix, bool csvData)
-{
-  bool ret;
-  int i = 0;
-  int max_len;
-  char fileName[19];
-  char prefix[8];
-  char rootPath[] = "/data";
-
-  if (freeMemory() < 400) {
-    strcpy_P(_output_buffer, sd_card_error);
-    Serial.print(_output_buffer);
-    Serial.print(freeMemory());
-    Serial.println(", need 400)");
-    ret = false;
-  } else {
-    ret = sd.begin(chipSelectPin, SPI_FULL_SPEED);
-  }
-
-  //Filenames need to fit the 8.3 filename convention, so truncate down the 
-  //given filename if it is too long.
-  memcpy(prefix, fileNamePrefix, 7);
-  prefix[7] = '\0';
-
-  if (ret) {
-    if (!sd.exists(rootPath))
-      ret = sd.mkdir(rootPath);
-    if (ret) {
-      while (true) {
-	if (i < 10) {
-	  max_len = 7;
-	} else if (i < 100) {
-	  max_len = 6;
-	} else if (i < 1000) {
-	  max_len = 5;
-	} else {
-	  break;
-	}
-
-	prefix[max_len - 1] = '\0';
-	sprintf(fileName, "%s/%s%d.%s", rootPath, prefix, i, 
-		csvData ? "csv" : "bin");
-	if (!sd.exists(fileName)) {
-	  file = sd.open(fileName, FILE_WRITE);
-	  break;
-	}
-	i++;
-      }
-    }
-  } else {
-    sd.initErrorPrint();
-  }
-
-  return file.isOpen();
-}
-
 #define write_if_init(gen_fn) return _write_from_output_buf(gen_fn);
 
 /**
@@ -627,6 +563,31 @@ int writeBytes(const uint8_t *buffer, uint8_t numBytes)
   } else {
     return 0;
   }
+}
+
+/*
+ * Helper function to write to the top of the CSV header with the current time 
+ */
+int _write_csv_time_header(DateTime *now, unsigned long curr_millis)
+{
+  char fmt_buf[32];
+
+  strcpy_P(fmt_buf, csv_header_fmt);
+  _output_buffer_reset();
+  sprintf(_output_buffer, fmt_buf, now->unixtime(), curr_millis);
+  write_if_init(_output_buffer);
+}
+
+int _write_binary_time_header(DateTime *now, unsigned long curr_millis)
+{
+  uint8_t buf[10];
+  uint32_t unixtime = now->unixtime();
+  
+  buf[0] = 0xFF;
+  buf[1] = 0xFF;
+  memcpy(buf + 2, &unixtime, 4);
+  memcpy(buf + 6, &curr_millis, 4);
+  return writeBytes(buf, 10);
 }
 
 /**
@@ -767,4 +728,100 @@ int binaryWriteUVLight(const uint8_t sensorId, uvlight_t *data)
   bin_data.uv = data->uvindex;
 
   _write_binary_data_struct(uv_light_bin_t)
+}
+
+bool setRTC()
+{
+  Wire.begin();
+  RTC.begin();
+  // Sets RTC to the date & time sketch was compiled
+  RTC.adjust(DateTime(__DATE__, __TIME__));
+  return true;
+}
+
+/**
+ * Function starts the SD card service and makes sure that the appropriate directory
+ * structure exists, then creates the file to use for logging data. Data will be logged
+ * to a file called fileNamePrefix_0.csv or fileNamePrefix_0.bin (number will be incremented
+ * for each new log file)
+ * 
+ * @param chipSelectPin Arduino pin SD card reader CS pin is attached to
+ * @param fileNamePrefix string to prefix at beginning of data file
+ * @param csvData boolean flag whether we are writing csv data or binary data (used for filename)
+ *
+ * @return true if successful, false if failed
+ */
+bool beginDataLog(int chipSelectPin, const char *fileNamePrefix, bool csvData)
+{
+  bool ret;
+  int i = 0;
+  int max_len;
+  char fileName[19];
+  char prefix[8];
+  char rootPath[] = "/data";
+  unsigned long curr_millis = 0;
+  DateTime now;
+
+  // Try to get the current time from the RTC, if available. This will be prepended to the log file
+  // to be used to convert relative timestamps to real time values.
+  Wire.begin();
+  RTC.begin();
+  if (RTC.isrunning()) {
+    now = RTC.now();
+    curr_millis = millis();
+  }
+
+  if (freeMemory() < 400) {
+    strcpy_P(_output_buffer, sd_card_error);
+    Serial.print(_output_buffer);
+    Serial.print(freeMemory());
+    Serial.println(", need 400)");
+    ret = false;
+  } else {
+    ret = sd.begin(chipSelectPin, SPI_FULL_SPEED);
+  }
+
+  //Filenames need to fit the 8.3 filename convention, so truncate down the 
+  //given filename if it is too long.
+  memcpy(prefix, fileNamePrefix, 7);
+  prefix[7] = '\0';
+
+  if (ret) {
+    if (!sd.exists(rootPath))
+      ret = sd.mkdir(rootPath);
+    if (ret) {
+      while (true) {
+	if (i < 10) {
+	  max_len = 7;
+	} else if (i < 100) {
+	  max_len = 6;
+	} else if (i < 1000) {
+	  max_len = 5;
+	} else {
+	  break;
+	}
+
+	prefix[max_len - 1] = '\0';
+	sprintf(fileName, "%s/%s%d.%s", rootPath, prefix, i, 
+		csvData ? "csv" : "bin");
+	if (!sd.exists(fileName)) {
+	  file = sd.open(fileName, FILE_WRITE);
+	  break;
+	}
+	i++;
+      }
+    }
+  } else {
+    sd.initErrorPrint();
+  }
+
+  if (RTC.isrunning() && file.isOpen()) {
+    if (csvData) {
+      _write_csv_time_header(&now, curr_millis);
+    } else {
+      _write_binary_time_header(&now, curr_millis);
+    }
+  }
+
+  return file.isOpen();
 }
