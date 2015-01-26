@@ -60,7 +60,7 @@ char * make_output_csv_path_from_input(const char *input_path)
     ptr--;
   }
   
-  len = strlen(ptr);
+  len = strlen(ptr) + 1;
   output_file_path = (char *) malloc(len + 3);
 
   strncpy(output_file_path, ptr, len);
@@ -81,9 +81,11 @@ char * make_output_csv_path_from_input(const char *input_path)
   output_file_path[0] = '.';
   len++;
 
-  output_file_path[len - 3] = 'c';
-  output_file_path[len - 2] = 's';
-  output_file_path[len - 1] = 'v';
+  output_file_path[len - 4] = 'c';
+  output_file_path[len - 3] = 's';
+  output_file_path[len - 2] = 'v';
+  
+  output_file_path[len - 1] = '\0';
 
   return output_file_path;
 }
