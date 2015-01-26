@@ -177,6 +177,7 @@ pin that is often pin 10.
 **External SD Breakout Wiring**
 
 SD Breakout Pin | Arduino Pin
+--- | ---
 CLK | DIO13
 DO | DIO12
 DI | DIO11
