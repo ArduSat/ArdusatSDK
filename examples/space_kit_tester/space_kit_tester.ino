@@ -6,7 +6,7 @@
  *    Description:  Simple driver for all the sensors included in the Ardusat
  *                  Space Kit. Outputs all sensor values at a configurable 
  *                  interval in JSON format that can be read by the Ardusat 
- *                  demo app (https://demo.ardusat.com).
+ *                  demo app (https://experiments.ardusat.com).
  *
  *                  This example uses many third-party libraries available from
  *                  Adafruit (https://github.com/adafruit). These libraries are

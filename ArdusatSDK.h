@@ -183,7 +183,7 @@ const char * orientationToCSV(const char *sensorName, orientation_t *input);
 
 /**
  * toJSON output functions create a string representation of the data in a JSON format
- * that can be used with http://demo.ardusat.com to visualize and log data. 
+ * that can be used with http://experiments.ardusat.com to visualize and log data. 
  * 
  * Format is:
  * ~{"sensorName": "name", "unit": "C", "value": 35.3}|
