@@ -140,6 +140,11 @@ int process_next_row(FILE *input, FILE *output)
       get_data_struct(10, "uv")
       sprintf(val_buf, "%f", *(float *)(buf + 6));
       break;
+    case (ARDUSAT_SENSOR_TYPE_ORIENTATION):
+      get_data_struct(18, "orientation")
+      sprintf(val_buf, "%f,%f,%f", *(float *)(buf + 6), 
+              *(float *)(buf + 10), *(float *)(buf + 14));
+      break;
     case ((char) 0xFF):
       // check if timestamp header
       if (fread(buf + 1, 1, 1, input) == 0 || buf[1] != (char) 0xFF ||
