@@ -15,6 +15,7 @@
 #include <utility/MemoryFree.h>
 #include <utility/BinaryDataFmt.h>
 #include <utility/serial.h>
+#include <utility/RTClib.h>
 
 /**
  * Unique numeric id for each physical sensor
@@ -228,6 +229,15 @@ int binaryWriteTemperature(const uint8_t sensorId, temperature_t *data);
 int binaryWriteLuminosity(const uint8_t sensorId, luminosity_t *data);
 int binaryWriteUVLight(const uint8_t sensorId, uvlight_t *data);
 int binaryWriteOrientation(const uint8_t sensorId, orientation_t *data);
+
+/**
+ * Setup and use the RTC chip, if found
+ *
+ * The clock must be set before it can be used. This is achieved by compiling
+ * and running a basic script (examples/set_rtc). After this, the library 
+ * automatically uses the RTC if available to timestamp.
+ */
+bool setRTC();
 
 #ifdef __cplusplus
 } // extern "C"
