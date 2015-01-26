@@ -40,8 +40,9 @@
 #define DATA_UNIT_DEGREES_FAHRENHEIT		5	// temperature
 #define DATA_UNIT_METER_PER_SECOND		6	// speed, somehow
 #define DATA_UNIT_LUX					7	// luminosity
-#define DATA_UNIT_RADIAN				8	// IMU
+#define DATA_UNIT_RADIAN				8	
 #define DATA_UNIT_MILLIWATT_PER_CMSQUARED 9
+#define DATA_UNIT_DEGREES 10
 
 /**
  * Data types for cells in data structures.
@@ -109,7 +110,7 @@ typedef struct {
 typedef struct {
 	_data_header_t header;
 	float x,y,z;
-} orientation_t;
+} gyro_t;
 
 typedef struct {
 	_data_header_t header;
@@ -125,6 +126,11 @@ typedef struct {
 	_data_header_t header;
 	float uvindex;
 } uvlight_t;
+
+typedef struct {
+	_data_header_t header;
+	float roll, pitch, heading;
+} orientation_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -154,21 +160,25 @@ void readUVLight(uvlight_t * uv);
 boolean beginAccelerationSensor();
 void readAcceleration(acceleration_t * accel);
 
-boolean beginOrientationSensor();
-void readOrientation(orientation_t * orient);
+boolean beginGyroSensor();
+void readGyro(gyro_t * orient);
 
 boolean beginMagneticSensor();
 void readMagnetic(magnetic_t * mag);
+
+void calculateOrientation(const acceleration_t *accel, const magnetic_t *mag,
+													orientation_t *orient);
 
 /**
  * toCSV output functions create a string representation of the data in CSV format.
  */
 const char * accelerationToCSV(const char *sensorName, acceleration_t * input);
 const char * magneticToCSV(const char *sensorName, magnetic_t *input);
-const char * orientationToCSV(const char *sensorName, orientation_t * input);
+const char * gyroToCSV(const char *sensorName, gyro_t * input);
 const char * temperatureToCSV(const char *sensorName, temperature_t * input);
 const char * luminosityToCSV(const char *sensorName, luminosity_t * input);
 const char * uvlightToCSV(const char *sensorName, uvlight_t * input);
+const char * orientationToCSV(const char *sensorName, orientation_t *input);
 
 /**
  * toJSON output functions create a string representation of the data in a JSON format
@@ -181,9 +191,10 @@ const char * valueToJSON(const char *sensor_name, uint8_t unit, float value);
 const char * accelerationToJSON(const char *sensor_name, acceleration_t * input);
 const char * magneticToJSON(const char *sensor_name, magnetic_t * input);
 const char * temperatureToJSON(const char *sensor_name, temperature_t * input);
-const char * orientationToJSON(const char *sensor_name, orientation_t * input);
+const char * gyroToJSON(const char *sensor_name, gyro_t * input);
 const char * luminosityToJSON(const char *sensor_name, luminosity_t * input);
 const char * uvlightToJSON(const char *sensor_name, uvlight_t * input);
+const char * orientationToJSON(const char *sensor_name, orientation_t * input);
 
 /**
  * Write functions take care of persisting data to an SD card
@@ -204,17 +215,19 @@ bool beginDataLog(int chipSelectPin, const char *fileNamePrefix, bool csvData);
 int writeBytes(const uint8_t *buffer, uint8_t numBytes); 
 int writeAcceleration(const char *sensorName, acceleration_t *data);
 int writeMagnetic(const char *sensorName, magnetic_t *data);
-int writeOrientation(const char *sensorName, orientation_t *data);
+int writeGyro(const char *sensorName, gyro_t *data);
 int writeTemperature(const char *sensorName, temperature_t *data);
 int writeLuminosity(const char *sensorName, luminosity_t *data);
 int writeUVLight(const char *sensorName, uvlight_t *data);
+int writeOrientation(const char *sensorName, orientation_t *data);
 
 int binaryWriteAcceleration(const uint8_t sensorId, acceleration_t *data);
 int binaryWriteMagnetic(const uint8_t sensorId, magnetic_t *data);
-int binaryWriteOrientation(const uint8_t sensorId, orientation_t *data);
+int binaryWriteGyro(const uint8_t sensorId, gyro_t *data);
 int binaryWriteTemperature(const uint8_t sensorId, temperature_t *data);
 int binaryWriteLuminosity(const uint8_t sensorId, luminosity_t *data);
 int binaryWriteUVLight(const uint8_t sensorId, uvlight_t *data);
+int binaryWriteOrientation(const uint8_t sensorId, orientation_t *data);
 
 #ifdef __cplusplus
 } // extern "C"

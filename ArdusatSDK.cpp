@@ -82,7 +82,6 @@ void _beginError(const prog_char *sensorName)
   char err_msg[50];
   char sensor[50];
   char output_buffer[100];
-  int len;
 
   strcpy_P(err_msg, begin_error_msg);
   strcpy_P(sensor, sensorName);
@@ -243,18 +242,18 @@ void readMagnetic(magnetic_t * output) {
 }
 
 /*
- * Orientation
+ * Gyroscope
  */
-boolean beginOrientationSensor() {
+boolean beginGyroSensor() {
   start_sensor_or_err(orientation_sensor_name, l3gd20h_init())
 }
 
-void readOrientation(orientation_t * output) {
+void readGyro(gyro_t * output) {
   if (output == NULL)
     return;
 
   //output->header.version = SENSORDATA_HEADER_VERSION;
-  //output->header.length = sizeof(orientation_t);
+  //output->header.length = sizeof(gyro_t);
   //output->header.dimensionality = 3;
   //output->header.celltype = DATA_CELLTYPE_FLOAT;
   output->header.unit = DATA_UNIT_RADIAN_PER_SECOND;
@@ -262,6 +261,50 @@ void readOrientation(orientation_t * output) {
 
   output->header.sensor_id = SENSORID_ADAFRUIT9DOFIMU;
   l3gd20h_getOrientation(&(output->x), &(output->y), &(output->z));
+}
+
+/**
+ * Calculate the orientation (pitch, roll, heading) from raw magnetometer and
+ * accelerometer readings.
+ *
+ * Calculation based on Adafruit 9DOF library
+ * (https://github.com/adafruit/Adafruit_9DOF/)
+ *
+ * @param accel Acceleration reading to use in calculation
+ * @param mag Magnetometer reading to use in calculation
+ * @param orient Orientation structure to save calculated orientation in
+ */
+void calculateOrientation(const acceleration_t *accel, const magnetic_t *mag, 
+			  orientation_t *orient)
+{
+  const float PI_F = 3.141592653F;
+
+  // Roll is rotation around x-axis (-180 <= roll <= 180)
+  // Positive roll is clockwise rotation wrt positive x axis
+  orient->roll = (float) atan2(accel->y, accel->z);
+
+  // Pitch is rotation around y-axis (-180 <= pitch <= 180)
+  // Positive pitch is clockwise rotation wrt positive y axis
+  if (accel->y * sin(orient->roll) + accel->z * cos(orient->roll) == 0) {
+    orient->pitch = accel->x > 0 ? (PI_F / 2) : (-PI_F / 2);
+  } else {
+    orient->pitch = (float)atan(-accel->x / (accel->y * sin(orient->roll) +
+					     accel->z * cos(orient->roll)));
+  }
+
+  // Heading is rotation around z-axis
+  // Positive heading is clockwise rotation wrt positive z axis
+  orient->heading = (float)atan2(mag->z * sin(orient->roll) - mag->y * cos(orient->roll),
+			         mag->x * cos(orient->pitch) + mag->y * sin(orient->pitch) * sin(orient->roll) +
+				 mag->z * sin(orient->pitch) * cos(orient->roll));
+
+  // Convert radians to degrees
+  orient->roll = orient->roll * 180 / PI_F;
+  orient->pitch = orient->pitch * 180 / PI_F;
+  orient->heading = orient->heading * 180 / PI_F;
+  orient->header.unit = DATA_UNIT_DEGREES;
+  orient->header.timestamp = accel->header.timestamp > mag->header.timestamp ? accel->header.timestamp :
+									       mag->header.timestamp;
 }
 
 /*
@@ -356,7 +399,7 @@ const char * temperatureToCSV(const char *sensorName, temperature_t * input) {
   return _output_buffer;
 }
 
-const char * orientationToCSV(const char *sensorName, orientation_t * input) {
+const char * gyroToCSV(const char *sensorName, gyro_t * input) {
   if (input == NULL)
     return (NULL);
 
@@ -397,6 +440,28 @@ const char * uvlightToCSV(const char *sensorName, uvlight_t * input) {
   _headerToCSV(&(input->header), sensorName);// warning : resets the internal buffer
 
   dtostrf(input->uvindex, 2, 3, _output_buffer + _output_buf_len);
+  _output_buf_len = strlen(_output_buffer);
+  _output_buffer[_output_buf_len++] = '\n';
+
+  return _output_buffer;
+}
+
+const char *orientationToCSV(const char *sensorName, orientation_t *input)
+{
+  if (input == NULL)
+    return NULL;
+
+  _headerToCSV(&(input->header), sensorName);
+
+  dtostrf(input->roll, 2, 3, _output_buffer + _output_buf_len);
+  _output_buf_len = strlen(_output_buffer);
+  _output_buffer[_output_buf_len++] = CSV_SEPARATOR;
+
+  dtostrf(input->pitch, 2, 3, _output_buffer + _output_buf_len);
+  _output_buf_len = strlen(_output_buffer);
+  _output_buffer[_output_buf_len++] = CSV_SEPARATOR;
+
+  dtostrf(input->heading, 2, 3, _output_buffer + _output_buf_len);
   _output_buf_len = strlen(_output_buffer);
   _output_buffer[_output_buf_len++] = '\n';
 
@@ -464,7 +529,7 @@ const char * magneticToJSON(const char *sensor_name, magnetic_t *mag)
   return _output_buffer;
 }
 
-const char * orientationToJSON(const char *sensor_name, orientation_t *orient)
+const char * gyroToJSON(const char *sensor_name, gyro_t *orient)
 {
   int nameLength = strlen(sensor_name);
   char nameBuf[nameLength + 8];
@@ -500,6 +565,24 @@ const char * uvlightToJSON(const char *sensor_name, uvlight_t *input)
 {
   _output_buffer_reset();
   _writeJSONValue(_output_buffer, sensor_name, unit_to_str(input->header.unit), input->uvindex);
+  return _output_buffer;
+}
+
+const char *orientationToJSON(const char *sensor_name, orientation_t *orient)
+{
+  int nameLength = strlen(sensor_name);
+  char nameBuf[nameLength + 8];
+  _output_buffer_reset();	
+
+  sprintf(nameBuf, "%sRoll", sensor_name);
+  _writeJSONValue(_output_buffer, nameBuf, unit_to_str(orient->header.unit),
+		  orient->roll);
+  sprintf(nameBuf, "%sPitch", sensor_name);
+  _writeJSONValue(&_output_buffer[_output_buf_len], nameBuf,
+		  unit_to_str(orient->header.unit), orient->pitch);
+  sprintf(nameBuf, "%sHeading", sensor_name);
+  _writeJSONValue(&_output_buffer[_output_buf_len], nameBuf,
+		  unit_to_str(orient->header.unit), orient->heading);
   return _output_buffer;
 }
 
@@ -659,13 +742,13 @@ int writeMagnetic(const char *sensorName, magnetic_t *data)
  * Writes a line of CSV formatted orientation data to the SD card.
  *
  * @param sensorName of this sensor
- * @param data orientation_t data to write
+ * @param data gyro_t data to write
  *
  * @return number of bytes written
  */
-int writeOrientation(const char *sensorName, orientation_t *data)
+int writeGyro(const char *sensorName, gyro_t *data)
 {
-  write_if_init(orientationToCSV(sensorName, data))
+  write_if_init(gyroToCSV(sensorName, data))
 }
 
 /**
@@ -707,6 +790,19 @@ int writeUVLight(const char *sensorName, uvlight_t *data)
   write_if_init(uvlightToCSV(sensorName, data))
 }
 
+/**
+ * Writes a line of CSV formatted orientation data to SD card.
+ *
+ * @param sensorName of this sensor
+ * @param data orientation_t data to write
+ *
+ * @return number of bytes written
+ */
+int writeOrientation(const char *sensorName, orientation_t *data)
+{
+  write_if_init(orientationToCSV(sensorName, data))
+}
+
 #define init_data_struct(type_def, type_enum) \
   type_def bin_data; \
   bin_data.type = type_enum; \
@@ -735,14 +831,14 @@ int binaryWriteMagnetic(const uint8_t sensorId, magnetic_t *data)
   _write_binary_data_struct(magnetic_bin_t)
 }
 
-int binaryWriteOrientation(const uint8_t sensorId, orientation_t *data)
+int binaryWriteGyro(const uint8_t sensorId, gyro_t *data)
 {
-  init_data_struct(orientation_bin_t, ARDUSAT_SENSOR_TYPE_ORIENTATION)
+  init_data_struct(gyro_bin_t, ARDUSAT_SENSOR_TYPE_GYRO)
   bin_data.x = data->x;
   bin_data.y = data->y;
   bin_data.z = data->z;
 
-  _write_binary_data_struct(orientation_bin_t)
+  _write_binary_data_struct(gyro_bin_t)
 }
 
 int binaryWriteTemperature(const uint8_t sensorId, temperature_t *data)
@@ -767,4 +863,14 @@ int binaryWriteUVLight(const uint8_t sensorId, uvlight_t *data)
   bin_data.uv = data->uvindex;
 
   _write_binary_data_struct(uv_light_bin_t)
+}
+
+int binaryWriteOrientation(const uint8_t sensorId, orientation_t *data)
+{
+  init_data_struct(orientation_bin_t, ARDUSAT_SENSOR_TYPE_ORIENTATION)
+  bin_data.roll = data->roll;
+  bin_data.pitch = data->pitch;
+  bin_data.heading = data->heading;
+
+  _write_binary_data_struct(orientation_bin_t)
 }

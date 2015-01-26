@@ -122,7 +122,7 @@ int process_next_row(FILE *input, FILE *output)
       sprintf(val_buf, "%f,%f,%f", *(float *)(buf + 6), 
               *(float *)(buf + 10), *(float *)(buf + 14));
       break;
-    case(ARDUSAT_SENSOR_TYPE_ORIENTATION):
+    case(ARDUSAT_SENSOR_TYPE_GYRO):
       get_data_struct(18, "gyro")
       sprintf(val_buf, "%f,%f,%f", *(float *)(buf + 6), 
               *(float *)(buf + 10), *(float *)(buf + 14));
