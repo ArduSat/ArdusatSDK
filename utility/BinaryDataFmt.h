@@ -61,6 +61,13 @@ typedef struct {
 	float uv;
 } uv_light_bin_t;
 
+typedef struct {
+	_bin_data_header
+	float roll;
+	float pitch;
+	float heading;
+} orientation_bin_t;
+
 //To translate from floating point representations into
 //2 byte integer representations we need to choose an effective
 //measurement range. When decoding binary data after logging, these

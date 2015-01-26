@@ -101,7 +101,8 @@ void loop() {
   uvlight_t uv_light;
   acceleration_t accel;
   magnetic_t mag;
-  gyro_t orientation;
+  gyro_t gyro;
+  orientation_t orientation;
   byte byteRead;
   float temp_val;
   float infrared_temp;
@@ -133,8 +134,12 @@ void loop() {
   serialConnection.println(magneticToJSON("magnetic", &mag));
   
   // Read Gyro
-  readGyro(&orientation);
-  serialConnection.println(gyroToJSON("gyro", &orientation));
+  readGyro(&gyro);
+  serialConnection.println(gyroToJSON("gyro", &gyro));
+
+  // Calculate Orientation from Accel + Magnet data
+  calculateOrientation(&accel, &mag, &orientation); 
+  serialConnection.println(orientationToJSON("orientation", &orientation));
 
   // Read Temp from TMP102 (default in celcius)
   readTemperature(&temp);
