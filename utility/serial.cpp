@@ -11,13 +11,13 @@
 #include <ArdusatSDK.h>
 #include "serial.h"
 
-prog_char no_software_params_err_msg[] PROGMEM = "Uh oh, you specified a software serial mode but didn't specify transmit/recieve pins! Halting program...";
-prog_char xbee_cmd_mode[] PROGMEM = "+++";
-prog_char xbee_cmd_ack[] PROGMEM = "OK";
-prog_char xbee_cmd_baud[] PROGMEM = "ATBD ";
-prog_char xbee_cmd_write[] PROGMEM = "ATWR";
-prog_char xbee_cmd_close[] PROGMEM = "ATCN";
-prog_char xbee_baud_success[] PROGMEM = "Set XBEE baud rate to ";
+prog_char no_software_params_err_msg[] = "Uh oh, you specified a software serial mode but didn't specify transmit/recieve pins! Halting program...";
+prog_char xbee_cmd_mode[] = "+++";
+prog_char xbee_cmd_ack[] = "OK";
+prog_char xbee_cmd_baud[] = "ATBD ";
+prog_char xbee_cmd_write[] = "ATWR";
+prog_char xbee_cmd_close[] = "ATCN";
+prog_char xbee_baud_success[] = "Set XBEE baud rate to ";
 
 #define send_to_serial(function) \
   if (_mode == SERIAL_MODE_HARDWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) { \
@@ -32,7 +32,7 @@ prog_char xbee_baud_success[] PROGMEM = "Set XBEE baud rate to ";
     return _soft_serial->fxn; \
   } else { \
     return Serial.fxn; \
-  } 
+  }
 
 /**
  * If only a mode is specified to the constructor, we need to be using hardware serial.
@@ -49,11 +49,11 @@ ArdusatSerial::ArdusatSerial(serialMode mode)
 /**
  * Constructor with serial mode and connection params for software serial.
  */
-ArdusatSerial::ArdusatSerial(serialMode mode, uint8_t softwareReceivePin, 
+ArdusatSerial::ArdusatSerial(serialMode mode, uint8_t softwareReceivePin,
                              uint8_t softwareTransmitPin, bool softwareInverseLogic)
 {
   if (mode == SERIAL_MODE_SOFTWARE || mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
-    _soft_serial = new SoftwareSerial(softwareReceivePin, softwareTransmitPin, 
+    _soft_serial = new SoftwareSerial(softwareReceivePin, softwareTransmitPin,
                                       softwareInverseLogic);
   }
 
@@ -67,14 +67,26 @@ ArdusatSerial::~ArdusatSerial()
   }
 }
 
-void ArdusatSerial::begin(unsigned long baud)
+/**
+ * Begin serial communications at the specified baud rate. Optionally attempts to
+ * set the Xbee unit attached to the SoftwareSerial port to the specified baud rate.
+ *
+ * Note that baud rates above ~57600 are not well-supported by SoftwareSerial, and 
+ * even 57600 may cause some bugs.
+ *
+ * @param baud rate for serial communications
+ * @param setXbeeSpeed flag to optionally attempt to set the Xbee unit to the baud rate 
+ */
+void ArdusatSerial::begin(unsigned long baud, bool setXbeeSpeed)
 {
   if (_mode == SERIAL_MODE_HARDWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
     Serial.begin(baud);
   }
 
   if (_mode == SERIAL_MODE_SOFTWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
-    set_xbee_baud_rate(_soft_serial, baud);
+    if (setXbeeSpeed) {
+      set_xbee_baud_rate(_soft_serial, baud);
+    }
     _soft_serial->end();
     _soft_serial->begin(baud);
   }
@@ -128,27 +140,33 @@ size_t ArdusatSerial::write(uint8_t b) {
  */
 int _enter_xbee_cmd_mode(SoftwareSerial *serial, unsigned long speed)
 {
-  char buf[4];
+  char buf[5];
   int i;
-  unsigned long rates[] = {  9600, 19200, 38400, 57600, 115200, 4800, 2400, 1200 };
+  // These are all the rates supported by xbee hardware. To save time on boot,
+  // just check for some of the most commonly used
+  //unsigned long rates[] = {  9600, 19200, 38400, 57600, 115200, 4800, 2400, 1200 };
+  unsigned long rates[] = {  9600, 57600, 115200, 19200, 38400 };
   strcpy_P(buf, xbee_cmd_mode);
 
   serial->end();
-  serial->begin(speed); 
+  // Give the Xbee time to boot after reset
+  delay(1200);
+  serial->begin(speed);
   serial->print(buf);
   delay(1200);
   if (!serial->available()) {
-    for (i = 0; i < 8; ++i) {
+    for (i = 0; i < 5; ++i) {
       serial->end();
       serial->begin(rates[i]);
       serial->print(buf);
       delay(1200);
       if (serial->available()) {
+        speed = rates[i];
         break;
       }
 
       // if we get here we have no more speeds to try...
-      if (i == 7) {
+      if (i == 4) {
         return -1;
       }
     }
@@ -212,8 +230,10 @@ void set_xbee_baud_rate(Stream *serial, unsigned long speed)
     serial->println(rate);
     strcpy_P(buf, xbee_cmd_write);
     serial->println(buf);
+    delay(1200);
     strcpy_P(buf, xbee_cmd_close);
     serial->println(buf);
+    delay(1200);
     strcpy_P(buf, xbee_baud_success);
     Serial.print(buf);
     Serial.println(speed);

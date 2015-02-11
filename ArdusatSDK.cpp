@@ -16,25 +16,25 @@ SdVolume vol;
 #define _output_buffer vol.cacheAddress()->output_buf
 int _output_buf_len = 0;
 
-prog_char begin_error_msg[] PROGMEM = "Uh oh, begin%s failed. Check your wiring!";
-prog_char orientation_sensor_name[] PROGMEM = "Orientation";
-prog_char accel_sensor_name[] PROGMEM = "Acceleration";
-prog_char mag_sensor_name[] PROGMEM = "Magnetic";
-prog_char uv_sensor_name[] PROGMEM = "UVLight";
-prog_char luminosity_sensor_name[] PROGMEM = "Luminosity";
-prog_char temperature_sensor_name[] PROGMEM = "Temperature";
-prog_char ir_temperature_sensor_name[] PROGMEM = "IRTemperature";
+prog_char begin_error_msg[] = "Uh oh, begin%s failed. Check your wiring!";
+prog_char orientation_sensor_name[] = "Orientation";
+prog_char accel_sensor_name[] = "Acceleration";
+prog_char mag_sensor_name[] = "Magnetic";
+prog_char uv_sensor_name[] = "UVLight";
+prog_char luminosity_sensor_name[] = "Luminosity";
+prog_char temperature_sensor_name[] = "Temperature";
+prog_char ir_temperature_sensor_name[] = "IRTemperature";
 
 SdFat sd;
 File file;
-prog_char sd_card_error[] PROGMEM = "Not enough RAM for SD card sys(free: "; 
+prog_char sd_card_error[] = "Not enough RAM for SD card sys(free: "; 
 
 char CSV_SEPARATOR = ',';
 char JSON_PREFIX = '~';
 char JSON_SUFFIX = '|';
-prog_char json_format[] PROGMEM = "%c{\"sensorName\":\"%s\", \"unit\":\"%s\", \"value\": %s}%c\n";
+prog_char json_format[] = "%c{\"sensorName\":\"%s\", \"unit\":\"%s\", \"value\": %s}%c\n";
 
-prog_char csv_header_fmt[] PROGMEM = "timestamp: %lu at millis %lu\n";
+prog_char csv_header_fmt[] = "timestamp: %lu at millis %lu\n";
 
 /**
  * Convert an enumerated unit code to a string representation.
@@ -81,7 +81,7 @@ const char * unit_to_str(uint8_t unit)
  *
  * @param sensorName name of sensor that failed.
  */
-void _beginError(const prog_char *sensorName)
+void _beginError(prog_char *sensorName)
 {
   char err_msg[50];
   char sensor[50];
