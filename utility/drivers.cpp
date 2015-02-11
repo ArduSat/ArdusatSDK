@@ -167,7 +167,7 @@ void l3gd20h_getRawAngularRates(int16_t *pX, int16_t *pY, int16_t *pZ)
 }
 
 // Function to retrieve raw temperature from the L3GD20  2015-01-25  M.K.
-void ld3gd20h_getRawTemperature(int8_t *pRawTemperature)
+void l3gd20h_getRawTemperature(int8_t *pRawTemperature)
 {
   if(NULL != pRawTemperature)
   {
