@@ -80,7 +80,7 @@ float mlx90614_getTempCelsius();
  * https://www.sparkfun.com/products/11931
  */
 boolean tmp102_init();
-float tmp102_getTempCelsius();		
+float tmp102_getTempCelsius();
 
 /**
  * TSL2561 Luminosity Sensor
