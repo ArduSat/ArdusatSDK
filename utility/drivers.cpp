@@ -156,6 +156,25 @@ void l3gd20h_getOrientation(float *x, float *y, float *z) {
   }
 }
 
+// Function to retrieve raw angular rate readings from the gyro  2015-01-25  M.K.
+void l3gd20h_getRawAngularRates(int16_t *pX, int16_t *pY, int16_t *pZ)
+{
+  if((NULL != pX) && (NULL != pY) && (NULL != pZ))
+  {
+    _2bit_xyz_read(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_OUT_X_L | 0x80,
+                     pX, pY, pZ, false);
+  }
+}
+
+// Function to retrieve raw temperature from the L3GD20  2015-01-25  M.K.
+void l3gd20h_getRawTemperature(int8_t *pRawTemperature)
+{
+  if(NULL != pRawTemperature)
+  {
+    _readFromRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_OUT_TEMP, pRawTemperature, sizeof(*pRawTemperature));
+  }
+}
+
 /*
  * LSM303 Accel + Mag Sensor
  */
@@ -265,6 +284,39 @@ void lsm303_getAccel(float *x, float *y, float *z)
   }
 }
 
+// Function to retrieve raw acceleration readings from the accelerometer/magnetometer  2015-01-25  M.K.
+void lsm303_getRawAcceleration(int16_t *pX, int16_t *pY, int16_t *pZ)
+{
+  if((NULL != pX) && (NULL != pY) && (NULL != pZ))
+  {
+    _2bit_xyz_read(LSM303_ADDRESS_ACCEL, LSM303_REGISTER_ACCEL_OUT_X_L_A | 0x80,
+                     pX, pY, pZ, false);
+
+	 // since the accelerometer readings are 12 bit (in high resolution mode) and left justified, we neet to right shift by 4
+    (*pX) >>= 4;
+    (*pY) >>= 4;
+    (*pZ) >>= 4;
+  }
+}
+
+// Function to retrieve raw temperature from the LSM303  2015-01-25  M.K.
+void lsm303_getRawTemperature(int16_t *pRawTemperature)
+{
+  if(NULL != pRawTemperature)
+  {
+    uint8_t ReadingFromRegisters[2];
+
+    _readFromRegAddr(LSM303_ADDRESS_MAG, LSM303_REGISTER_MAG_TEMP_OUT_H_M, ReadingFromRegisters, sizeof(ReadingFromRegisters));
+
+    // Since the _readFromRegAddr() call reads the temperature out in big endian format (MSB first),
+    // we need to convert it to little endian
+    *pRawTemperature = ReadingFromRegisters[0] << 8;
+    *pRawTemperature |= ReadingFromRegisters[1];
+    // Since the temperature value appears to be 10 bits and left justified, we need to right shift by 6
+    *pRawTemperature >>= 6;
+  }
+}
+
 void lsm303_getMag(float *x, float *y, float *z)
 {
   int16_t vals[3];
@@ -279,6 +331,19 @@ void lsm303_getMag(float *x, float *y, float *z)
     *z = vals[2] / _lsm303Mag_Gauss_LSB_Z * SENSORS_GAUSS_TO_MICROTESLA;
   }
 }
+
+// Function to retrieve raw field strength readings from the accelerometer/magnetometer  2015-01-25  M.K.
+void lsm303_getRawMag(int16_t *pX, int16_t *pY, int16_t *pZ)
+{
+  if((NULL != pX) && (NULL != pY) && (NULL != pZ))
+  {
+    //NOTE: the magnetometer output registers are not in X, Y, Z order; instead,
+    //they are in X, Z, Y order
+    _2bit_xyz_read(LSM303_ADDRESS_MAG, LSM303_REGISTER_MAG_OUT_X_H_M,
+                     pX, pZ, pY, true);
+  }
+}
+
 
 /*
  * ML8511 UV Light

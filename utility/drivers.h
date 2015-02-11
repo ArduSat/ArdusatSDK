@@ -46,8 +46,54 @@ boolean l3gd20h_init();
 boolean lsm303_accel_init();
 boolean lsm303_mag_init();
 void l3gd20h_getOrientation(float *x, float *y, float *z);
+
+/**
+ * Get raw 16 bit readings from l3gd20h gyroscope. These raw values can then be converted
+ * into engineering values.
+ *
+ * @param pX value to store x-axis data in
+ * @param pY value to store y-axis data in
+ * @param pZ value to store z-axis data in
+ */
+void l3gd20h_getRawAngularRates(int16_t *pX, int16_t *pY, int16_t *pZ);
+
+/**
+ * Gets the raw 8-bit temperature reading from the L3GD20H on-die thermometer. This
+ * value has a scale factor of -1 LSB/degree C.
+ *
+ * @param pRawTemperature location to store temp reading in
+ */
+void l3gd20h_getRawTemperature(int8_t *pRawTemperature);
+
 void lsm303_getAccel(float * x, float * y, float * z);
+
+/**
+ * Get raw 16 bit readings from LSM303 accelerometer.
+ *
+ * @param pX value to store x-axis data in
+ * @param pY value to store y-axis data in
+ * @param pZ value to store z-axis data in
+ */
+void lsm303_getRawAcceleration(int16_t *pX, int16_t *pY, int16_t *pZ);
+
+/**
+ * Gets 16-bit temperature fro on-die thermometer on the magnetometer. This appears to 
+ * be appropriately scaled & offset in deg C.
+ *
+ * @param pRawTemperature location to store temp reading in
+ */
+void lsm303_getRawTemperature(int16_t *pRawTemperature);
+
 void lsm303_getMag(float * x, float * y, float * z);
+
+/**
+ * Get raw 16 bit readings from LSM303 magnetometer.
+ *
+ * @param pX value to store x-axis data in
+ * @param pY value to store y-axis data in
+ * @param pZ value to store z-axis data in
+ */
+void lsm303_getRawMag(int16_t *pX, int16_t *pY, int16_t *pZ);
 
 /**
  * ML8511 breakout board contains an MP8511 UV light sensor
