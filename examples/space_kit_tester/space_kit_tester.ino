@@ -62,7 +62,7 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 10, 11);
  */
 void setup() {
   serialConnection.begin(9600);
-  serialConnection.println("Ardusat Space Kit tester"); 
+  serialConnection.println("Ardusat Space Kit tester");
 
   beginAccelerationSensor();
   beginTemperatureSensor();
@@ -71,17 +71,17 @@ void setup() {
   beginUVLightSensor();
   beginGyroSensor();
   beginMagneticSensor();
-  
+
   // initialize the digital pins as outputs for the LEDs
   pinMode(LED_TMP102, OUTPUT);
-  pinMode(LED_MLX90614, OUTPUT);       
+  pinMode(LED_MLX90614, OUTPUT);
   pinMode(LED_TSL2561, OUTPUT);
-  pinMode(LED_SERIAL, OUTPUT); 
-  
+  pinMode(LED_SERIAL, OUTPUT);
+
   // More pin initializations
   pinMode(UVOUT, INPUT);
   pinMode(REF_3V3, INPUT);
-  
+
   /* We're ready to go! */
   serialConnection.println("");
 }
@@ -107,14 +107,12 @@ void loop() {
   float temp_val;
   float infrared_temp;
 
-  // To test sending serial data from the computer, we can turn the Serial Read
+  // To test sending serial data from the computer, we can turn the serialConnection Read
   // LED on or off
   // Entering 1 will turn ON, 0 or any other number turns OFF
   if (serialConnection.available()) {
     byteRead = serialConnection.read();
 
-    // Echo the value read back on the serial port
-    serialConnection.write(byteRead);
     if (byteRead == 49) // Equals 1 / ON
     {
       digitalWrite(LED_SERIAL, HIGH);   // turn the LED on (HIGH is the voltage level)
@@ -122,7 +120,7 @@ void loop() {
     else
     {
       digitalWrite(LED_SERIAL, LOW);    // turn the LED off by making the voltage LOW
-    }  
+    }
   }
 
   // Read Accelerometer
@@ -132,13 +130,13 @@ void loop() {
   // Read Magnetometer
   readMagnetic(&mag);
   serialConnection.println(magneticToJSON("magnetic", &mag));
-  
+
   // Read Gyro
   readGyro(&gyro);
   serialConnection.println(gyroToJSON("gyro", &gyro));
 
   // Calculate Orientation from Accel + Magnet data
-  calculateOrientation(&accel, &mag, &orientation); 
+  calculateOrientation(&accel, &mag, &orientation);
   serialConnection.println(orientationToJSON("orientation", &orientation));
 
   // Read Temp from TMP102 (default in celcius)
@@ -152,7 +150,7 @@ void loop() {
   } else {
     digitalWrite(LED_TMP102, LOW);    // turn the LED off by making the voltage LOW
   }
-  
+
   // Read MLX Infrared temp sensor
   readInfraredTemperature(&temp);
   serialConnection.println(temperatureToJSON("infraredTemp", &temp));
@@ -163,7 +161,7 @@ void loop() {
   } else {
     digitalWrite(LED_MLX90614, LOW);    // turn the LED off by making the voltage LOW
   }
-        
+
   // Read TSL2561 Luminosity
   readLuminosity(&luminosity);
   serialConnection.println(luminosityToJSON("luminosity", &luminosity));
@@ -174,8 +172,8 @@ void loop() {
     } else {
       digitalWrite(LED_TSL2561, LOW);    // turn the LED off by making the voltage LOW
     }
-  } 
-  
+  }
+
   // Read MP8511 UV 
   readUVLight(&uv_light);
   serialConnection.println(uvlightToJSON("uv", &uv_light));
