@@ -11,13 +11,13 @@
 #include <ArdusatSDK.h>
 #include "serial.h"
 
-prog_char no_software_params_err_msg[] PROGMEM = "Uh oh, you specified a software serial mode but didn't specify transmit/recieve pins! Halting program...";
-prog_char xbee_cmd_mode[] PROGMEM = "+++";
-prog_char xbee_cmd_ack[] PROGMEM = "OK";
-prog_char xbee_cmd_baud[] PROGMEM = "ATBD ";
-prog_char xbee_cmd_write[] PROGMEM = "ATWR";
-prog_char xbee_cmd_close[] PROGMEM = "ATCN";
-prog_char xbee_baud_success[] PROGMEM = "Set XBEE baud rate to ";
+prog_char no_software_params_err_msg[] = "Uh oh, you specified a software serial mode but didn't specify transmit/recieve pins! Halting program...";
+prog_char xbee_cmd_mode[] = "+++";
+prog_char xbee_cmd_ack[] = "OK";
+prog_char xbee_cmd_baud[] = "ATBD ";
+prog_char xbee_cmd_write[] = "ATWR";
+prog_char xbee_cmd_close[] = "ATCN";
+prog_char xbee_baud_success[] = "Set XBEE baud rate to ";
 
 #define send_to_serial(function) \
   if (_mode == SERIAL_MODE_HARDWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) { \
@@ -32,7 +32,7 @@ prog_char xbee_baud_success[] PROGMEM = "Set XBEE baud rate to ";
     return _soft_serial->fxn; \
   } else { \
     return Serial.fxn; \
-  } 
+  }
 
 /**
  * If only a mode is specified to the constructor, we need to be using hardware serial.
@@ -49,11 +49,11 @@ ArdusatSerial::ArdusatSerial(serialMode mode)
 /**
  * Constructor with serial mode and connection params for software serial.
  */
-ArdusatSerial::ArdusatSerial(serialMode mode, uint8_t softwareReceivePin, 
+ArdusatSerial::ArdusatSerial(serialMode mode, uint8_t softwareReceivePin,
                              uint8_t softwareTransmitPin, bool softwareInverseLogic)
 {
   if (mode == SERIAL_MODE_SOFTWARE || mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
-    _soft_serial = new SoftwareSerial(softwareReceivePin, softwareTransmitPin, 
+    _soft_serial = new SoftwareSerial(softwareReceivePin, softwareTransmitPin,
                                       softwareInverseLogic);
   }
 

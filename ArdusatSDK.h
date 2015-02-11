@@ -17,6 +17,8 @@
 #include <utility/serial.h>
 #include <utility/RTClib.h>
 
+#define prog_char const char PROGMEM
+
 /**
  * Unique numeric id for each physical sensor
  */
