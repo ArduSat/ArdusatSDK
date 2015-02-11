@@ -100,11 +100,6 @@ boolean l3gd20h_init() {
   }
 
   // Sets switch to normal mode & enables 3 channels
-  buf = 0x00;
-  if (_writeToRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_CTRL_REG1, &buf, 1)) {
-    return false;
-  }
-
   buf = 0x0F;
   if (_writeToRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_CTRL_REG1, &buf, 1)) {
     return false;
@@ -225,6 +220,12 @@ boolean lsm303_accel_init() {
       res != 0x57) {
     return false;
   }
+
+  // set full scale range to +/- 2g, enable high resolution mode
+  res = 8;
+  if (_writeToRegAddr(LSM303_ADDRESS_ACCEL, LSM303_REGISTER_ACCEL_CTRL_REG4_A, &res, 1)) {
+    return false; }
+
   return true;
 }
 
@@ -232,14 +233,21 @@ boolean lsm303_mag_init() {
   uint8_t res;
 
   Wire.begin();
+  // configure mode select for continuous conversion
   res = 0x00;
   if (_writeToRegAddr(LSM303_ADDRESS_MAG, LSM303_REGISTER_MAG_MR_REG_M, &res, 1)) {
     return false;
   }
 
+  // configure for 15 Hz ODR, enable temperature sensor
+  res = 0x90;
+  if (_writeToRegAddr(LSM303_ADDRESS_MAG, LSM303_REGISTER_MAG_CRA_REG_M, &res, 1)) {
+    return false;
+  }
+
   //verify connected to sensor
   if (_readFromRegAddr(LSM303_ADDRESS_MAG, LSM303_REGISTER_MAG_CRA_REG_M, &res, 1) ||
-      res != 0x10) {
+      res != 0x90) {
     return false;
   }
 
@@ -310,6 +318,9 @@ float map_float(float x, float in_min, float in_max, float out_min, float out_ma
  */
 boolean ml8511_init()
 {
+  pinMode(DRIVER_ML8511_UV_PIN, INPUT);
+  pinMode(DRIVER_ML8511_REF_PIN, INPUT);
+
   return true;
 }
 
