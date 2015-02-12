@@ -27,7 +27,7 @@ prog_char ir_temperature_sensor_name[] = "IRTemperature";
 
 SdFat sd;
 File file;
-prog_char sd_card_error[] = "Not enough RAM for SD card sys(free: "; 
+prog_char sd_card_error[] = "Not enough RAM for SD card sys(free: ";
 
 char CSV_SEPARATOR = ',';
 char JSON_PREFIX = '~';
@@ -278,7 +278,7 @@ void readGyro(gyro_t * output) {
  * @param mag Magnetometer reading to use in calculation
  * @param orient Orientation structure to save calculated orientation in
  */
-void calculateOrientation(const acceleration_t *accel, const magnetic_t *mag, 
+void calculateOrientation(const acceleration_t *accel, const magnetic_t *mag,
 			  orientation_t *orient)
 {
   const float PI_F = 3.141592653F;
@@ -344,6 +344,74 @@ const char * _headerToCSV(_data_header_t * header, const char *sensorName) {
     _output_buf_len = strlen(_output_buffer);
     _output_buffer[_output_buf_len++] = CSV_SEPARATOR;
   }
+
+  return _output_buffer;
+}
+
+/*
+ * Create a CSV string with a generic float value and a sensor name. Optional timestamp
+ * argument allows passing in a timestamp; will use millis() otherwise.
+ *
+ * @param sensorName string sensor name
+ * @param value value to write
+ * @param timestamp optional timestamp. If 0, millis() will be called.
+ *
+ * @return pointer to output buffer
+ */
+const char * valueToCSV(const char *sensorName, float value, unsigned long timestamp)
+{
+  return valuesToCSV(sensorName, &value, 1, timestamp);
+}
+
+/*
+ * Create a CSV string with a generic array of float values and a sensor name. Optional timestamp
+ * argument allows passing in a timestamp; will use millis() otherwise.
+ *
+ * @param sensorName string sensor name
+ * @param value array of float values to write
+ * @param numValues number of floats in array
+ * @param timestamp optional timestamp. If 0, millis() will be called.
+ *
+ * @return pointer to output buffer
+ */
+const char * valuesToCSV(const char *sensorName, float values[], int numValues, unsigned long timestamp)
+{
+  int i, name_len;
+
+  if (values == NULL)
+    return NULL;
+
+  if (timestamp == 0) {
+    timestamp = millis();
+  }
+
+  _output_buffer_reset();
+
+  ultoa(timestamp, _output_buffer, 10);
+  _output_buf_len = strlen(_output_buffer);
+  _output_buffer[_output_buf_len++] = CSV_SEPARATOR;
+
+  if (sensorName != NULL) {
+    if ((name_len = strlen(sensorName)) > 50) {
+      name_len = 50;
+    }
+    memcpy(&(_output_buffer[_output_buf_len]), sensorName, name_len);
+    _output_buf_len += name_len;
+    _output_buffer[_output_buf_len++] = CSV_SEPARATOR;
+  }
+
+  for (i = 0; i < numValues; ++i) {
+    if (_output_buf_len > OUTPUT_BUFFER_MAXSIZE - 10) {
+      break;
+    }
+    dtostrf(values[i], 2, 3, _output_buffer + _output_buf_len);
+    _output_buf_len = strlen(_output_buffer);
+    if (i != numValues - 1) {
+      _output_buffer[_output_buf_len++] = CSV_SEPARATOR;
+    }
+  }
+
+  _output_buffer[_output_buf_len++] = '\n';
 
   return _output_buffer;
 }
@@ -478,7 +546,7 @@ const char *orientationToCSV(const char *sensorName, orientation_t *input)
 int _writeJSONValue(char *buf, const char *sensor_name, const char *unit, float value)
 {
   char num [10];
-  char format_str[80]; 
+  char format_str[80];
   // inexact estimate on the number of characters the value will take up...
   if (strlen(sensor_name) + strlen(unit) + 10 + _output_buf_len > OUTPUT_BUFFER_MAXSIZE) {
     return -1;
@@ -493,7 +561,7 @@ int _writeJSONValue(char *buf, const char *sensor_name, const char *unit, float 
 const char * valueToJSON(const char *sensor_name, uint8_t unit, float value)
 {
   _output_buffer_reset();
-  _writeJSONValue(_output_buffer, sensor_name, unit_to_str(unit), value); 
+  _writeJSONValue(_output_buffer, sensor_name, unit_to_str(unit), value);
   return _output_buffer;
 }
 
@@ -501,7 +569,7 @@ const char * accelerationToJSON(const char *sensor_name, acceleration_t *acceler
 {
   int nameLength = strlen(sensor_name);
   char nameBuf[nameLength + 2];
-  _output_buffer_reset();	
+  _output_buffer_reset();
 
   sprintf(nameBuf, "%sX", sensor_name);
   _writeJSONValue(_output_buffer, nameBuf, unit_to_str(acceleration->header.unit),
@@ -519,7 +587,7 @@ const char * magneticToJSON(const char *sensor_name, magnetic_t *mag)
 {
   int nameLength = strlen(sensor_name);
   char nameBuf[nameLength + 2];
-  _output_buffer_reset();	
+  _output_buffer_reset();
 
   sprintf(nameBuf, "%sX", sensor_name);
   _writeJSONValue(_output_buffer, nameBuf, unit_to_str(mag->header.unit),
@@ -537,7 +605,7 @@ const char * gyroToJSON(const char *sensor_name, gyro_t *orient)
 {
   int nameLength = strlen(sensor_name);
   char nameBuf[nameLength + 8];
-  _output_buffer_reset();	
+  _output_buffer_reset();
 
   sprintf(nameBuf, "%sX", sensor_name);
   _writeJSONValue(_output_buffer, nameBuf, unit_to_str(orient->header.unit),
@@ -576,7 +644,7 @@ const char *orientationToJSON(const char *sensor_name, orientation_t *orient)
 {
   int nameLength = strlen(sensor_name);
   char nameBuf[nameLength + 8];
-  _output_buffer_reset();	
+  _output_buffer_reset();
 
   sprintf(nameBuf, "%sRoll", sensor_name);
   _writeJSONValue(_output_buffer, nameBuf, unit_to_str(orient->header.unit),
@@ -590,18 +658,16 @@ const char *orientationToJSON(const char *sensor_name, orientation_t *orient)
   return _output_buffer;
 }
 
-#define write_if_init(gen_fn) return _write_from_output_buf(gen_fn);
+#define write_if_init(gen_fn) return writeString(gen_fn);
 
 /**
- * Helper function to write output buffer to file. This function is necessary
- * because we share the output buffer between the SD card library and this file
- * but to actually perform the SD card write we need to allocate another buffer.
+ * Helper function to write null-terminated output buffer string to file. 
  *
- * @param output_buf pointer to output buffer
+ * @param output_buf pointer to output buffer to write.
  *
  * @return number of bytes written
  */
-int _write_from_output_buf(const char *output_buf)
+int writeString(const char *output_buf)
 {
   int buf_len = strlen(output_buf);
   return writeBytes((const uint8_t *) output_buf, buf_len);

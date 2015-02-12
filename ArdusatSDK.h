@@ -22,13 +22,13 @@
 /**
  * Unique numeric id for each physical sensor
  */
-#define SENSORID_NULL			0x00	// no sensor, or unreliable
+#define SENSORID_NULL			  0x00	// no sensor, or unreliable
 #define SENSORID_TMP102			0x01
 #define SENSORID_TSL2561		0x02
 #define SENSORID_MLX90614		0x03
 #define SENSORID_ADAFRUIT9DOFIMU	0x04
 #define SENSORID_SI1145			0x05
-#define SENSORID_ML8511 		0x06 
+#define SENSORID_ML8511		  0x06
 
 #define OUTPUT_BUFFER_MAXSIZE 500
 
@@ -43,7 +43,7 @@
 #define DATA_UNIT_DEGREES_FAHRENHEIT		5	// temperature
 #define DATA_UNIT_METER_PER_SECOND		6	// speed, somehow
 #define DATA_UNIT_LUX					7	// luminosity
-#define DATA_UNIT_RADIAN				8	
+#define DATA_UNIT_RADIAN				8
 #define DATA_UNIT_MILLIWATT_PER_CMSQUARED 9
 #define DATA_UNIT_DEGREES 10
 
@@ -138,7 +138,7 @@ typedef struct {
 #ifdef __cplusplus
 extern "C" {
 #endif
-	
+
 /**
  * Get a string representation of a unit constant
  */
@@ -148,7 +148,7 @@ const char * unit_to_str(uint8_t);
  * setup and read functions are used to initialize sensors and read data from them.
  */
 //TODO: expand setup functions with options
-boolean beginTemperatureSensor(); 
+boolean beginTemperatureSensor();
 void readTemperature(temperature_t * temp);
 
 boolean beginInfraredTemperatureSensor();
@@ -175,6 +175,8 @@ void calculateOrientation(const acceleration_t *accel, const magnetic_t *mag,
 /**
  * toCSV output functions create a string representation of the data in CSV format.
  */
+const char * valuesToCSV(const char *sensorName, float values[], int numValues, unsigned long timestamp=0);
+const char * valueToCSV(const char *sensorName, float value, unsigned long timestamp=0);
 const char * accelerationToCSV(const char *sensorName, acceleration_t * input);
 const char * magneticToCSV(const char *sensorName, magnetic_t *input);
 const char * gyroToCSV(const char *sensorName, gyro_t * input);
@@ -215,7 +217,8 @@ const char * orientationToJSON(const char *sensor_name, orientation_t * input);
  */
 bool beginDataLog(int chipSelectPin, const char *fileNamePrefix, bool csvData);
 
-int writeBytes(const uint8_t *buffer, uint8_t numBytes); 
+int writeBytes(const uint8_t *buffer, uint8_t numBytes);
+int writeString(const char *output);
 int writeAcceleration(const char *sensorName, acceleration_t *data);
 int writeMagnetic(const char *sensorName, magnetic_t *data);
 int writeGyro(const char *sensorName, gyro_t *data);
