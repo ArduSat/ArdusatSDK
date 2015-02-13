@@ -767,7 +767,7 @@ boolean tmp102_init() {
 }
 
 float tmp102_getTempCelsius() {
-  uint16_t val;
+  int16_t val;
   uint8_t * bytes = (uint8_t *) &val;
   uint8_t temp_byte;
   float tmp;
