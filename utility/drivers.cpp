@@ -156,7 +156,14 @@ void l3gd20h_getOrientation(float *x, float *y, float *z) {
   }
 }
 
-// Function to retrieve raw angular rate readings from the gyro  2015-01-25  M.K.
+/**
+ * Get raw 16 bit readings from l3gd20h gyroscope. These raw values can then be converted
+ * into engineering values.
+ *
+ * @param pX value to store x-axis data in
+ * @param pY value to store y-axis data in
+ * @param pZ value to store z-axis data in
+ */
 void l3gd20h_getRawAngularRates(int16_t *pX, int16_t *pY, int16_t *pZ)
 {
   if((NULL != pX) && (NULL != pY) && (NULL != pZ))
@@ -166,7 +173,12 @@ void l3gd20h_getRawAngularRates(int16_t *pX, int16_t *pY, int16_t *pZ)
   }
 }
 
-// Function to retrieve raw temperature from the L3GD20  2015-01-25  M.K.
+/**
+ * Gets the raw 8-bit temperature reading from the L3GD20H on-die thermometer. This
+ * value has a scale factor of -1 LSB/degree C.
+ *
+ * @param pRawTemperature location to store temp reading in
+ */
 void l3gd20h_getRawTemperature(int8_t *pRawTemperature)
 {
   if(NULL != pRawTemperature)
@@ -284,7 +296,13 @@ void lsm303_getAccel(float *x, float *y, float *z)
   }
 }
 
-// Function to retrieve raw acceleration readings from the accelerometer/magnetometer  2015-01-25  M.K.
+/**
+ * Get raw 16 bit readings from LSM303 accelerometer.
+ *
+ * @param pX value to store x-axis data in
+ * @param pY value to store y-axis data in
+ * @param pZ value to store z-axis data in
+ */
 void lsm303_getRawAcceleration(int16_t *pX, int16_t *pY, int16_t *pZ)
 {
   if((NULL != pX) && (NULL != pY) && (NULL != pZ))
@@ -299,7 +317,12 @@ void lsm303_getRawAcceleration(int16_t *pX, int16_t *pY, int16_t *pZ)
   }
 }
 
-// Function to retrieve raw temperature from the LSM303  2015-01-25  M.K.
+/**
+ * Gets 16-bit temperature fro on-die thermometer on the magnetometer. This appears to 
+ * be appropriately scaled & offset in deg C.
+ *
+ * @param pRawTemperature location to store temp reading in
+ */
 void lsm303_getRawTemperature(int16_t *pRawTemperature)
 {
   if(NULL != pRawTemperature)
@@ -332,7 +355,13 @@ void lsm303_getMag(float *x, float *y, float *z)
   }
 }
 
-// Function to retrieve raw field strength readings from the accelerometer/magnetometer  2015-01-25  M.K.
+/**
+ * Get raw 16 bit readings from LSM303 magnetometer.
+ *
+ * @param pX value to store x-axis data in
+ * @param pY value to store y-axis data in
+ * @param pZ value to store z-axis data in
+ */
 void lsm303_getRawMag(int16_t *pX, int16_t *pY, int16_t *pZ)
 {
   if((NULL != pX) && (NULL != pY) && (NULL != pZ))

@@ -22,30 +22,34 @@
 /**
  * Unique numeric id for each physical sensor
  */
-#define SENSORID_NULL			  0x00	// no sensor, or unreliable
-#define SENSORID_TMP102			0x01
-#define SENSORID_TSL2561		0x02
-#define SENSORID_MLX90614		0x03
-#define SENSORID_ADAFRUIT9DOFIMU	0x04
-#define SENSORID_SI1145			0x05
-#define SENSORID_ML8511		  0x06
+typedef enum {
+	SENSORID_NULL = 0x00,	// no sensor, or unreliable
+	SENSORID_TMP102	= 0x01,
+	SENSORID_TSL2561 = 0x02,
+	SENSORID_MLX90614 = 0x03,
+	SENSORID_ADAFRUIT9DOFIMU = 0x04,
+	SENSORID_SI1145	= 0x05,
+	SENSORID_ML8511	= 0x06,
+} sensor_id_t;
 
 #define OUTPUT_BUFFER_MAXSIZE 500
 
 /**
  * Unit definitions
  */
-#define DATA_UNIT_NONE	0
-#define DATA_UNIT_METER_PER_SECONDSQUARED	1	//haccelerometer
-#define DATA_UNIT_RADIAN_PER_SECOND		2	// gyroscope
-#define DATA_UNIT_MICROTESLA			3	// magnetometer
-#define DATA_UNIT_DEGREES_CELSIUS		4	// temperature
-#define DATA_UNIT_DEGREES_FAHRENHEIT		5	// temperature
-#define DATA_UNIT_METER_PER_SECOND		6	// speed, somehow
-#define DATA_UNIT_LUX					7	// luminosity
-#define DATA_UNIT_RADIAN				8
-#define DATA_UNIT_MILLIWATT_PER_CMSQUARED 9
-#define DATA_UNIT_DEGREES 10
+typedef enum {
+  DATA_UNIT_NONE = 0,
+  DATA_UNIT_METER_PER_SECONDSQUARED = 1,
+  DATA_UNIT_RADIAN_PER_SECOND = 2,
+  DATA_UNIT_MICROTESLA = 3,
+  DATA_UNIT_DEGREES_CELSIUS = 4,
+  DATA_UNIT_DEGREES_FAHRENHEIT = 5,
+  DATA_UNIT_METER_PER_SECOND = 6,
+  DATA_UNIT_LUX	= 7,
+  DATA_UNIT_RADIAN = 8,
+  DATA_UNIT_MILLIWATT_PER_CMSQUARED = 9,
+  DATA_UNIT_DEGREES = 10,
+} data_unit_t;
 
 /**
  * Data types for cells in data structures.
@@ -192,14 +196,14 @@ const char * orientationToCSV(const char *sensorName, orientation_t *input);
  * Format is:
  * ~{"sensorName": "name", "unit": "C", "value": 35.3}|
  */
-const char * valueToJSON(const char *sensor_name, uint8_t unit, float value);
-const char * accelerationToJSON(const char *sensor_name, acceleration_t * input);
-const char * magneticToJSON(const char *sensor_name, magnetic_t * input);
-const char * temperatureToJSON(const char *sensor_name, temperature_t * input);
-const char * gyroToJSON(const char *sensor_name, gyro_t * input);
-const char * luminosityToJSON(const char *sensor_name, luminosity_t * input);
-const char * uvlightToJSON(const char *sensor_name, uvlight_t * input);
-const char * orientationToJSON(const char *sensor_name, orientation_t * input);
+const char * valueToJSON(const char *sensorName, uint8_t unit, float value);
+const char * accelerationToJSON(const char *sensorName, acceleration_t * input);
+const char * magneticToJSON(const char *sensorName, magnetic_t * input);
+const char * temperatureToJSON(const char *sensorName, temperature_t * input);
+const char * gyroToJSON(const char *sensorName, gyro_t * input);
+const char * luminosityToJSON(const char *sensorName, luminosity_t * input);
+const char * uvlightToJSON(const char *sensorName, uvlight_t * input);
+const char * orientationToJSON(const char *sensorName, orientation_t * input);
 
 /**
  * Write functions take care of persisting data to an SD card

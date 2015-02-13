@@ -24,14 +24,15 @@ prog_char uv_sensor_name[] = "UVLight";
 prog_char luminosity_sensor_name[] = "Luminosity";
 prog_char temperature_sensor_name[] = "Temperature";
 prog_char ir_temperature_sensor_name[] = "IRTemperature";
+prog_char pressure_sensor_name[] = "BarometricPressureSensor";
 
 SdFat sd;
 File file;
 prog_char sd_card_error[] = "Not enough RAM for SD card sys(free: ";
 
-char CSV_SEPARATOR = ',';
-char JSON_PREFIX = '~';
-char JSON_SUFFIX = '|';
+static char CSV_SEPARATOR = ',';
+static char JSON_PREFIX = '~';
+static char JSON_SUFFIX = '|';
 prog_char json_format[] = "%c{\"sensorName\":\"%s\", \"unit\":\"%s\", \"value\": %s}%c\n";
 
 prog_char csv_header_fmt[] = "timestamp: %lu at millis %lu\n";
@@ -545,7 +546,7 @@ const char *orientationToCSV(const char *sensorName, orientation_t *input)
  */
 int _writeJSONValue(char *buf, const char *sensor_name, const char *unit, float value)
 {
-  char num [10];
+  char num [32];
   char format_str[80];
   // inexact estimate on the number of characters the value will take up...
   if (strlen(sensor_name) + strlen(unit) + 10 + _output_buf_len > OUTPUT_BUFFER_MAXSIZE) {
