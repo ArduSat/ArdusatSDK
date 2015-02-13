@@ -19,7 +19,7 @@ void setup(void)
 {
   Serial.begin(9600);
 
-  if (!beginBarometricPressure()) {
+  if (!beginBarometricPressureSensor()) {
     Serial.println("can't init barometric pressure");
   }
 

@@ -38,6 +38,7 @@ Function | Sensor | Config Arguments
 **beginMagneticSensor** | LSM303 (9DOF breakout) | None
 **beginOrientationSensor** | L3GD20 (9DOF breakout) | None
 **beginUVLightSensor** | SI1145 | None
+**beginBarometricPressureSensor** | BMP180 | None
 
 `begin` functions return `true` on success or `false` on failure.
 
@@ -51,15 +52,16 @@ Read Function | Data Structure | Data Elements | Sensor
 `readTemperature` | `temperature_t` | `t` | TMP102
 `readInfraredTemperature` | `temperature_t` | `t` | MLX90614
 `readLuminosity` | `luminosity_t` | `lux` | TSL2561
-`readAcceleration` | `acceleration_t` | `x, y, z` | LSM303 (9DOF breakout)
-`readMagnetic` | `magnetic_t` | `x, y, z` | LSM303 (9DOF breakout)
-`readGyro` | `orientation_t` | `x, y, z` | L3GD20 (9DOF breakout)
+`readAcceleration` | `acceleration_t` | `x, y, z` | LSM303 (10DOF breakout)
+`readMagnetic` | `magnetic_t` | `x, y, z` | LSM303 (10DOF breakout)
+`readGyro` | `orientation_t` | `x, y, z` | L3GD20 (10DOF breakout)
 `readUVLight` | `uvlight_t` | `uvindex` | SI1145
+`readBarometricPressure` | `pressure_t` | `pressure` | BMP180 (10DOF breakout)
 
 In addition to these `read` functions, a convenience function `calculateOrientation` is provided
 to calculate the 3-axis orientation from raw data from the accelerometer and magnetometer. This 
-function calculates `roll` (rotation about `x` axis), `pitch` (roation about `y` axis), and 
-`heading` (roation about `z` axis), and has the following signature:
+function calculates `roll` (rotation about `x` axis), `pitch` (rotation about `y` axis), and 
+`heading` (rotation about `z` axis), and has the following signature:
 
 ```
 void calculateOrientation(const acceleration_t *, const magnetic_t *, orientation_t *);
@@ -67,7 +69,7 @@ void calculateOrientation(const acceleration_t *, const magnetic_t *, orientatio
 
 Usage example:
 ```
-#import ArdusatSDK.H
+#import <ArdusatSDK.h>
 
 Serial.begin(9600);
 temperature_t temp_data;
@@ -78,6 +80,20 @@ if (!beginTemperatureSensor()) {
 readTemperature(&temp_data);
 Serial.println(temp_data.t);
 ```
+
+The Barometric Pressure sensor has two additional convenience functions to calculate altitude (which
+requires knowing the current sea level barometric pressure, a value that's easily available from
+weather observation data), or current sea level barometric pressure (which requires knowing the
+current altitude). For these convenience functions, altitude should be provided in meters, and
+pressure values should be provided in hPa.
+
+```
+float pressureToAltitude(float knownSeaLevelPressure, float measuredAtmosphericPressure);
+float seaLevelPressureForAltitude(float knownAltitude, float measuredAtmosphericPressure);
+```
+
+To translate meters to feet, multiply the meter value by `3.28084`. To translate feet to meters,
+multiply the feet value by `0.3084`.
 
 ## Different Output Formats
 The Ardusat SDK can output sensor data in both JSON and CSV format to allow interfacing with
@@ -221,6 +237,38 @@ CSV data will be logged exactly as output from `ToCSV` functions appear on the S
 display. The format is: `timestamp (ms),sensorName,values`. Note that unless a real time clock chip
 is used, the Arduino has no ability to know the actual time, so `timestamp` will be the time in MS
 since the Arduino chip was started.
+
+### Logging Other Sensor Data
+If you have a custom sketch that includes data which doesn't fit into any of the ArdusatSDK-provided
+data structures, two convenience functions `valueToCSV` and `valuesToCSV` are provided to format
+generic `float` values into CSV strings. `valueToCSV` writes a single `float` to the CSV string,
+while `valuesToCSV` writes an array of strings. The output of these functions can be given to the
+`writeString` function to log the data to an SD card. Both `toCSV` functions take an optional
+`timestamp` argument - if this is not provided, the current time will be added to the CSV string
+using the `millis()` function.
+
+Usage example:
+
+```
+float mySingleValue;
+typedef struct {
+  float myValue1;
+  float myValue2;
+  float myValue3;
+} myValues_t;
+
+myValues_t myValues;
+
+mySingleValue = someMeasurementFunction();
+long currTime = millis();
+
+myValues.myValue1 = someOtherMeasurementFunction();
+myValues.myValue2 = another();
+myValues.myValue3 = thirdMeasurementFunction();
+
+writeString(valueToCSV("first_sensor", mySingleValue, currTime));
+writeString(valuesToCSV("my_vector_data", (float *) &myValues, 3));
+```
 
 ### Binary Data Format
 The binary data format allows data to be logged with less space on the SD card, enabling more data

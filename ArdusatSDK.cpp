@@ -273,7 +273,7 @@ void readGyro(gyro_t * output) {
 /*
  * Barometric Pressure
  */
-boolean beginBarometricPressure() {
+boolean beginBarometricPressureSensor() {
   start_sensor_or_err(pressure_sensor_name, bmp180_init())
 }
 

@@ -180,7 +180,7 @@ void readGyro(gyro_t * orient);
 boolean beginMagneticSensor();
 void readMagnetic(magnetic_t * mag);
 
-boolean beginBarometricPressure();
+boolean beginBarometricPressureSensor();
 void readBarometricPressure(pressure_t *pressure);
 
 void calculateOrientation(const acceleration_t *accel, const magnetic_t *mag,
