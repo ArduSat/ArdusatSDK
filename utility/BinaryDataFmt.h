@@ -21,6 +21,7 @@ typedef enum {
   ARDUSAT_SENSOR_TYPE_TEMPERATURE,
   ARDUSAT_SENSOR_TYPE_LUMINOSITY,
   ARDUSAT_SENSOR_TYPE_UV,
+  ARDUSAT_SENSOR_TYPE_PRESSURE,
 } ardusat_sensor_types_e;
 
 #define _bin_data_header uint8_t type; uint8_t id; uint32_t timestamp;
@@ -67,6 +68,11 @@ typedef struct {
 	float pitch;
 	float heading;
 } orientation_bin_t;
+
+typedef struct {
+  _bin_data_header
+  float pressure;
+} pressure_bin_t;
 
 //To translate from floating point representations into
 //2 byte integer representations we need to choose an effective

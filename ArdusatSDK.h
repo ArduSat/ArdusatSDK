@@ -30,6 +30,7 @@ typedef enum {
 	SENSORID_ADAFRUIT9DOFIMU = 0x04,
 	SENSORID_SI1145	= 0x05,
 	SENSORID_ML8511	= 0x06,
+	SENSORID_BMP180 = 0x07
 } sensor_id_t;
 
 #define OUTPUT_BUFFER_MAXSIZE 500
@@ -49,6 +50,7 @@ typedef enum {
   DATA_UNIT_RADIAN = 8,
   DATA_UNIT_MILLIWATT_PER_CMSQUARED = 9,
   DATA_UNIT_DEGREES = 10,
+  DATA_UNIT_HECTOPASCAL	= 11
 } data_unit_t;
 
 /**
@@ -139,6 +141,11 @@ typedef struct {
 	float roll, pitch, heading;
 } orientation_t;
 
+typedef struct {
+	_data_header_t header;
+	float pressure;
+} pressure_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -173,6 +180,9 @@ void readGyro(gyro_t * orient);
 boolean beginMagneticSensor();
 void readMagnetic(magnetic_t * mag);
 
+boolean beginBarometricPressure();
+void readBarometricPressure(pressure_t *pressure);
+
 void calculateOrientation(const acceleration_t *accel, const magnetic_t *mag,
 													orientation_t *orient);
 
@@ -188,6 +198,7 @@ const char * temperatureToCSV(const char *sensorName, temperature_t * input);
 const char * luminosityToCSV(const char *sensorName, luminosity_t * input);
 const char * uvlightToCSV(const char *sensorName, uvlight_t * input);
 const char * orientationToCSV(const char *sensorName, orientation_t *input);
+const char * pressureToCSV(const char *sensorName, pressure_t *pressure);
 
 /**
  * toJSON output functions create a string representation of the data in a JSON format
@@ -204,6 +215,7 @@ const char * gyroToJSON(const char *sensorName, gyro_t * input);
 const char * luminosityToJSON(const char *sensorName, luminosity_t * input);
 const char * uvlightToJSON(const char *sensorName, uvlight_t * input);
 const char * orientationToJSON(const char *sensorName, orientation_t * input);
+const char * pressureToJSON(const char *sensorName, pressure_t *input);
 
 /**
  * Write functions take care of persisting data to an SD card
@@ -230,6 +242,7 @@ int writeTemperature(const char *sensorName, temperature_t *data);
 int writeLuminosity(const char *sensorName, luminosity_t *data);
 int writeUVLight(const char *sensorName, uvlight_t *data);
 int writeOrientation(const char *sensorName, orientation_t *data);
+int writePressure(const char *sensorName, pressure_t *data);
 
 int binaryWriteAcceleration(const uint8_t sensorId, acceleration_t *data);
 int binaryWriteMagnetic(const uint8_t sensorId, magnetic_t *data);
@@ -238,6 +251,7 @@ int binaryWriteTemperature(const uint8_t sensorId, temperature_t *data);
 int binaryWriteLuminosity(const uint8_t sensorId, luminosity_t *data);
 int binaryWriteUVLight(const uint8_t sensorId, uvlight_t *data);
 int binaryWriteOrientation(const uint8_t sensorId, orientation_t *data);
+int binaryWritePressure(const uint8_t sensorId, pressure_t *data);
 
 /**
  * Setup and use the RTC chip, if found

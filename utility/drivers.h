@@ -23,12 +23,14 @@
 #include <utility/Adafruit_LSM303_U.h>
 #include <utility/Adafruit_L3GD20_U.h>
 #include <utility/Adafruit_SI1145.h>
+#include <utility/BMP180.h>
 #include <utility/TSL2561.h>
 
 #define DRIVER_TSL2561_ADDR		0x39
 #define DRIVER_TMP102_ADDR		0x48
 #define DRIVER_MLX90614_ADDR	0x5A
 #define DRIVER_SI1145_ADDR		0x60
+#define DRIVER_BMP180_ADDR    0x77
 #define DRIVER_ML8511_UV_PIN A0
 #define DRIVER_ML8511_REF_PIN A1
 
@@ -54,6 +56,21 @@ void lsm303_getRawAcceleration(int16_t *pX, int16_t *pY, int16_t *pZ);
 void lsm303_getRawTemperature(int16_t *pRawTemperature);
 void lsm303_getMag(float * x, float * y, float * z);
 void lsm303_getRawMag(int16_t *pX, int16_t *pY, int16_t *pZ);
+
+/*
+ * BMP180 Barometric altimeter is on Adafruit 10DOF, gives atmospheric pressure/altitude.
+ *
+ * http://www.adafruit.com/product/1604
+ */
+boolean bmp180_init();
+void bmp180_getRawTemperature(uint16_t *temp);
+void bmp180_getTemperature(float *temp);
+void bmp180_getRawPressure(uint32_t *pressure);
+void bmp180_getPressure(float *pressure);
+
+// helper functions for pressure conversions
+float pressureToAltitude(float seaLevelPressure, float atmosphericPressure);
+float seaLevelPressureForAltitude(float altitude, float atmosphericPressure);
 
 /**
  * ML8511 breakout board contains an MP8511 UV light sensor

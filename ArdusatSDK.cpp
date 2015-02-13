@@ -67,6 +67,8 @@ const char * unit_to_str(uint8_t unit)
       return "mW/cm^2";
     case (DATA_UNIT_RADIAN):
       return "rad";
+    case (DATA_UNIT_HECTOPASCAL):
+      return "hPa";
     default:
       return "";
   };
@@ -266,6 +268,24 @@ void readGyro(gyro_t * output) {
 
   output->header.sensor_id = SENSORID_ADAFRUIT9DOFIMU;
   l3gd20h_getOrientation(&(output->x), &(output->y), &(output->z));
+}
+
+/*
+ * Barometric Pressure
+ */
+boolean beginBarometricPressure() {
+  start_sensor_or_err(pressure_sensor_name, bmp180_init())
+}
+
+void readBarometricPressure(pressure_t *output)
+{
+  if (output == NULL)
+    return;
+  output->header.unit = DATA_UNIT_HECTOPASCAL;
+  output->header.timestamp = millis();
+
+  output->header.sensor_id = SENSORID_BMP180;
+  bmp180_getPressure(&output->pressure);
 }
 
 /**
@@ -541,6 +561,19 @@ const char *orientationToCSV(const char *sensorName, orientation_t *input)
   return _output_buffer;
 }
 
+const char *pressureToCSV(const char *sensorName, pressure_t *input)
+{
+  if (input == NULL)
+    return NULL;
+
+  _headerToCSV(&(input->header), sensorName);
+
+  dtostrf(input->pressure, 2, 3, _output_buffer + _output_buf_len);
+  _output_buffer[_output_buf_len++] = '\n';
+
+  return _output_buffer;
+}
+
 /*
  * toJSON output functions 
  */
@@ -656,6 +689,13 @@ const char *orientationToJSON(const char *sensor_name, orientation_t *orient)
   sprintf(nameBuf, "%sHeading", sensor_name);
   _writeJSONValue(&_output_buffer[_output_buf_len], nameBuf,
 		  unit_to_str(orient->header.unit), orient->heading);
+  return _output_buffer;
+}
+
+const char *pressureToJSON(const char *sensorName, pressure_t *pressure)
+{
+  _output_buffer_reset();
+  _writeJSONValue(_output_buffer, sensorName, unit_to_str(pressure->header.unit), pressure->pressure);
   return _output_buffer;
 }
 
@@ -831,6 +871,19 @@ int writeOrientation(const char *sensorName, orientation_t *data)
   write_if_init(orientationToCSV(sensorName, data))
 }
 
+/**
+ * Writes a line of CSV formatted pressure data to SD card.
+ *
+ * @param sensorName of this sensor
+ * @param data pressure_t data to write
+ *
+ * @return number of bytes written
+ */
+int writePressure(const char *sensorName, pressure_t *data)
+{
+  write_if_init(pressureToCSV(sensorName, data))
+}
+
 #define init_data_struct(type_def, type_enum) \
   type_def bin_data; \
   bin_data.type = type_enum; \
@@ -901,6 +954,14 @@ int binaryWriteOrientation(const uint8_t sensorId, orientation_t *data)
   bin_data.heading = data->heading;
 
   _write_binary_data_struct(orientation_bin_t)
+}
+
+int binaryWritePressure(const uint8_t sensorId, pressure_t *data)
+{
+  init_data_struct(pressure_bin_t, ARDUSAT_SENSOR_TYPE_PRESSURE)
+  bin_data.pressure = data->pressure;
+
+  _write_binary_data_struct(pressure_bin_t)
 }
 
 /**

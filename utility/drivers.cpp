@@ -375,6 +375,256 @@ void lsm303_getRawMag(int16_t *pX, int16_t *pY, int16_t *pZ)
 
 
 /*
+ * BMP180 Barometeric Altimeter
+ */
+// BMP state variables
+static bmp085_calibration _bmp180_calibration;
+static uint8_t _bmp180_mode;
+
+/*
+ * Reads the factory configuration from the BMP180
+ */
+#define _bmp180_read_unsigned_config_val(reg, config_location) \
+  if (_readFromRegAddr(DRIVER_BMP180_ADDR, reg, buf, 2)) { \
+    return -1; \
+  } else { \
+    config_location = (buf[0] << 8) + buf[1]; \
+  }
+
+#define _bmp180_read_signed_config_val(reg, config_location) \
+  if (_readFromRegAddr(DRIVER_BMP180_ADDR, reg, buf, 2)) { \
+    return -1; \
+  } else { \
+    config_location = (int16_t) ((buf[0] << 8) + buf[1]); \
+  }
+
+static int _bmp180_read_configuration(void)
+{
+  uint8_t buf[2];
+  _bmp180_read_signed_config_val(BMP085_REGISTER_CAL_AC1, _bmp180_calibration.ac1)
+  _bmp180_read_signed_config_val(BMP085_REGISTER_CAL_AC2, _bmp180_calibration.ac2)
+  _bmp180_read_signed_config_val(BMP085_REGISTER_CAL_AC3, _bmp180_calibration.ac3)
+  _bmp180_read_unsigned_config_val(BMP085_REGISTER_CAL_AC4, _bmp180_calibration.ac4)
+  _bmp180_read_unsigned_config_val(BMP085_REGISTER_CAL_AC5, _bmp180_calibration.ac5)
+  _bmp180_read_unsigned_config_val(BMP085_REGISTER_CAL_AC6, _bmp180_calibration.ac6)
+  _bmp180_read_signed_config_val(BMP085_REGISTER_CAL_B1, _bmp180_calibration.b1)
+  _bmp180_read_signed_config_val(BMP085_REGISTER_CAL_B2, _bmp180_calibration.b2)
+  _bmp180_read_signed_config_val(BMP085_REGISTER_CAL_MB, _bmp180_calibration.mb)
+  _bmp180_read_signed_config_val(BMP085_REGISTER_CAL_MC, _bmp180_calibration.mc)
+  _bmp180_read_signed_config_val(BMP085_REGISTER_CAL_MD, _bmp180_calibration.md)
+
+  return 0;
+}
+
+/**
+ * Compute B5 coefficient from datasheet for temp & pressure calculations
+ *
+ * @param ut raw temp measured from BMP180 chip
+ */
+int32_t _bmp180_compute_b5(int32_t ut)
+{
+  int32_t X1 = (ut - (int32_t) _bmp180_calibration.ac6) * ((int32_t) _bmp180_calibration.ac5) >> 15;
+  int32_t X2 = ((int32_t) _bmp180_calibration.mc << 11) / (X1 + (int32_t) _bmp180_calibration.md);
+  return X1 + X2;
+}
+
+/**
+ * Initialize the BMP180. Sets ultra high res mode.
+ */
+boolean bmp180_init()
+{
+  uint8_t res;
+  bmp085_mode_t mode = BMP085_MODE_ULTRAHIGHRES;
+
+  Wire.begin();
+
+  if (_readFromRegAddr(DRIVER_BMP180_ADDR, BMP085_REGISTER_CHIPID, &res, 1) ||
+      res != 0x55) {
+    return false;
+  }
+
+  if (_bmp180_read_configuration()) {
+    return false;
+  }
+
+  _bmp180_mode = mode;
+  return true;
+}
+
+/**
+ * Gets raw 16 bit temperature from the BMP180. See datasheet for instructions on
+ * calculating calibrated value.
+ *
+ * @param temp location to write temperature to.
+ */
+void bmp180_getRawTemperature(uint16_t *temp)
+{
+  uint8_t reg[2];
+  reg[0] = BMP085_REGISTER_READTEMPCMD;
+  if (_writeToRegAddr(DRIVER_BMP180_ADDR, BMP085_REGISTER_CONTROL, reg, 1)) {
+    return;
+  }
+
+  delay(5);
+
+  if (_readFromRegAddr(DRIVER_BMP180_ADDR, BMP085_REGISTER_TEMPDATA, reg, 2)) {
+    return;
+  }
+
+  *temp = (reg[0] << 8) + reg[1];
+}
+
+/**
+ * Get calibrated temperature from BMP180.
+ *
+ * @param temp location to write temp to
+ */
+void bmp180_getTemperature(float *temp)
+{
+  uint16_t raw_temp = 0;
+  int32_t UT, X1, X2, B5;
+
+  bmp180_getRawTemperature(&raw_temp);
+  if (raw_temp != 0) {
+    UT = (int32_t) raw_temp;
+    B5 = _bmp180_compute_b5(UT);
+    *temp = (B5 + 8) >> 4;
+    *temp /= 10;
+  }
+}
+
+/**
+ * Gets raw 24 bit pressure value from BMP180. See datasheet for instructions on 
+ * calculating calibrated value.
+ *
+ * @param pressure location to write pressure to
+ */
+void bmp180_getRawPressure(uint32_t *pressure)
+{
+  uint8_t reg[3];
+  uint32_t temp32;
+  reg[0] = BMP085_REGISTER_READPRESSURECMD + (_bmp180_mode << 6);
+
+  if (_writeToRegAddr(DRIVER_BMP180_ADDR, BMP085_REGISTER_CONTROL, &reg, 1)) {
+    return;
+  }
+
+  // read delay is based on resolution mode set in begin
+  switch(_bmp180_mode) {
+    case BMP085_MODE_ULTRALOWPOWER:
+      delay(5);
+      break;
+    case BMP085_MODE_STANDARD:
+      delay(8);
+      break;
+    case BMP085_MODE_HIGHRES:
+      delay(14);
+      break;
+    case BMP085_MODE_ULTRAHIGHRES:
+    default:
+      delay(26);
+      break;
+  }
+
+  if (_readFromRegAddr(DRIVER_BMP180_ADDR, BMP085_REGISTER_PRESSUREDATA, reg, 3)) {
+    return;
+  }
+
+  temp32 = (uint32_t) reg[0] << 16;
+  temp32 += reg[1] << 8;
+  temp32 += reg[2];
+  temp32 >>= (8 - _bmp180_mode);
+
+  *pressure = temp32;
+}
+
+/**
+ * Get calibrated pressure from BMP180.
+ *
+ * @param pressure location to write to
+ */
+void bmp180_getPressure(float *pressure) {
+  int32_t ut = 0;
+  int32_t up = 0;
+  int32_t pressure_i = 0;
+  int32_t x1, x2, b5, b6, x3, b3, p;
+  uint32_t b4, b7;
+  uint16_t raw_temp;
+
+  bmp180_getRawTemperature(&raw_temp);
+  ut = (int32_t) raw_temp;
+  bmp180_getRawPressure((uint32_t *) &up);
+  up = (int32_t) up;
+
+  // Temp compensation
+  b5 = _bmp180_compute_b5(ut);
+
+  // Pressure compensation
+  b6 = b5 - 4000;
+  x1 = (_bmp180_calibration.b2 * ((b6 * b6) >> 12)) >> 11;
+  x2 = (_bmp180_calibration.ac2 * b6) >> 11;
+  x3 = x1 + x2;
+  b3 = (((((int32_t) _bmp180_calibration.ac1) * 4 + x3) << _bmp180_mode) + 2) >> 2;
+  x1 = (_bmp180_calibration.ac3 * b6) >> 13;
+  x2 = (_bmp180_calibration.b1 * ((b6 * b6) >> 12)) >> 16;
+  x3 = ((x1 + x2) + 2) >> 2;
+  b4 = (_bmp180_calibration.ac4 * (uint32_t) (x3 + 32768)) >> 15;
+  b7 = ((uint32_t) (up - b3) * (50000 >> _bmp180_mode));
+
+  if (b7 < 0x80000000) {
+    p = (b7 << 1) / b4;
+  } else {
+    p = (b7 / b4) << 1;
+  }
+
+  x1 = (p >> 8) * (p >> 8);
+  x1 = (x1 * 3038) >> 16;
+  x2 = (-7357 * p) >> 16;
+  pressure_i = p + ((x1 + x2 + 3791) >> 4);
+
+  *pressure = pressure_i / 100.0F;
+}
+
+/**
+ * Calculates the altitude in meters from the specified measured atmospheric pressure (hPa) 
+ * and sea-level pressure (hPa)
+ *
+ * Equation taken from BMP180 datasheet (page 16):
+ * http://www.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
+  
+ * Note that using the equation from wikipedia can give bad results
+ * at high altitude.  See this thread for more information:
+ * http://forums.adafruit.com/viewtopic.php?f=22&t=58064
+ *
+ * @param seaLevelPressure Known pressure at sea-level (hPa)
+ * @param atmosphericPressure Pressure at altitude (hPa)
+ */
+float pressureToAltitude(float seaLevelPressure, float atmosphericPressure)
+{
+  return 44330.0 * (1.0 - pow(atmosphericPressure / seaLevelPressure, 0.1903));
+}
+
+/**
+ * Calculates the pressure at sea level (in hPa) from the specified altitude (meters)
+ * and measured atmospheric pressure (hPa)
+ * 
+ * Equation taken from BMP180 datasheet (page 17):
+ * http://www.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
+ *
+ * Note that using the equation from wikipedia can give bad results
+ * at high altitude.  See this thread for more information:
+ * http://forums.adafruit.com/viewtopic.php?f=22&t=58064
+ *
+ * @param altitude Known altitude (meters)
+ * @param atmosphericPressure Measured atmospheric pressure (hPa)
+ */
+float seaLevelPressureForAltitude(float altitude, float atmosphericPressure)
+{
+  return atmosphericPressure / pow(1.0 - (altitude / 44330.0), 5.255);
+}
+
+
+/*
  * ML8511 UV Light
  */
 /*
