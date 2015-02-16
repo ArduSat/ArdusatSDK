@@ -27,3 +27,9 @@
 *.i*86
 *.x86_64
 *.hex
+
+# Python compiled files
+*.pyc
+
+# Compiled decode utility
+decode_binary

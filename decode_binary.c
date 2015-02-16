@@ -147,6 +147,10 @@ int process_next_row(FILE *input, FILE *output)
       sprintf(val_buf, "%f,%f,%f", *(float *)(buf + 6),
               *(float *)(buf + 10), *(float *)(buf + 14));
       break;
+    case (ARDUSAT_SENSOR_TYPE_PRESSURE):
+      get_data_struct(10, "pressure")
+      sprintf(val_buf, "%f", *(float *)(buf + 6));
+      break;
     case ((char) 0xFF):
       // check if timestamp header
       if (fread(buf + 1, 1, 1, input) == 0 || buf[1] != (char) 0xFF ||
