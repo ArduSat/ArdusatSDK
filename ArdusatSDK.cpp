@@ -569,6 +569,7 @@ const char *pressureToCSV(const char *sensorName, pressure_t *input)
   _headerToCSV(&(input->header), sensorName);
 
   dtostrf(input->pressure, 2, 3, _output_buffer + _output_buf_len);
+  _output_buf_len = strlen(_output_buffer);
   _output_buffer[_output_buf_len++] = '\n';
 
   return _output_buffer;
