@@ -273,33 +273,50 @@ writeString(valuesToCSV("my_vector_data", (float *) &myValues, 3));
 ### Binary Data Format
 The binary data format allows data to be logged with less space on the SD card, enabling more data
 to be logged in the same space allotment. However, these binary data stamps must be decoded before
-they can be used by external data programs. To do this, a simple utility, `decode_binary.c` has been
-provided with the SDK. It must be compiled before use. On Mac OS X, this requires command line build
-utilities (`gcc`), on Linux the `gcc` compiler is usually included by default. This utility currently
-does not support Windows systems, but Cygwin can likely be used for compatibility, and we will be
-adding conversion support on the Ardusat website shortly.
+they can be used by external data programs. To do this, a simple Python-based utility,
+`decode_binary.py` has been provided with the SDK. On Mac OS X and Linux systems, Python should be
+installed already, but might need to be upgraded for pre Python 2.5 versions (fairly uncommon). On
+Windows, Python must be installed before the script can be used - go to 
+[Python Downloads](https://www.python.org/downloads/) to download an installer or newer version of
+Python. We will also be adding conversion support on the Ardusat website at some point.
 
-**Compile decode_binary with gcc (Mac OS X/Linux)**
-```
-cd /path/to/ArdusatSDK
-gcc decode_binary.c -o decode_binary
-```
+Once Python is installed, the utility can be used (run `python ./decode_binary.py --help` for usage 
+information) to translate the binary data into regular CSV data with the format. If no output path 
+is given, the output path will default to the filename of the binary file, saved to the current 
+working directory.
 
-Once the binary is compiled, it can be used (run ./decode_binary --help for usage information) to
-translate the binary data into regular CSV data with the format. If no output path is given, the output path will
-default to the filename of the binary file, saved to the current working directory.
+**decode_binary.py usage options**
 ```
->> ./decode_binary --help
+>> python ./decode_binary.py --help
+usage: decode_binary.py [-h] [-o,--output-file OUTPUT_FILE]
+                        [-s,--stop-on-error]
+                        input_file
+
 Decodes a binary data file created using the ArdusatSDK.
-usage: ./decode_binary [options] FILE
-Options:
-  -o,--output-file PATH          CSV file to write decoded data to
-  -h,--help                      Print this usage info.
->> ./decode_binary -o ./my-data.csv /Volumes/SD\ Card/DATA/MYLOG0.BIN
-Decoding file /Volumes/SD Card/DATA/MYLOG0.BIN and saving data to
-/Users/ardusat/Downloads/ArdusatSDK/my-data.csv...
-Finished decoding /Volumes/SD Card/DATA/MYLOG0.BIN. Saved 132 data observations to
-/Users/ardusat/Downloads/ArdusatSDK/my-data.csv.
+
+positional arguments:
+  input_file            Binary data file to decode
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o,--output-file OUTPUT_FILE
+                        CSV file to write decoded data to
+  -s,--stop-on-error    Stop decoding if unexpected bytes encountered
+```
+
+**Decode a binary data file (Mac OS X/Linux)**
+```
+>> python ./decode_binary.py -o my_data.csv MYDATA0.BIN
+Decoding MYDATA0.BIN (24516 bytes) and saving data to my_data.csv...
+Finished decoding MYDATA0.BIN, saved 1362 data observations to my_data.csv
+```
+
+**Decode a binary data file (Windows)**
+```
+>> C:\Python27\python.exe C:\ArdusatSDK\decode_binary.py -o C:\ArdusatSDK\my_data.csv
+C:\ArdusatSDK\MYDATA0.BIN
+Decoding C:\ArdusatSDK\MYDATA0.BIN (24516 bytes) and saving data to C:\ArdusatSDK\my_data.csv...
+Finished decoding C:\ArdusatSDK\MYDATA0.BIN, saved 1362 data observations to C:\ArdusatSDK\my_data.csv
 ```
 
 The actual data format for each time of data is described below, along with the number of bytes for
