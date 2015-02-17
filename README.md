@@ -37,7 +37,7 @@ Function | Sensor | Config Arguments
 **beginAccelerationSensor** | LSM303 (9DOF breakout) | None
 **beginMagneticSensor** | LSM303 (9DOF breakout) | None
 **beginOrientationSensor** | L3GD20 (9DOF breakout) | None
-**beginUVLightSensor** | SI1145 | None
+**beginUVLightSensor** | ML8511 | None
 **beginBarometricPressureSensor** | BMP180 | None
 
 `begin` functions return `true` on success or `false` on failure.
@@ -55,7 +55,7 @@ Read Function | Data Structure | Data Elements | Sensor
 `readAcceleration` | `acceleration_t` | `x, y, z` | LSM303 (10DOF breakout)
 `readMagnetic` | `magnetic_t` | `x, y, z` | LSM303 (10DOF breakout)
 `readGyro` | `orientation_t` | `x, y, z` | L3GD20 (10DOF breakout)
-`readUVLight` | `uvlight_t` | `uvindex` | SI1145
+`readUVLight` | `uvlight_t` | `uvindex` | ML8511
 `readBarometricPressure` | `pressure_t` | `pressure` | BMP180 (10DOF breakout)
 
 In addition to these `read` functions, a convenience function `calculateOrientation` is provided
