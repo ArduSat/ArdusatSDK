@@ -21,7 +21,7 @@ class ArdusatBinaryData(object):
                        ARDUSAT_SENSOR_TYPE_LUMINOSITY: (10, "<BIf"),
                        ARDUSAT_SENSOR_TYPE_UV: (10, "<BIf"),
                        ARDUSAT_SENSOR_TYPE_ORIENTATION: (18, "<BIfff"),
-                       ARDUSAT_SENSOR_TYPE_PRESSURE: (10, "<BIfff"),
+                       ARDUSAT_SENSOR_TYPE_PRESSURE: (10, "<BIf"),
     }
 
     SENSOR_NAME = { ARDUSAT_SENSOR_TYPE_ACCELERATION: "accelerometer",
