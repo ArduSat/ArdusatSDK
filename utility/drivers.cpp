@@ -788,11 +788,38 @@ float tmp102_getTempCelsius() {
 TSL2561 tsl2561 = TSL2561(DRIVER_TSL2561_ADDR);
 
 boolean tsl2561_init() {
-  return tsl2561.begin();
+  boolean status = tsl2561.begin();
+
+  if(status)
+  {
+    // set gain to 1, as TSL2561 library defaults to 16,
+    // which will cause saturation of the signal-conditioned
+    // photodiodes when exposed to a strong light source,
+    // such as the outdoors
+    tsl2561.setGain(TSL2561_GAIN_0X);
+    // set integration time to 13 ms (currently, the TSL2561 library
+    // defaults to 13 ms integration time, but we should explicitly set
+    // to ensure this)
+    tsl2561.setTiming(TSL2561_INTEGRATIONTIME_13MS);
+  }
+
+  return status;
 }
 
 float tsl2561_getLux() {
+  // TODO: check for saturation of from either channel, and if so,
+  // or indicate to the user the sensor is saturation via a status
+  // code OR by setting the return value to a really high value (100,000?)
+  // TODO: if it is desired to improve resolution under low light values,
+  // we will need to dynamically change the gain and/or integration time
+  // settings
+
+  // read from channel 0 (IR + visible photodiode)
   uint16_t ch0 = tsl2561.getLuminosity(0);
+  // read from channel 1 (IR photodiode)
   uint16_t ch1 = tsl2561.getLuminosity(1);
+  // compute luminosity based on channel 0, channel 1 readings
+  // (NOTE: TSL2561::calculateLux() takes into account the gain and
+  // integration time)
   return tsl2561.calculateLux(ch0, ch1);
 }
