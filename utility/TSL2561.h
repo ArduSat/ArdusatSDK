@@ -137,6 +137,10 @@
 #define TSL2561_CLIPPING_101MS    (37000)
 #define TSL2561_CLIPPING_402MS    (65000)
 
+// Value returned by getLuminosity() if either photodiode input is saturated
+#define TSL2561_SATURATED_LUX     (60000)
+
+
 enum
 {
   TSL2561_REGISTER_CONTROL          = 0x00,
@@ -180,6 +184,7 @@ class TSL2561 {
   void setGain(tsl2561Gain_t gain);
   void getLuminosity (uint16_t *broadband, uint16_t *ir);
   uint32_t calculateLux(uint16_t broadband, uint16_t ir);
+  boolean IsSensorSaturated(const uint16_t &broadband, const uint16_t &ir);
 
  private:
   void enable(void);

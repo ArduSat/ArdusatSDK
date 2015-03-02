@@ -302,24 +302,10 @@ uint32_t TSL2561::calculateLux(uint16_t broadband, uint16_t ir)
   unsigned long channel0;
 
   /* Make sure the sensor isn't saturated! */
-  uint16_t clipThreshold;
-  switch (_tsl2561IntegrationTime)
+  if(IsSensorSaturated(broadband, ir))
   {
-    case TSL2561_INTEGRATIONTIME_13MS:
-      clipThreshold = TSL2561_CLIPPING_13MS;
-      break;
-    case TSL2561_INTEGRATIONTIME_101MS:
-      clipThreshold = TSL2561_CLIPPING_101MS;
-      break;
-    default:
-      clipThreshold = TSL2561_CLIPPING_402MS;
-      break;
-  }
-
-  /* Return 0 lux if the sensor is saturated */
-  if ((broadband > clipThreshold) || (ir > clipThreshold))
-  {
-    return 0;
+    /* Return precanned "high lux" value if the sensor is saturated */
+    return TSL2561_SATURATED_LUX;
   }
 
   /* Get the correct scale depending on the intergration time */
@@ -473,5 +459,40 @@ uint16_t TSL2561::read16(uint8_t reg)
   x <<= 8;
   x |= t;
   return x;
+}
+
+/**************************************************************************/
+/*!
+    @brief  Given a set TSL2561 readings, checks to see if either of them
+            are saturated, and if so, returns true
+*/
+/**************************************************************************/
+
+boolean TSL2561::IsSensorSaturated(const uint16_t &broadband, const uint16_t &ir)
+{
+	boolean ReturnValue = false;
+
+  /* Make sure the sensor isn't saturated! */
+  uint16_t clipThreshold;
+  switch (_tsl2561IntegrationTime)
+  {
+    case TSL2561_INTEGRATIONTIME_13MS:
+      clipThreshold = TSL2561_CLIPPING_13MS;
+      break;
+    case TSL2561_INTEGRATIONTIME_101MS:
+      clipThreshold = TSL2561_CLIPPING_101MS;
+      break;
+    default:
+      clipThreshold = TSL2561_CLIPPING_402MS;
+      break;
+  }
+
+  /* Return 0 true if the sensor is saturated */
+  if((broadband > clipThreshold) || (ir > clipThreshold))
+  {
+    ReturnValue = true;
+  }
+
+  return ReturnValue;
 }
 
