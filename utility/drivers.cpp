@@ -788,11 +788,22 @@ float tmp102_getTempCelsius() {
 TSL2561 tsl2561 = TSL2561(DRIVER_TSL2561_ADDR);
 
 boolean tsl2561_init() {
-  return tsl2561.begin();
+  boolean result = tsl2561.begin();
+
+  if(result)
+  {
+    tsl2561.setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);
+    tsl2561.setGain(TSL2561_GAIN_1X);
+    tsl2561.enableAutoRange(false);
+  }
+
+  return result;
+
 }
 
 float tsl2561_getLux() {
-  uint16_t ch0 = tsl2561.getLuminosity(0);
-  uint16_t ch1 = tsl2561.getLuminosity(1);
-  return tsl2561.calculateLux(ch0, ch1);
+  uint16_t broadband, ir;
+
+  tsl2561.getLuminosity(&broadband, &ir);
+  return tsl2561.calculateLux(broadband, ir);
 }
