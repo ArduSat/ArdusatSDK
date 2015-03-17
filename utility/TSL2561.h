@@ -1,14 +1,13 @@
-
 /**************************************************************************/
-/*! 
-    @file     tsl2561.h
-    @author   K. Townsend (microBuilder.eu)
+/*!
+    @file     TSL2561.h
+    @author   K. Townsend (Adafruit Industries)
 
     @section LICENSE
 
     Software License Agreement (BSD License)
 
-    Copyright (c) 2010, microBuilder SARL
+    Copyright (c) 2013, Adafruit Industries
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -34,7 +33,6 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /**************************************************************************/
-
 #ifndef _TSL2561_H_
 #define _TSL2561_H_
 
@@ -49,10 +47,10 @@
 #define TSL2561_INFRARED 1                  // channel 1
 #define TSL2561_FULLSPECTRUM 0              // channel 0
 
-// 3 i2c address options!
-#define TSL2561_ADDR_LOW  0x29
-#define TSL2561_ADDR_FLOAT 0x39
-#define TSL2561_ADDR_HIGH 0x49
+// I2C address options
+#define TSL2561_ADDR_LOW          (0x29)
+#define TSL2561_ADDR_FLOAT        (0x39)    // Default address (pin left floating)
+#define TSL2561_ADDR_HIGH         (0x49)
 
 // Lux calculations differ slightly for CS package
 //#define TSL2561_PACKAGE_CS
@@ -126,6 +124,23 @@
 #define TSL2561_LUX_B8C           (0x0000)  // 0.000 * 2^LUX_SCALE
 #define TSL2561_LUX_M8C           (0x0000)  // 0.000 * 2^LUX_SCALE
 
+// Auto-gain thresholds
+#define TSL2561_AGC_THI_13MS      (4850)    // Max value at Ti 13ms = 5047
+#define TSL2561_AGC_TLO_13MS      (100)
+#define TSL2561_AGC_THI_101MS     (36000)   // Max value at Ti 101ms = 37177
+#define TSL2561_AGC_TLO_101MS     (200)
+#define TSL2561_AGC_THI_402MS     (63000)   // Max value at Ti 402ms = 65535
+#define TSL2561_AGC_TLO_402MS     (500)
+
+// Clipping thresholds
+#define TSL2561_CLIPPING_13MS     (4900)
+#define TSL2561_CLIPPING_101MS    (37000)
+#define TSL2561_CLIPPING_402MS    (65000)
+
+// Value returned by getLuminosity() if either photodiode input is saturated
+#define TSL2561_SATURATED_LUX     (60000)
+
+
 enum
 {
   TSL2561_REGISTER_CONTROL          = 0x00,
@@ -153,32 +168,38 @@ tsl2561IntegrationTime_t;
 
 typedef enum
 {
-  TSL2561_GAIN_0X                   = 0x00,    // No gain
+  TSL2561_GAIN_1X                   = 0x00,    // No gain
   TSL2561_GAIN_16X                  = 0x10,    // 16x gain
 }
 tsl2561Gain_t;
-
 
 class TSL2561 {
  public:
   TSL2561(uint8_t addr);
   boolean begin(void);
+
+  /* TSL2561 Functions */
+  void enableAutoRange(bool enable);
+  void setIntegrationTime(tsl2561IntegrationTime_t time);
+  void setGain(tsl2561Gain_t gain);
+  void getLuminosity (uint16_t *broadband, uint16_t *ir);
+  uint32_t calculateLux(uint16_t broadband, uint16_t ir);
+  boolean IsSensorSaturated(const uint16_t &broadband, const uint16_t &ir);
+
+ private:
   void enable(void);
   void disable(void);
-  void write8(uint8_t r, uint8_t v);
+  void getData (uint16_t *broadband, uint16_t *ir);
+  void write8(uint8_t reg, uint32_t value);
+  uint8_t read8(uint8_t reg);
   uint16_t read16(uint8_t reg);
 
-  uint32_t calculateLux(uint16_t ch0, uint16_t ch1);
-  void setTiming(tsl2561IntegrationTime_t integration);
-  void setGain(tsl2561Gain_t gain);
-  uint16_t getLuminosity (uint8_t channel);
-  uint32_t getFullLuminosity ();
 
  private:
   int8_t _addr;
-  tsl2561IntegrationTime_t _integration;
-  tsl2561Gain_t _gain;
-
-  boolean _initialized;
+  boolean _tsl2561Initialised;
+  boolean _tsl2561AutoGain;
+  tsl2561IntegrationTime_t _tsl2561IntegrationTime;
+  tsl2561Gain_t _tsl2561Gain;
 };
 #endif

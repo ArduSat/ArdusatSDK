@@ -1,13 +1,13 @@
 /**************************************************************************/
-/*! 
-    @file     tsl2561.c
-    @author   K. Townsend (microBuilder.eu / adafruit.com)
+/*!
+    @file     TSL2561.cpp
+    @author   K. Townsend (Adafruit Industries)
 
     @section LICENSE
 
     Software License Agreement (BSD License)
 
-    Copyright (c) 2010, microBuilder SARL, Adafruit Industries
+    Copyright (c) 2013, Adafruit Industries
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -40,92 +40,276 @@
 
 #include "TSL2561.h"
 
-TSL2561::TSL2561(uint8_t addr) {
+#define TSL2561_DELAY_INTTIME_13MS    (15)
+#define TSL2561_DELAY_INTTIME_101MS   (120)
+#define TSL2561_DELAY_INTTIME_402MS   (450)
+
+/**************************************************************************/
+/*!
+    Constructor
+*/
+/**************************************************************************/
+TSL2561::TSL2561(uint8_t addr)
+{
   _addr = addr;
-  _initialized = false;
-  _integration = TSL2561_INTEGRATIONTIME_13MS;
-  _gain = TSL2561_GAIN_16X;
+  _tsl2561Initialised = false;
+  _tsl2561AutoGain = false;
+  _tsl2561IntegrationTime = TSL2561_INTEGRATIONTIME_13MS;
+  _tsl2561Gain = TSL2561_GAIN_1X;
 
   // we cant do wire initialization till later, because we havent loaded Wire yet
 }
 
-boolean TSL2561::begin(void) {
+/**************************************************************************/
+/*!
+    Initializes I2C and configures the sensor (call this function before
+    doing anything else)
+*/
+/**************************************************************************/
+boolean TSL2561::begin(void)
+{
   Wire.begin();
 
- // Initialise I2C
-  Wire.beginTransmission(_addr);
-#if ARDUINO >= 100
-  Wire.write(TSL2561_REGISTER_ID);
-#else
-  Wire.send(TSL2561_REGISTER_ID);
-#endif
-  Wire.endTransmission();
-  Wire.requestFrom(_addr, 1);
-#if ARDUINO >= 100
-  int x = Wire.read();
-#else
-  int x = Wire.receive();
-#endif
-  //Serial.print("0x"); Serial.println(x, HEX);
-  if (x & 0x0A ) {
-    //Serial.println("Found TSL2561");
-  } else {
+  /* Make sure we're actually connected */
+  uint8_t x = read8(TSL2561_REGISTER_ID);
+  if (!(x & 0x0A))
+  {
     return false;
   }
-  _initialized = true;
+  _tsl2561Initialised = true;
 
-  // Set default integration time and gain
-  setTiming(_integration);
-  setGain(_gain);
-  // Note: by default, the device is in power down mode on bootup
+  /* Set default integration time and gain */
+  setIntegrationTime(_tsl2561IntegrationTime);
+  setGain(_tsl2561Gain);
+
+  /* Note: by default, the device is in power down mode on bootup */
   disable();
 
   return true;
 }
 
+/**************************************************************************/
+/*!
+    Enables the device
+*/
+/**************************************************************************/
 void TSL2561::enable(void)
 {
-  if (!_initialized) begin();
-
-  // Enable the device by setting the control bit to 0x03
+  /* Enable the device by setting the control bit to 0x03 */
   write8(TSL2561_COMMAND_BIT | TSL2561_REGISTER_CONTROL, TSL2561_CONTROL_POWERON);
 }
 
+/**************************************************************************/
+/*!
+    Disables the device (putting it in lower power sleep mode)
+*/
+/**************************************************************************/
 void TSL2561::disable(void)
 {
-  if (!_initialized) begin();
-
-  // Disable the device by setting the control bit to 0x03
+  /* Turn the device off to save power */
   write8(TSL2561_COMMAND_BIT | TSL2561_REGISTER_CONTROL, TSL2561_CONTROL_POWEROFF);
 }
 
-
-void TSL2561::setGain(tsl2561Gain_t gain) {
-  if (!_initialized) begin();
-
-  enable();
-  _gain = gain;
-  write8(TSL2561_COMMAND_BIT | TSL2561_REGISTER_TIMING, _integration | _gain);  
-  disable();
-}
-
-void TSL2561::setTiming(tsl2561IntegrationTime_t integration)
+/**************************************************************************/
+/*!
+    Private function to read luminosity on both channels
+*/
+/**************************************************************************/
+void TSL2561::getData (uint16_t *broadband, uint16_t *ir)
 {
-  if (!_initialized) begin();
-
+  /* Enable the device by setting the control bit to 0x03 */
   enable();
-  _integration = integration;
-  write8(TSL2561_COMMAND_BIT | TSL2561_REGISTER_TIMING, _integration | _gain);  
+
+  /* Wait x ms for ADC to complete */
+  switch (_tsl2561IntegrationTime)
+  {
+    case TSL2561_INTEGRATIONTIME_13MS:
+      delay(TSL2561_DELAY_INTTIME_13MS);  // KTOWN: Was 14ms
+      break;
+    case TSL2561_INTEGRATIONTIME_101MS:
+      delay(TSL2561_DELAY_INTTIME_101MS); // KTOWN: Was 102ms
+      break;
+    default:
+      delay(TSL2561_DELAY_INTTIME_402MS); // KTOWN: Was 403ms
+      break;
+  }
+
+  /* Reads a two byte value from channel 0 (visible + infrared) */
+  *broadband = read16(TSL2561_COMMAND_BIT | TSL2561_WORD_BIT | TSL2561_REGISTER_CHAN0_LOW);
+
+  /* Reads a two byte value from channel 1 (infrared) */
+  *ir = read16(TSL2561_COMMAND_BIT | TSL2561_WORD_BIT | TSL2561_REGISTER_CHAN1_LOW);
+
+  /* Turn the device off to save power */
   disable();
 }
 
-uint32_t TSL2561::calculateLux(uint16_t ch0, uint16_t ch1)
+/**************************************************************************/
+/*!
+    @brief  Enables or disables the auto-gain settings when reading
+            data from the sensor
+*/
+/**************************************************************************/
+void TSL2561::enableAutoRange(bool enable)
+{
+   _tsl2561AutoGain = enable ? true : false;
+}
+
+/**************************************************************************/
+/*!
+    Adjusts the gain on the TSL2561 (adjusts the sensitivity to light)
+*/
+/**************************************************************************/
+
+void TSL2561::setGain(tsl2561Gain_t gain)
+{
+  if (!_tsl2561Initialised) begin();
+
+  /* Enable the device by setting the control bit to 0x03 */
+  enable();
+
+  /* Update the timing register */
+  write8(TSL2561_COMMAND_BIT | TSL2561_REGISTER_TIMING, _tsl2561IntegrationTime | gain);
+
+  /* Update value placeholders */
+  _tsl2561Gain = gain;
+
+  /* Turn the device off to save power */
+  disable();
+}
+
+/**************************************************************************/
+/*!
+    Sets the integration time for the TSL2561
+*/
+/**************************************************************************/
+
+void TSL2561::setIntegrationTime(tsl2561IntegrationTime_t time)
+{
+  if (!_tsl2561Initialised) begin();
+
+  /* Enable the device by setting the control bit to 0x03 */
+  enable();
+
+  /* Update the timing register */
+  write8(TSL2561_COMMAND_BIT | TSL2561_REGISTER_TIMING, time | _tsl2561Gain);
+
+  /* Update value placeholders */
+  _tsl2561IntegrationTime = time;
+
+  /* Turn the device off to save power */
+  disable();
+}
+
+/**************************************************************************/
+/*!
+    @brief  Gets the broadband (mixed lighting) and IR only values from
+            the TSL2561, adjusting gain if auto-gain is enabled
+*/
+/**************************************************************************/
+void TSL2561::getLuminosity (uint16_t *broadband, uint16_t *ir)
+{
+  bool valid = false;
+
+  if (!_tsl2561Initialised) begin();
+
+  /* If Auto gain disabled get a single reading and continue */
+  if(!_tsl2561AutoGain)
+  {
+    getData (broadband, ir);
+    return;
+  }
+
+  /* Read data until we find a valid range */
+  bool _agcCheck = false;
+  do
+  {
+    uint16_t _b, _ir;
+    uint16_t _hi, _lo;
+    tsl2561IntegrationTime_t _it = _tsl2561IntegrationTime;
+
+    /* Get the hi/low threshold for the current integration time */
+    switch(_it)
+    {
+      case TSL2561_INTEGRATIONTIME_13MS:
+        _hi = TSL2561_AGC_THI_13MS;
+        _lo = TSL2561_AGC_TLO_13MS;
+        break;
+      case TSL2561_INTEGRATIONTIME_101MS:
+        _hi = TSL2561_AGC_THI_101MS;
+        _lo = TSL2561_AGC_TLO_101MS;
+        break;
+      default:
+        _hi = TSL2561_AGC_THI_402MS;
+        _lo = TSL2561_AGC_TLO_402MS;
+        break;
+    }
+
+    getData(&_b, &_ir);
+
+    /* Run an auto-gain check if we haven't already done so ... */
+    if (!_agcCheck)
+    {
+      if ((_b < _lo) && (_tsl2561Gain == TSL2561_GAIN_1X))
+      {
+        /* Increase the gain and try again */
+        setGain(TSL2561_GAIN_16X);
+        /* Drop the previous conversion results */
+        getData(&_b, &_ir);
+        /* Set a flag to indicate we've adjusted the gain */
+        _agcCheck = true;
+      }
+      else if ((_b > _hi) && (_tsl2561Gain == TSL2561_GAIN_16X))
+      {
+        /* Drop gain to 1x and try again */
+        setGain(TSL2561_GAIN_1X);
+        /* Drop the previous conversion results */
+        getData(&_b, &_ir);
+        /* Set a flag to indicate we've adjusted the gain */
+        _agcCheck = true;
+      }
+      else
+      {
+        /* Nothing to look at here, keep moving ....
+           Reading is either valid, or we're already at the chips limits */
+        *broadband = _b;
+        *ir = _ir;
+        valid = true;
+      }
+    }
+    else
+    {
+      /* If we've already adjusted the gain once, just return the new results.
+         This avoids endless loops where a value is at one extreme pre-gain,
+         and the the other extreme post-gain */
+      *broadband = _b;
+      *ir = _ir;
+      valid = true;
+    }
+  } while (!valid);
+}
+
+/**************************************************************************/
+/*!
+    Converts the raw sensor values to the standard SI lux equivalent.
+    Returns 0 if the sensor is saturated and the values are unreliable.
+*/
+/**************************************************************************/
+uint32_t TSL2561::calculateLux(uint16_t broadband, uint16_t ir)
 {
   unsigned long chScale;
   unsigned long channel1;
   unsigned long channel0;
 
-  switch (_integration)
+  /* Make sure the sensor isn't saturated! */
+  if(IsSensorSaturated(broadband, ir))
+  {
+    /* Return precanned "high lux" value if the sensor is saturated */
+    return TSL2561_SATURATED_LUX;
+  }
+
+  /* Get the correct scale depending on the intergration time */
+  switch (_tsl2561IntegrationTime)
   {
     case TSL2561_INTEGRATIONTIME_13MS:
       chScale = TSL2561_LUX_CHSCALE_TINT0;
@@ -133,23 +317,23 @@ uint32_t TSL2561::calculateLux(uint16_t ch0, uint16_t ch1)
     case TSL2561_INTEGRATIONTIME_101MS:
       chScale = TSL2561_LUX_CHSCALE_TINT1;
       break;
-    default: // No scaling ... integration time = 402ms
+    default: /* No scaling ... integration time = 402ms */
       chScale = (1 << TSL2561_LUX_CHSCALE);
       break;
   }
 
-  // Scale for gain (1x or 16x)
-  if (!_gain) chScale = chScale << 4;
+  /* Scale for gain (1x or 16x) */
+  if (!_tsl2561Gain) chScale = chScale << 4;
 
-  // scale the channel values
-  channel0 = (ch0 * chScale) >> TSL2561_LUX_CHSCALE;
-  channel1 = (ch1 * chScale) >> TSL2561_LUX_CHSCALE;
+  /* Scale the channel values */
+  channel0 = (broadband * chScale) >> TSL2561_LUX_CHSCALE;
+  channel1 = (ir * chScale) >> TSL2561_LUX_CHSCALE;
 
-  // find the ratio of the channel values (Channel1/Channel0)
+  /* Find the ratio of the channel values (Channel1/Channel0) */
   unsigned long ratio1 = 0;
   if (channel0 != 0) ratio1 = (channel1 << (TSL2561_LUX_RATIOSCALE+1)) / channel0;
 
-  // round the ratio value
+  /* round the ratio value */
   unsigned long ratio = (ratio1 + 1) >> 1;
 
   unsigned int b, m;
@@ -193,105 +377,122 @@ uint32_t TSL2561::calculateLux(uint16_t ch0, uint16_t ch1)
   unsigned long temp;
   temp = ((channel0 * b) - (channel1 * m));
 
-  // do not allow negative lux value
+  /* Do not allow negative lux value */
   if (temp < 0) temp = 0;
 
-  // round lsb (2^(LUX_SCALE-1))
+  /* Round lsb (2^(LUX_SCALE-1)) */
   temp += (1 << (TSL2561_LUX_LUXSCALE-1));
 
-  // strip off fractional portion
+  /* Strip off fractional portion */
   uint32_t lux = temp >> TSL2561_LUX_LUXSCALE;
 
-  // Signal I2C had no errors
+  /* Signal I2C had no errors */
   return lux;
 }
 
-uint32_t TSL2561::getFullLuminosity (void)
+/**************************************************************************/
+/*!
+    @brief  Writes a register and an 8 bit value over I2C
+*/
+/**************************************************************************/
+void TSL2561::write8 (uint8_t reg, uint32_t value)
 {
-  if (!_initialized) begin();
-
-  // Enable the device by setting the control bit to 0x03
-  enable();
-
-  // Wait x ms for ADC to complete
-  switch (_integration)
-  {
-    case TSL2561_INTEGRATIONTIME_13MS:
-      delay(14);
-      break;
-    case TSL2561_INTEGRATIONTIME_101MS:
-      delay(102);
-      break;
-    default:
-      delay(403);
-      break;
-  }
-
-  uint32_t x;
-  x = read16(TSL2561_COMMAND_BIT | TSL2561_WORD_BIT | TSL2561_REGISTER_CHAN1_LOW);
-  x <<= 16;
-  x |= read16(TSL2561_COMMAND_BIT | TSL2561_WORD_BIT | TSL2561_REGISTER_CHAN0_LOW);
-
-  disable();
-
-  return x;
-}
-uint16_t TSL2561::getLuminosity (uint8_t channel) {
-
-  uint32_t x = getFullLuminosity();
-
-  if (channel == 0) {
-    // Reads two byte value from channel 0 (visible + infrared)
-    return (x & 0xFFFF);
-  } else if (channel == 1) {
-    // Reads two byte value from channel 1 (infrared)
-    return (x >> 16);
-  } else if (channel == 2) {
-    // Reads all and subtracts out just the visible!
-    return ( (x & 0xFFFF) - (x >> 16));
-  }
-  
-  // unknown channel!
-  return 0;
+  Wire.beginTransmission(_addr);
+  #if ARDUINO >= 100
+  Wire.write(reg);
+  Wire.write(value & 0xFF);
+  #else
+  Wire.send(reg);
+  Wire.send(value & 0xFF);
+  #endif
+  Wire.endTransmission();
 }
 
+/**************************************************************************/
+/*!
+    @brief  Reads an 8 bit value over I2C
+*/
+/**************************************************************************/
+uint8_t TSL2561::read8(uint8_t reg)
+{
+  Wire.beginTransmission(_addr);
+  #if ARDUINO >= 100
+  Wire.write(reg);
+  #else
+  Wire.send(reg);
+  #endif
+  Wire.endTransmission();
 
+  Wire.requestFrom(_addr, 1);
+  #if ARDUINO >= 100
+  return Wire.read();
+  #else
+  return Wire.receive();
+  #endif
+}
+
+/**************************************************************************/
+/*!
+    @brief  Reads a 16 bit values over I2C
+*/
+/**************************************************************************/
 uint16_t TSL2561::read16(uint8_t reg)
 {
   uint16_t x; uint16_t t;
 
   Wire.beginTransmission(_addr);
-#if ARDUINO >= 100
+  #if ARDUINO >= 100
   Wire.write(reg);
-#else
+  #else
   Wire.send(reg);
-#endif
+  #endif
   Wire.endTransmission();
 
   Wire.requestFrom(_addr, 2);
-#if ARDUINO >= 100
+  #if ARDUINO >= 100
   t = Wire.read();
   x = Wire.read();
-#else
+  #else
   t = Wire.receive();
   x = Wire.receive();
-#endif
+  #endif
   x <<= 8;
   x |= t;
   return x;
 }
 
+/**************************************************************************/
+/*!
+    @brief  Given a set TSL2561 readings, checks to see if either of them
+            are saturated, and if so, returns true
+*/
+/**************************************************************************/
 
-
-void TSL2561::write8 (uint8_t reg, uint8_t value)
+boolean TSL2561::IsSensorSaturated(const uint16_t &broadband, const uint16_t &ir)
 {
-  Wire.beginTransmission(_addr);
-#if ARDUINO >= 100
-  Wire.write(reg);
-  Wire.write(value);
-#else
-  Wire.send(reg);
-  Wire.send(value);
-#endif
-  Wire.endTransmission();
+	boolean ReturnValue = false;
+
+  /* Make sure the sensor isn't saturated! */
+  uint16_t clipThreshold;
+  switch (_tsl2561IntegrationTime)
+  {
+    case TSL2561_INTEGRATIONTIME_13MS:
+      clipThreshold = TSL2561_CLIPPING_13MS;
+      break;
+    case TSL2561_INTEGRATIONTIME_101MS:
+      clipThreshold = TSL2561_CLIPPING_101MS;
+      break;
+    default:
+      clipThreshold = TSL2561_CLIPPING_402MS;
+      break;
+  }
+
+  /* Return 0 true if the sensor is saturated */
+  if((broadband > clipThreshold) || (ir > clipThreshold))
+  {
+    ReturnValue = true;
+  }
+
+  return ReturnValue;
 }
+
