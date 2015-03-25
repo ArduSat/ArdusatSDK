@@ -32,7 +32,7 @@
 #include <Wire.h>
 #include <ArdusatSDK.h>
 
-ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 10, 11);
+ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8,9);
 
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
