@@ -16,6 +16,8 @@ SdVolume vol;
 #define _output_buffer vol.cacheAddress()->output_buf
 int _output_buf_len = 0;
 
+bool ARDUSAT_SHIELD = false;
+
 prog_char begin_error_msg[] = "Uh oh, begin%s failed. Check your wiring!";
 prog_char orientation_sensor_name[] = "Orientation";
 prog_char accel_sensor_name[] = "Acceleration";

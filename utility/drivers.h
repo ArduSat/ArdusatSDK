@@ -26,13 +26,16 @@
 #include <utility/BMP180.h>
 #include <utility/TSL2561.h>
 
-#define DRIVER_TSL2561_ADDR		0x39
-#define DRIVER_TMP102_ADDR		0x48
-#define DRIVER_MLX90614_ADDR	0x5A
-#define DRIVER_SI1145_ADDR		0x60
-#define DRIVER_BMP180_ADDR    0x77
-#define DRIVER_ML8511_UV_PIN A0
-#define DRIVER_ML8511_REF_PIN A1
+#define DRIVER_TSL2561_ADDR		          0x39 // 0x49 for lemsens
+#define DRIVER_LEMSENS_TSL2561_ADDR		  0x49 // (lemsens)
+#define DRIVER_TMP102_ADDR		          0x48 // 0x4B for lemsens
+#define DRIVER_LEMSENS_TMP102_1_ADDR		0x4B // (lemsens)
+#define DRIVER_MLX90614_ADDR	          0x5A
+#define DRIVER_SI1145_ADDR		          0x60
+#define DRIVER_BMP180_ADDR              0x77
+#define DRIVER_LSM303_DTR_ADDR          0x1E
+#define DRIVER_ML8511_UV_PIN            A0
+#define DRIVER_ML8511_REF_PIN           A1
 
 #ifdef __cplusplus
 extern "C" {

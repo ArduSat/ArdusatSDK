@@ -11,6 +11,8 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "drivers.h"
+#include "ArdusatSDK.h"
+
 
 /**
  * Generic I2C Read function
@@ -772,8 +774,13 @@ float tmp102_getTempCelsius() {
   uint8_t temp_byte;
   float tmp;
 
-  _readFromRegAddr(DRIVER_TMP102_ADDR, 0x00, bytes, 2);
+  if (ARDUSAT_SHIELD) {
+    temp_byte = DRIVER_LEMSENS_TMP102_1_ADDR;
+  } else {
+    temp_byte = DRIVER_TMP102_ADDR;
+  }
 
+  _readFromRegAddr(temp_byte, 0x00, bytes, 2);
   temp_byte = bytes[0];
   bytes[0] = bytes[1];
   bytes[1] = temp_byte;
@@ -785,16 +792,26 @@ float tmp102_getTempCelsius() {
 /*
  * TSL2561 Luminosity
  */
-TSL2561 tsl2561 = TSL2561(DRIVER_TSL2561_ADDR);
+//TSL2561 tsl2561 = TSL2561(DRIVER_TSL2561_ADDR);
+TSL2561 *tsl2561;
 
 boolean tsl2561_init() {
-  boolean result = tsl2561.begin();
+  uint8_t addr;
+  if (!tsl2561) {
+    if (ARDUSAT_SHIELD) {
+      addr = DRIVER_LEMSENS_TSL2561_ADDR;
+    } else {
+      addr = DRIVER_TSL2561_ADDR;
+    }
+    tsl2561 = new TSL2561(addr);
+  }
+  boolean result = tsl2561->begin();
 
   if(result)
   {
-    tsl2561.setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);
-    tsl2561.setGain(TSL2561_GAIN_1X);
-    tsl2561.enableAutoRange(false);
+    tsl2561->setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);
+    tsl2561->setGain(TSL2561_GAIN_16X);
+    tsl2561->enableAutoRange(true);
   }
 
   return result;
@@ -804,6 +821,6 @@ boolean tsl2561_init() {
 float tsl2561_getLux() {
   uint16_t broadband, ir;
 
-  tsl2561.getLuminosity(&broadband, &ir);
-  return tsl2561.calculateLux(broadband, ir);
+  tsl2561->getLuminosity(&broadband, &ir);
+  return tsl2561->calculateLux(broadband, ir);
 }

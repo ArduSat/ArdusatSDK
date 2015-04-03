@@ -19,6 +19,7 @@
 
 #define prog_char const char PROGMEM
 
+extern bool ARDUSAT_SHIELD;
 /**
  * Unique numeric id for each physical sensor
  */
