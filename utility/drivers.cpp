@@ -675,12 +675,14 @@ boolean ml8511_init()
  * read on the UV sensor pin and the 3.3 V power pin, then use that actual 
  * voltage to get a ratio of the read voltage compared to exactly 3.3V. We 
  * then map this value into a properly scaled value.
+ * 
+ * @param pin to read
  *
  * @return calculated UV value in mW / cm^2
  */
-float ml8511_getUV()
+float ml8511_getUV(int pin)
 {
-  int uv_v = average_analog_read(DRIVER_ML8511_UV_PIN);
+  int uv_v = average_analog_read(pin);
   int ref_v = average_analog_read(DRIVER_ML8511_REF_PIN);
   float scaled_uv_v = 3.3 / ref_v * uv_v;
   return map_float(scaled_uv_v, 0.99, 2.9, 0.0, 15.0);

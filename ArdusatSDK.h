@@ -170,7 +170,7 @@ boolean beginLuminositySensor();
 void readLuminosity(luminosity_t * lum);
 
 boolean beginUVLightSensor();
-void readUVLight(uvlight_t * uv);
+void readUVLight(uvlight_t * uv, int pin=DRIVER_ML8511_UV_PIN);
 
 boolean beginAccelerationSensor();
 void readAcceleration(acceleration_t * accel);

@@ -81,7 +81,7 @@ float seaLevelPressureForAltitude(float altitude, float atmosphericPressure);
  * https://www.sparkfun.com/products/12705
  */
 boolean ml8511_init();
-float ml8511_getUV();
+float ml8511_getUV(int pin);
 
 /**
  * SI1145 breakout board is a UV/Light sensor from Adafruit. It was included in earlier

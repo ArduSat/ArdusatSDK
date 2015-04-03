@@ -186,7 +186,7 @@ boolean beginUVLightSensor() {
 #endif
 }
 
-void readUVLight(uvlight_t * output) {
+void readUVLight(uvlight_t * output, int pin) {
   if (output == NULL)
     return;
 
@@ -202,7 +202,7 @@ void readUVLight(uvlight_t * output) {
   output->uvindex = si1145_getUVIndex();
 #else
   output->header.sensor_id = SENSORID_ML8511;
-  output->uvindex = ml8511_getUV();
+  output->uvindex = ml8511_getUV(pin);
 #endif
 }
 
