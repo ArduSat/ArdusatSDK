@@ -4,7 +4,9 @@
 
 void setup(void)
 {
+  ARDUSAT_SHIELD = true;
   Serial.begin(9600);
+  while (!Serial);
 
   if (!beginLuminositySensor()) {
     Serial.println("can't init luminosity sensor");

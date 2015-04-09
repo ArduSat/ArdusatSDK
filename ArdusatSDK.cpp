@@ -48,6 +48,7 @@ prog_char csv_header_fmt[] = "timestamp: %lu at millis %lu\n";
  */
 const char * unit_to_str(uint8_t unit)
 {
+#if 0
   switch (unit) {
     case (DATA_UNIT_NONE):
       return "";
@@ -74,6 +75,7 @@ const char * unit_to_str(uint8_t unit)
     default:
       return "";
   };
+#endif
 }
 
 #define start_sensor_or_err(sensor_name, function) if (!function) { _beginError(sensor_name); return false;} \
@@ -88,6 +90,7 @@ const char * unit_to_str(uint8_t unit)
  */
 void _beginError(prog_char *sensorName)
 {
+#if 0
   char err_msg[50];
   char sensor[50];
   char output_buffer[100];
@@ -98,6 +101,7 @@ void _beginError(prog_char *sensorName)
   //Make SURE sensorName isn't too long for the output buffer!!!
   sprintf(output_buffer, err_msg, sensor);
   Serial.println(output_buffer);
+#endif
 }
 
 /*
@@ -342,6 +346,7 @@ void _output_buffer_reset() {
   _output_buf_len = 0;
 }
 
+#if 0
 const char * _headerToCSV(_data_header_t * header, const char *sensorName) {
   int name_len;
 
@@ -701,6 +706,7 @@ const char *pressureToJSON(const char *sensorName, pressure_t *pressure)
   _writeJSONValue(_output_buffer, sensorName, unit_to_str(pressure->header.unit), pressure->pressure);
   return _output_buffer;
 }
+#endif
 
 #define write_if_init(gen_fn) return writeString(gen_fn);
 
@@ -791,6 +797,7 @@ int _write_binary_time_header(DateTime *now, unsigned long curr_millis)
  *
  * @return number of bytes written
  */
+#if 0
 int writeAcceleration(const char *sensorName, acceleration_t *data)
 {
   write_if_init(accelerationToCSV(sensorName, data))
@@ -886,6 +893,7 @@ int writePressure(const char *sensorName, pressure_t *data)
 {
   write_if_init(pressureToCSV(sensorName, data))
 }
+#endif
 
 #define init_data_struct(type_def, type_enum) \
   type_def bin_data; \
@@ -1030,7 +1038,7 @@ bool beginDataLog(int chipSelectPin, const char *fileNamePrefix, bool csvData)
 	}
 
 	prefix[max_len - 1] = '\0';
-	sprintf(fileName, "%s/%s%d.%s", rootPath, prefix, i, 
+	sprintf(fileName, "%s/%s%d.%s", rootPath, prefix, i,
 		csvData ? "csv" : "bin");
 	if (!sd.exists(fileName)) {
 	  file = sd.open(fileName, FILE_WRITE);

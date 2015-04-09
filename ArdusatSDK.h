@@ -14,7 +14,7 @@
 #include <utility/SdVolume.h>
 #include <utility/MemoryFree.h>
 #include <utility/BinaryDataFmt.h>
-#include <utility/serial.h>
+//#include <utility/serial.h>
 #include <utility/RTClib.h>
 
 #define prog_char const char PROGMEM

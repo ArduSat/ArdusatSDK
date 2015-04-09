@@ -32,12 +32,10 @@
 #include <Wire.h>
 #include <ArdusatSDK.h>
 
-ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8,9);
-
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
-#define READ_INTERVAL 250 // interval, in ms, to wait between readings
+#define READ_INTERVAL 5000 // interval, in ms, to wait between readings
 
 // Pin Definitions
 // 3 LEDs can be turned on/off based on sensor values. These constants define the pins
@@ -49,7 +47,9 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8,9);
 
 // These pins are used for measurements
 #define LDR_Pin A2 // analog pin 2 for LDR photo sensor
-#define UVOUT A0 //Output from the UV sensor
+#define UVOUT0 A0 //Output from the UV sensor
+#define UVOUT1 A2 //Output from the UV sensor
+#define UVOUT2 A3 //Output from the UV sensor
 #define REF_3V3 A1 // 3.3V power on the Arduino board
 
 /* 
@@ -61,8 +61,10 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8,9);
  * =====================================================================================
  */
 void setup() {
-  serialConnection.begin(9600);
-  serialConnection.println("Ardusat Space Kit tester");
+  ARDUSAT_SHIELD = true;
+  Serial.begin(9600);
+  while(!Serial);
+  Serial.println("Ardusat Space Kit tester");
 
   beginAccelerationSensor();
   beginTemperatureSensor();
@@ -79,11 +81,14 @@ void setup() {
   pinMode(LED_SERIAL, OUTPUT);
 
   // More pin initializations
-  pinMode(UVOUT, INPUT);
   pinMode(REF_3V3, INPUT);
+  // More pin initializations
+  pinMode(UVOUT0, INPUT);
+  pinMode(UVOUT1, INPUT);
+  pinMode(UVOUT2, INPUT);
 
   /* We're ready to go! */
-  serialConnection.println("");
+  Serial.println("");
 }
 
 /* 
@@ -110,8 +115,8 @@ void loop() {
   // To test sending serial data from the computer, we can turn the serialConnection Read
   // LED on or off
   // Entering 1 will turn ON, 0 or any other number turns OFF
-  if (serialConnection.available()) {
-    byteRead = serialConnection.read();
+  if (Serial.available()) {
+    byteRead = Serial.read();
 
     if (byteRead == 49) // Equals 1 / ON
     {
@@ -125,23 +130,19 @@ void loop() {
 
   // Read Accelerometer
   readAcceleration(&accel);
-  serialConnection.println(accelerationToJSON("accelerometer", &accel));
+  Serial.println(accelerationToJSON("accelerometer", &accel));
 
   // Read Magnetometer
   readMagnetic(&mag);
-  serialConnection.println(magneticToJSON("magnetic", &mag));
+  Serial.println(magneticToJSON("magnetic", &mag));
 
   // Read Gyro
   readGyro(&gyro);
-  serialConnection.println(gyroToJSON("gyro", &gyro));
-
-  // Calculate Orientation from Accel + Magnet data
-  calculateOrientation(&accel, &mag, &orientation);
-  serialConnection.println(orientationToJSON("orientation", &orientation));
+  Serial.println(gyroToJSON("gyro", &gyro));
 
   // Read Temp from TMP102 (default in celcius)
   readTemperature(&temp);
-  serialConnection.println(temperatureToJSON("temp", &temp));
+  Serial.println(temperatureToJSON("temp", &temp));
   temp_val = temp.t;
 
   // Logic to turn on the temperature LED based on detected temp above ~29.5 C / 85 F
@@ -153,7 +154,7 @@ void loop() {
 
   // Read MLX Infrared temp sensor
   readInfraredTemperature(&temp);
-  serialConnection.println(temperatureToJSON("infraredTemp", &temp));
+  Serial.println(temperatureToJSON("infraredTemp", &temp));
   infrared_temp = temp.t;
 
   if (infrared_temp > 29.5) {
@@ -164,7 +165,7 @@ void loop() {
 
   // Read TSL2561 Luminosity
   readLuminosity(&luminosity);
-  serialConnection.println(luminosityToJSON("luminosity", &luminosity));
+  Serial.println(luminosityToJSON("luminosity", &luminosity));
 
   if (luminosity.lux) {
     if (luminosity.lux < 100) {
@@ -175,8 +176,12 @@ void loop() {
   }
 
   // Read MP8511 UV 
-  readUVLight(&uv_light);
-  serialConnection.println(uvlightToJSON("uv", &uv_light));
+  readUVLight(&uv_light, UVOUT0);
+  Serial.println(uvlightToJSON("uv0", &uv_light));
+  readUVLight(&uv_light, UVOUT1);
+  Serial.println(uvlightToJSON("uv1", &uv_light));
+  readUVLight(&uv_light, UVOUT2);
+  Serial.println(uvlightToJSON("uv2", &uv_light));
 
   delay(READ_INTERVAL);
 }

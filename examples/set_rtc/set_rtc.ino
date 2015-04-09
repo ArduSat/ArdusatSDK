@@ -12,6 +12,7 @@
 void setup()
 {
   Serial.begin(9600);
+  while (!Serial);
   setRTC();
 
   Serial.println("\nRTC set!");

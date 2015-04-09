@@ -11,8 +11,11 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "drivers.h"
+#include "pololu-LSM303.h"
 #include "ArdusatSDK.h"
 
+static config_lsm303_accel_t _lsm303_d_accel_config;
+static config_lsm303_mag_t _lsm303_d_mag_config;
 
 /**
  * Generic I2C Read function
@@ -35,7 +38,7 @@ int _readFromRegAddr(uint8_t devAddr, uint8_t reg, void *val, int length)
   if (Wire.write(reg) < 1)
     return -1;
 
-  if ((ret = Wire.endTransmission(false)) != 0) {
+  if ((ret = Wire.endTransmission()) != 0) {
     return ret;
   }
 
@@ -142,7 +145,6 @@ int _2bit_xyz_read(uint8_t addr, uint8_t reg, int16_t *x, int16_t *y, int16_t *z
     *z = (int16_t)((*low) | (((int16_t) *hi) << 8));
     return 0;
   }
-
   return ret;
 }
 
@@ -192,6 +194,8 @@ void l3gd20h_getRawTemperature(int8_t *pRawTemperature)
 /*
  * LSM303 Accel + Mag Sensor
  */
+LSM303 lsm;
+#if 0
 int _lsm303_set_mag_gain(lsm303MagGain gain)
 {
   int new_xy;
@@ -241,60 +245,94 @@ int _lsm303_set_mag_gain(lsm303MagGain gain)
   }
 }
 
-boolean lsm303_accel_init() {
-  uint8_t res = 0x57;
+bool lsm303_chip = device_DLHC;
+#endif
 
-  Wire.begin();
-  if (_writeToRegAddr(LSM303_ADDRESS_ACCEL, LSM303_REGISTER_ACCEL_CTRL_REG1_A, &res, 1)) {
-    return false; }
-
-  //verify connected to sensor
-  if (_readFromRegAddr(LSM303_ADDRESS_ACCEL, LSM303_REGISTER_ACCEL_CTRL_REG1_A, &res, 1) ||
-      res != 0x57) {
-    return false;
+void _lsm303_set_sdk_options() {
+  // update accelerometer gain
+  if (lsm.getDeviceType() == LSM303::device_D) {
+    lsm.writeReg(LSM303::CTRL2, LSM303_ACCEL_GAIN8G);
+    _lsm303_d_accel_config.gain = LSM303_ACCEL_GAIN8G;
+  } else {
+    // Ctrl register FS1/FS0 for gain
+    // 00 +/- 2
+    // 01 +/- 4
+    // 10 +/- 8
+    // 11 +/- 16
+    // BDU BLE FS1 FS0 HR 0 0 SIM
+    // 0    0   0   0   1 0 0  0
+    // 0b00011000 = 0x18 (High res, +/- 4g)
+    lsm.writeAccReg(LSM303::CTRL_REG4_A, 0x18);
   }
 
-  // set full scale range to +/- 2g, enable high resolution mode
-  res = 8;
-  if (_writeToRegAddr(LSM303_ADDRESS_ACCEL, LSM303_REGISTER_ACCEL_CTRL_REG4_A, &res, 1)) {
-    return false; }
+  // update mag scaling
+  if (lsm.getDeviceType() == LSM303::device_D) {
+    lsm.writeReg(LSM303::CTRL6, LSM303_MAG_SCALE4GAUSS);
+    _lsm303_d_mag_config.scale = LSM303_MAG_SCALE4GAUSS;
+  } else {
+    // Ctrl register for mag scaling
+    // 0b001 +-1.3
+    // 0b010 +-1.9
+    // 0b011 +-2.5
+    // 0b100 +-4.0
+    // 0b101 +-4.7
+    // 0b110 +-5.6
+    // ob111 +-8.1
+    // GN2 GN1 GN0  0 -->
+    // 0b10000000 = 0x80 (+/- 4 gauss)
+    lsm.writeMagReg(LSM303::CRB_REG_M, 0x80);
+  }
+}
 
+boolean lsm303_accel_init() {
+  Wire.begin();
+  lsm.init();
+  lsm.enableDefault();
+  _lsm303_set_sdk_options();
   return true;
 }
 
 boolean lsm303_mag_init() {
-  uint8_t res;
-
   Wire.begin();
-  // configure mode select for continuous conversion
-  res = 0x00;
-  if (_writeToRegAddr(LSM303_ADDRESS_MAG, LSM303_REGISTER_MAG_MR_REG_M, &res, 1)) {
-    return false;
-  }
-
-  // configure for 15 Hz ODR, enable temperature sensor
-  res = 0x90;
-  if (_writeToRegAddr(LSM303_ADDRESS_MAG, LSM303_REGISTER_MAG_CRA_REG_M, &res, 1)) {
-    return false;
-  }
-
-  //verify connected to sensor
-  if (_readFromRegAddr(LSM303_ADDRESS_MAG, LSM303_REGISTER_MAG_CRA_REG_M, &res, 1) ||
-      res != 0x90) {
-    return false;
-  }
-
-  return _lsm303_set_mag_gain(LSM303_MAGGAIN_1_3) == 0;
+  lsm.init();
+  lsm.enableDefault();
+  _lsm303_set_sdk_options();
+  return true;
 }
 
 void lsm303_getAccel(float *x, float *y, float *z)
 {
-  int16_t vals[3];
-  if (_2bit_xyz_read(LSM303_ADDRESS_ACCEL, LSM303_REGISTER_ACCEL_OUT_X_L_A | 0x80,
-                     &vals[0], &vals[1], &vals[2], false) == 0) {
+  float sensitivity;
+
+  lsm.read();
+
+  if (lsm.getDeviceType() == LSM303::device_D) {
+    switch(_lsm303_d_accel_config.gain) {
+        case LSM303_ACCEL_GAIN2G:
+            sensitivity = 0.061;
+            break;
+        case LSM303_ACCEL_GAIN4G:
+            sensitivity = 0.122;
+            break;
+        case LSM303_ACCEL_GAIN6G:
+            sensitivity = 0.183;
+            break;
+        case LSM303_ACCEL_GAIN8G:
+            sensitivity = 0.244;
+            break;
+        case LSM303_ACCEL_GAIN16G:
+            sensitivity = 0.732;
+            break;
+    }
+    *x = lsm.a.x * sensitivity / 1000 * SENSORS_GRAVITY_STANDARD;
+    *y = lsm.a.y * sensitivity / 1000 * SENSORS_GRAVITY_STANDARD;
+    *z = lsm.a.z * sensitivity / 1000 * SENSORS_GRAVITY_STANDARD;
+  } else {
+#if 0
     *x = (vals[0] >> 4) * _lsm303Accel_MG_LSB * SENSORS_GRAVITY_STANDARD;
     *y = (vals[1] >> 4) * _lsm303Accel_MG_LSB * SENSORS_GRAVITY_STANDARD;
     *z = (vals[2] >> 4) * _lsm303Accel_MG_LSB * SENSORS_GRAVITY_STANDARD;
+#endif
   }
 }
 
@@ -305,6 +343,7 @@ void lsm303_getAccel(float *x, float *y, float *z)
  * @param pY value to store y-axis data in
  * @param pZ value to store z-axis data in
  */
+#if 0
 void lsm303_getRawAcceleration(int16_t *pX, int16_t *pY, int16_t *pZ)
 {
   if((NULL != pX) && (NULL != pY) && (NULL != pZ))
@@ -341,21 +380,40 @@ void lsm303_getRawTemperature(int16_t *pRawTemperature)
     *pRawTemperature >>= 6;
   }
 }
+#endif
 
 void lsm303_getMag(float *x, float *y, float *z)
 {
-  int16_t vals[3];
+  float sensitivity;
 
-  //For some reason, y & z are "flipped" in the raw data coming out of the mag.
-  //(z values are read before y values)
-  //use indexes to flip them back
-  if (_2bit_xyz_read(LSM303_ADDRESS_MAG, LSM303_REGISTER_MAG_OUT_X_H_M,
-                     &vals[0], &vals[2], &vals[1], true) == 0) {
-    *x = vals[0] / _lsm303Mag_Gauss_LSB_XY * SENSORS_GAUSS_TO_MICROTESLA;
-    *y = vals[1] / _lsm303Mag_Gauss_LSB_XY * SENSORS_GAUSS_TO_MICROTESLA;
-    *z = vals[2] / _lsm303Mag_Gauss_LSB_Z * SENSORS_GAUSS_TO_MICROTESLA;
+  lsm.read();
+
+  if (lsm.getDeviceType() == LSM303::device_D) {
+    switch(_lsm303_d_mag_config.scale) {
+        case LSM303_MAG_SCALE2GAUSS:
+            sensitivity = 0.080;
+            break;
+        case LSM303_MAG_SCALE4GAUSS:
+            sensitivity = 0.160;
+            break;
+        case LSM303_MAG_SCALE8GAUSS:
+            sensitivity = 0.320;
+            break;
+        case LSM303_MAG_SCALE12GAUSS:
+            sensitivity = 0.479;
+            break;
+    }
+
+    *x = lsm.m.x * sensitivity * SENSORS_MGAUSS_TO_UTESLA;
+    *y = lsm.m.y * sensitivity * SENSORS_MGAUSS_TO_UTESLA;
+    *z = lsm.m.z * sensitivity * SENSORS_MGAUSS_TO_UTESLA;
   }
 }
+
+#if 0
+      *x = vals[0] / _lsm303Mag_Gauss_LSB_XY * SENSORS_GAUSS_TO_MICROTESLA;
+      *y = vals[1] / _lsm303Mag_Gauss_LSB_XY * SENSORS_GAUSS_TO_MICROTESLA;
+      *z = vals[2] / _lsm303Mag_Gauss_LSB_Z * SENSORS_GAUSS_TO_MICROTESLA;
 
 /**
  * Get raw 16 bit readings from LSM303 magnetometer.
@@ -374,8 +432,9 @@ void lsm303_getRawMag(int16_t *pX, int16_t *pY, int16_t *pZ)
                      pX, pZ, pY, true);
   }
 }
+#endif
 
-
+#if 0
 /*
  * BMP180 Barometeric Altimeter
  */
@@ -624,7 +683,7 @@ float seaLevelPressureForAltitude(float altitude, float atmosphericPressure)
 {
   return atmosphericPressure / pow(1.0 - (altitude / 44330.0), 5.255);
 }
-
+#endif
 
 /*
  * ML8511 UV Light
@@ -689,6 +748,7 @@ float ml8511_getUV(int pin)
 }
 
 
+#if 0
 /*
  * SI1145 UV/Light
  */
@@ -705,6 +765,7 @@ float si1145_getUVIndex() {
   UVindex /= 100.0;
   return (UVindex);
 }
+#endif
 
 /*
  * MLX90614 IR Temperature

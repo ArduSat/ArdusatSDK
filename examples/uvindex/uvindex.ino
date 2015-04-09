@@ -7,7 +7,7 @@ void setup(void)
   Serial.begin(9600);
 
   if (!beginUVLightSensor()) {
-	  Serial.println("can't init UV sensor");
+    Serial.println("can't init UV sensor");
   }
 }
 
@@ -17,7 +17,8 @@ void loop(void)
 
 	readUVLight(&uv);
 
-	Serial.println(uvlightToJSON("uv", &uv));
+	Serial.print("UV: ");
+	Serial.println(uv.uvindex);
 
 	delay(1000);
 }
