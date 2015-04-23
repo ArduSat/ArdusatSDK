@@ -21,7 +21,7 @@ function deploy () {
     mkdir tmp_ArdusatSDK
     cp -r ./ArdusatSDK tmp_ArdusatSDK/ArdusatSDK
     cd tmp_ArdusatSDK
-    rm -rf ./ArdusatSDK/.git ./ArdusatSDK/decode_binary ./ArdusatSDK/.ycm* ./ArdusatSDK/*.pyc ./deploy_sdk.sh
+    rm -rf ./ArdusatSDK/.git ./ArdusatSDK/decode_binary ./ArdusatSDK/.ycm* ./ArdusatSDK/*.pyc ./ArdusatSDK/deploy_sdk.sh ./ArdusatSDK/.gitignore
     zip -r ArdusatSDK.zip ./ArdusatSDK
     aws s3 cp ./ArdusatSDK.zip s3://ardusatweb/ArdusatSDK.zip
     cp -f ArdusatSDK.zip ~/Downloads/ArdusatSDK.zip
