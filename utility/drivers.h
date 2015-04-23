@@ -24,7 +24,7 @@
 #include <utility/Adafruit_SI1145.h>
 #include <utility/BMP180.h>
 #include <utility/TSL2561.h>
-#include <utility/pololu-LSM303.h>
+#include <utility/pololu_LSM303.h>
 
 #define DRIVER_TSL2561_ADDR		          0x39 // 0x49 for lemsens
 #define DRIVER_LEMSENS_TSL2561_ADDR		  0x49 // (lemsens)
