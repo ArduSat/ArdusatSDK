@@ -1,4 +1,4 @@
-#include "pololu-LSM303.h"
+#include "pololu_LSM303.h"
 #include <Wire.h>
 #include <math.h>
 

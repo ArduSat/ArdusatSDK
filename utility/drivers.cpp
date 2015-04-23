@@ -11,7 +11,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "drivers.h"
-#include "pololu-LSM303.h"
+#include "pololu_LSM303.h"
 #include "ArdusatSDK.h"
 
 static config_lsm303_accel_t _lsm303_d_accel_config;
