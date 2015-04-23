@@ -7,12 +7,13 @@ export AWS_DEFAULT_PROFILE=ardusat
 # Print usage
 function usage() {
   echo -n "$(basename $0) [OPTIONS] [FILE]...
-  Deploys a new version of the SDK live to AWS. This makes updates to the 
+  Deploys a new version of the SDK live to AWS. This makes updates to the
   CHANGELOG and increments the version.
 
 Options:
   -v, --version-string   Specify a new version string for this version
-  -h, --help        Display this help and exit
+  -n, --no-version       Don't update the version string
+  -h, --help             Display this help and exit
 "
 }
 
@@ -29,7 +30,8 @@ function deploy () {
     rm -rf ./tmp_ArdusatSDK
 }
 
-while getopts "hv:" opt; do
+no_update=0
+while getopts "hnv:" opt; do
     case $opt in
 	h)
 	    usage
@@ -37,6 +39,9 @@ while getopts "hv:" opt; do
 	    ;;
 	v)
 	    version_string=$OPTARG
+	    ;;
+	n)
+	    no_update=1
 	    ;;
 	\?)
 	    echo "Invalid option -$OPTARG"
@@ -47,28 +52,30 @@ while getopts "hv:" opt; do
 done
 shift $((OPTIND-1))
 
-if [ -z $version_string ]; then
-    default_str=`awk '/##\ \[.*\] -/ { print substr($2, 2, length($2) - 2); exit; }' CHANGELOG.md`
-    new_minor_version=$(($(echo $default_str | sed 's/.*\.\([0-9][0-9]*\)$/\1/') + 1))
-    default_str=$(echo $default_str | sed 's/\(.*\)\.[0-9][0-9]*$/\1/').$new_minor_version
-    echo "Enter a version string ($default_str):"
-    read version_string
-    if [ -z $version_string ]; then
-	version_string=$default_str
-    fi
+if [[ $no_update -eq 0 ]]; then
+  if [ -z $version_string ]; then
+      default_str=`awk '/##\ \[.*\] -/ { print substr($2, 2, length($2) - 2); exit; }' CHANGELOG.md`
+      new_minor_version=$(($(echo $default_str | sed 's/.*\.\([0-9][0-9]*\)$/\1/') + 1))
+      default_str=$(echo $default_str | sed 's/\(.*\)\.[0-9][0-9]*$/\1/').$new_minor_version
+      echo "Enter a version string ($default_str):"
+      read version_string
+      if [ -z $version_string ]; then
+	  version_string=$default_str
+      fi
+  fi
+
+  echo "Enter a CHANGELOG description for SDK version $version_string"
+  FILE=$(mktemp -t $(basename $0));
+  vim "$FILE";
+  changelog=`cat $FILE`
+  rm "$FILE"
+
+  echo "CHANGELOG description:"
+  echo "$changelog"
+
+  awk -v v="## [$version_string] - $(date +%Y-%m-%d)" -v d="$changelog\n" 'NR == 4 { print v; print d; } { print }' CHANGELOG.md > CHANGELOG.md.new
+
+  mv CHANGELOG.md.new CHANGELOG.md
 fi
-
-echo "Enter a CHANGELOG description for SDK version $version_string"
-FILE=$(mktemp -t $(basename $0));
-vim "$FILE";
-changelog=`cat $FILE`
-rm "$FILE"
-
-echo "CHANGELOG description:"
-echo "$changelog"
-
-awk -v v="## [$version_string] - $(date +%Y-%m-%d)" -v d="$changelog\n" 'NR == 4 { print v; print d; } { print }' CHANGELOG.md > CHANGELOG.md.new
-
-mv CHANGELOG.md.new CHANGELOG.md
 
 deploy
