@@ -52,6 +52,11 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8,9);
 #define UVOUT A0 //Output from the UV sensor
 #define REF_3V3 A1 // 3.3V power on the Arduino board
 
+// Barometer settings
+#define MY_ALTITUDE_FEET 4300
+float myAltitude;
+float currentSeaLevelPressure = 1026.8;
+
 /* 
  * ===  FUNCTION  ======================================================================
  *         Name:  setup
@@ -71,6 +76,8 @@ void setup() {
   beginUVLightSensor();
   beginGyroSensor();
   beginMagneticSensor();
+  beginBarometricPressureSensor();
+  myAltitude = MY_ALTITUDE_FEET * 0.3048;
 
   // initialize the digital pins as outputs for the LEDs
   pinMode(LED_TMP102, OUTPUT);
@@ -106,6 +113,10 @@ void loop() {
   byte byteRead;
   float temp_val;
   float infrared_temp;
+  pressure_t pressure;
+  uint16_t rawTemp;
+  uint32_t rawPressure;
+  float tempIMU;
 
   // To test sending serial data from the computer, we can turn the serialConnection Read
   // LED on or off
@@ -177,6 +188,14 @@ void loop() {
   // Read MP8511 UV 
   readUVLight(&uv_light);
   serialConnection.println(uvlightToJSON("uv", &uv_light));
+  
+  //  Read Barometer BMP180
+  readBarometricPressure(&pressure);
+  bmp180_getRawTemperature(&rawTemp);
+  bmp180_getTemperature(&tempIMU);
+  bmp180_getRawPressure(&rawPressure);
+  Serial.println(pressureToJSON("pressure", &pressure));
+  Serial.println(valueToJSON("tempIMU",4,tempIMU)); // data type 4 = Degrees C
 
   delay(READ_INTERVAL);
 }
