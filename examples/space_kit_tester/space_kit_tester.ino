@@ -14,9 +14,9 @@
  *
  *                  http://www.apache.org/licenses/LICENSE-2.0
  *
- *        Version:  1.0
+ *        Version:  1.1
  *        Created:  10/29/2014 02:50:13
- *       Revision:  none
+ *       Revision:  5/18/2015 - add BMP180 pressure and temp
  *       Compiler:  Arduino
  *
  *         Author:  Ben Peters (ben@ardusat.com)
@@ -189,12 +189,14 @@ void loop() {
   readUVLight(&uv_light);
   serialConnection.println(uvlightToJSON("uv", &uv_light));
   
-  //  Read Barometer BMP180
+  // Read BMP180 Barometer Pressure 
   readBarometricPressure(&pressure);
-  bmp180_getRawTemperature(&rawTemp);
-  bmp180_getTemperature(&tempIMU);
   bmp180_getRawPressure(&rawPressure);
   Serial.println(pressureToJSON("pressure", &pressure));
+
+  // Read BMP180 Temperature from Barometer
+  bmp180_getRawTemperature(&rawTemp);
+  bmp180_getTemperature(&tempIMU);
   Serial.println(valueToJSON("tempIMU",4,tempIMU)); // data type 4 = Degrees C
 
   delay(READ_INTERVAL);
