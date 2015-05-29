@@ -35,7 +35,7 @@ prog_char sd_card_error[] = "Not enough RAM for SD card sys(free: ";
 static char CSV_SEPARATOR = ',';
 static char JSON_PREFIX = '~';
 static char JSON_SUFFIX = '|';
-prog_char json_format[] = "%c{\"sensorName\":\"%s\", \"unit\":\"%s\", \"value\": %s}%c\n";
+prog_char json_format[] = "%c{\"sensorName\":\"%s\",\"unit\":\"%s\",\"value\":%s,\"cs\":%d}%c\n";
 
 prog_char csv_header_fmt[] = "timestamp: %lu at millis %lu\n";
 
@@ -43,7 +43,7 @@ prog_char csv_header_fmt[] = "timestamp: %lu at millis %lu\n";
  * Convert an enumerated unit code to a string representation.
  *
  * @param unit code (see units.h defines)
- * 
+ *
  * @return string representation of unit
  */
 const char * unit_to_str(uint8_t unit)
@@ -81,7 +81,7 @@ const char * unit_to_str(uint8_t unit)
 
 /**
  * Prints an error message if beginSensor function fails.
- * 
+ *
  * This relies on a 128 character output buffer. Make sure that sensorName isn't too long!
  *
  * @param sensorName name of sensor that failed.
@@ -101,7 +101,7 @@ void _beginError(prog_char *sensorName)
 }
 
 /*
- * Temperature 
+ * Temperature
  */
 boolean beginTemperatureSensor() {
   start_sensor_or_err(temperature_sensor_name, tmp102_init())
@@ -334,6 +334,33 @@ void calculateOrientation(const acceleration_t *accel, const magnetic_t *mag,
 									       mag->header.timestamp;
 }
 
+/**
+ * Calculates a checksum value for a given sensorName and value
+ *
+ * @param sensor_name name of sensor
+ * @param num_vals Number of values
+ * @param values variable number of floats to write
+ *
+ * @return checksum
+ */
+int calculateCheckSum(const char *sensor_name, int num_vals, ...) {
+  int cs = 0;
+  const char *c_ptr = sensor_name;
+
+  va_list values;
+  va_start(values, num_vals);
+  for (int i = 0; i < num_vals; ++i)
+  {
+    cs += lroundf(va_arg(values, double));
+  }
+  va_end(values);
+
+  while (*c_ptr != NULL) {
+    cs += *c_ptr++;
+  }
+  return cs;
+}
+
 /*
  * toCSV Output functions
  */
@@ -371,7 +398,18 @@ const char * _headerToCSV(_data_header_t * header, const char *sensorName) {
   return _output_buffer;
 }
 
-/*
+#define add_float_to_csv_buffer(val) \
+  _output_buffer[_output_buf_len++] = CSV_SEPARATOR; \
+  dtostrf(val, 2, 3, _output_buffer + _output_buf_len);\
+  _output_buf_len = strlen(_output_buffer)
+
+#define _add_checksum_to_csv_buffer(sensor_name, num_vals, ...) \
+  int cs = calculateCheckSum(sensor_name, num_vals, __VA_ARGS__); \
+  _output_buffer[_output_buf_len++] = CSV_SEPARATOR; \
+  itoa(cs, _output_buffer + _output_buf_len, 10); \
+  _output_buf_len = strlen(_output_buffer);
+
+/**
  * Create a CSV string with a generic float value and a sensor name. Optional timestamp
  * argument allows passing in a timestamp; will use millis() otherwise.
  *
@@ -383,26 +421,24 @@ const char * _headerToCSV(_data_header_t * header, const char *sensorName) {
  */
 const char * valueToCSV(const char *sensorName, float value, unsigned long timestamp)
 {
-  return valuesToCSV(sensorName, &value, 1, timestamp);
+  return valuesToCSV(sensorName, timestamp, 1, value);
 }
 
-/*
+/**
  * Create a CSV string with a generic array of float values and a sensor name. Optional timestamp
  * argument allows passing in a timestamp; will use millis() otherwise.
  *
  * @param sensorName string sensor name
- * @param value array of float values to write
- * @param numValues number of floats in array
  * @param timestamp optional timestamp. If 0, millis() will be called.
+ * @param numValues number of float values
+ * @param variable float values
  *
  * @return pointer to output buffer
  */
-const char * valuesToCSV(const char *sensorName, float values[], int numValues, unsigned long timestamp)
+const char * valuesToCSV(const char *sensorName, unsigned long timestamp, int numValues, ...)
 {
   int i, name_len;
-
-  if (values == NULL)
-    return NULL;
+  va_list args;
 
   if (timestamp == 0) {
     timestamp = millis();
@@ -412,28 +448,28 @@ const char * valuesToCSV(const char *sensorName, float values[], int numValues, 
 
   ultoa(timestamp, _output_buffer, 10);
   _output_buf_len = strlen(_output_buffer);
-  _output_buffer[_output_buf_len++] = CSV_SEPARATOR;
 
   if (sensorName != NULL) {
     if ((name_len = strlen(sensorName)) > 50) {
       name_len = 50;
     }
+    _output_buffer[_output_buf_len++] = CSV_SEPARATOR;
     memcpy(&(_output_buffer[_output_buf_len]), sensorName, name_len);
     _output_buf_len += name_len;
-    _output_buffer[_output_buf_len++] = CSV_SEPARATOR;
   }
 
+  va_start(args, numValues);
   for (i = 0; i < numValues; ++i) {
     if (_output_buf_len > OUTPUT_BUFFER_MAXSIZE - 10) {
       break;
     }
-    dtostrf(values[i], 2, 3, _output_buffer + _output_buf_len);
-    _output_buf_len = strlen(_output_buffer);
-    if (i != numValues - 1) {
-      _output_buffer[_output_buf_len++] = CSV_SEPARATOR;
-    }
+    add_float_to_csv_buffer(va_arg(args, double));
   }
+  va_end(args);
 
+  va_start(args, numValues);
+  _add_checksum_to_csv_buffer(sensorName, numValues, args);
+  va_end(args);
   _output_buffer[_output_buf_len++] = '\n';
 
   return _output_buffer;
@@ -455,8 +491,9 @@ const char * accelerationToCSV(const char *sensorName, acceleration_t * input) {
 
   dtostrf(input->z, 2, 3, _output_buffer + _output_buf_len);
   _output_buf_len = strlen(_output_buffer);
-  _output_buffer[_output_buf_len++] = '\n';
 
+  _add_checksum_to_csv_buffer(sensorName, 3, input->x, input->y, input->z);
+  _output_buffer[_output_buf_len++] = '\n';
   return _output_buffer;
 }
 
@@ -476,6 +513,8 @@ const char * magneticToCSV(const char *sensorName, magnetic_t * input) {
 
   dtostrf(input->z, 2, 3, _output_buffer + _output_buf_len);
   _output_buf_len = strlen(_output_buffer);
+
+  _add_checksum_to_csv_buffer(sensorName, 3, input->x, input->y, input->z);
   _output_buffer[_output_buf_len++] = '\n';
 
   return _output_buffer;
@@ -489,6 +528,8 @@ const char * temperatureToCSV(const char *sensorName, temperature_t * input) {
 
   dtostrf(input->t, 2, 3, _output_buffer + _output_buf_len);
   _output_buf_len = strlen(_output_buffer);
+
+  _add_checksum_to_csv_buffer(sensorName, 1, input->t);
   _output_buffer[_output_buf_len++] = '\n';
 
   return _output_buffer;
@@ -510,6 +551,8 @@ const char * gyroToCSV(const char *sensorName, gyro_t * input) {
 
   dtostrf(input->z, 2, 3, _output_buffer + _output_buf_len);
   _output_buf_len = strlen(_output_buffer);
+
+  _add_checksum_to_csv_buffer(sensorName, 3, input->x, input->y, input->z);
   _output_buffer[_output_buf_len++] = '\n';
 
   return _output_buffer;
@@ -523,6 +566,7 @@ const char * luminosityToCSV(const char *sensorName, luminosity_t * input) {
 
   dtostrf(input->lux, 2, 3, _output_buffer + _output_buf_len);
   _output_buf_len = strlen(_output_buffer);
+  _add_checksum_to_csv_buffer(sensorName, 1, input->lux);
   _output_buffer[_output_buf_len++] = '\n';
 
   return _output_buffer;
@@ -536,6 +580,7 @@ const char * uvlightToCSV(const char *sensorName, uvlight_t * input) {
 
   dtostrf(input->uvindex, 2, 3, _output_buffer + _output_buf_len);
   _output_buf_len = strlen(_output_buffer);
+  _add_checksum_to_csv_buffer(sensorName, 1, input->uvindex);
   _output_buffer[_output_buf_len++] = '\n';
 
   return _output_buffer;
@@ -558,8 +603,8 @@ const char *orientationToCSV(const char *sensorName, orientation_t *input)
 
   dtostrf(input->heading, 2, 3, _output_buffer + _output_buf_len);
   _output_buf_len = strlen(_output_buffer);
+  _add_checksum_to_csv_buffer(sensorName, 3, input->roll, input->pitch, input->heading);
   _output_buffer[_output_buf_len++] = '\n';
-
   return _output_buffer;
 }
 
@@ -572,13 +617,14 @@ const char *pressureToCSV(const char *sensorName, pressure_t *input)
 
   dtostrf(input->pressure, 2, 3, _output_buffer + _output_buf_len);
   _output_buf_len = strlen(_output_buffer);
+  _add_checksum_to_csv_buffer(sensorName, 1, input->pressure);
   _output_buffer[_output_buf_len++] = '\n';
 
   return _output_buffer;
 }
 
 /*
- * toJSON output functions 
+ * toJSON output functions
  */
 int _writeJSONValue(char *buf, const char *sensor_name, const char *unit, float value)
 {
@@ -591,7 +637,8 @@ int _writeJSONValue(char *buf, const char *sensor_name, const char *unit, float 
   dtostrf(value, 4, 2, num);
   strcpy_P(format_str, json_format);
   _output_buf_len += sprintf(buf, format_str,
-			     JSON_PREFIX, sensor_name, unit, num, JSON_SUFFIX);
+			     JSON_PREFIX, sensor_name, unit, num,
+			     calculateCheckSum(sensor_name, 1, value), JSON_SUFFIX);
   return _output_buf_len;
 }
 
@@ -705,7 +752,7 @@ const char *pressureToJSON(const char *sensorName, pressure_t *pressure)
 #define write_if_init(gen_fn) return writeString(gen_fn);
 
 /**
- * Helper function to write null-terminated output buffer string to file. 
+ * Helper function to write null-terminated output buffer string to file.
  *
  * @param output_buf pointer to output buffer to write.
  *
@@ -726,7 +773,7 @@ int writeString(const char *output_buf)
  *
  * @param buffer byte array to write
  * @param number of bytes to write
- * 
+ *
  * @return number of bytes written
  */
 int writeBytes(const uint8_t *buffer, uint8_t numBytes)
@@ -759,7 +806,7 @@ int writeBytes(const uint8_t *buffer, uint8_t numBytes)
 }
 
 /*
- * Helper function to write to the top of the CSV header with the current time 
+ * Helper function to write to the top of the CSV header with the current time
  */
 int _write_csv_time_header(DateTime *now, unsigned long curr_millis)
 {
@@ -775,7 +822,7 @@ int _write_binary_time_header(DateTime *now, unsigned long curr_millis)
 {
   uint8_t buf[10];
   uint32_t unixtime = now->unixtime();
-  
+
   buf[0] = 0xFF;
   buf[1] = 0xFF;
   memcpy(buf + 2, &unixtime, 4);
@@ -972,7 +1019,7 @@ int binaryWritePressure(const uint8_t sensorId, pressure_t *data)
  * structure exists, then creates the file to use for logging data. Data will be logged
  * to a file called fileNamePrefix_0.csv or fileNamePrefix_0.bin (number will be incremented
  * for each new log file)
- * 
+ *
  * @param chipSelectPin Arduino pin SD card reader CS pin is attached to
  * @param fileNamePrefix string to prefix at beginning of data file
  * @param csvData boolean flag whether we are writing csv data or binary data (used for filename)
@@ -1009,7 +1056,7 @@ bool beginDataLog(int chipSelectPin, const char *fileNamePrefix, bool csvData)
     ret = sd.begin(chipSelectPin, SPI_FULL_SPEED);
   }
 
-  //Filenames need to fit the 8.3 filename convention, so truncate down the 
+  //Filenames need to fit the 8.3 filename convention, so truncate down the
   //given filename if it is too long.
   memcpy(prefix, fileNamePrefix, 7);
   prefix[7] = '\0';
@@ -1030,7 +1077,7 @@ bool beginDataLog(int chipSelectPin, const char *fileNamePrefix, bool csvData)
 	}
 
 	prefix[max_len - 1] = '\0';
-	sprintf(fileName, "%s/%s%d.%s", rootPath, prefix, i, 
+	sprintf(fileName, "%s/%s%d.%s", rootPath, prefix, i,
 		csvData ? "csv" : "bin");
 	if (!sd.exists(fileName)) {
 	  file = sd.open(fileName, FILE_WRITE);

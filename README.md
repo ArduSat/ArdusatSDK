@@ -100,6 +100,31 @@ The Ardusat SDK can output sensor data in both JSON and CSV format to allow inte
 external systems such as the [Ardusat Experiment Platform](http://experiments.ardusat.com). To use these functions,
 call the `ToJSON` or `ToCSV` family of functions:
 
+### Checksum
+Both JSON and CSV output formats optionally include checksum values to verify that the data remains
+uncorrupted through transmission. This is an integer value that is calculated when the data packet
+is first written in a known way. The client receiving the data packet can then re-calculate the
+checksum using the same algorithm, then verify that the calculated value matches the transmitted
+checksum. The algorithm used to calculate the checksum sums the characters in the `sensorName` field
+as integers, then rounds the value (s) and adds this to the sum of the name characters.
+
+Example checksum calculation:
+
+```
+int calculate_checksum(const char *sensorName, float value) {
+  int checksum = 0;
+  int i, len;
+
+  len = strlen(sensorName);
+  for (i = 0; i < len; ++i) {
+    checksum += sensorName[i];
+  }
+  checksum += lroundf(value);
+  return checksum;
+}
+
+```
+
 ### JSON Format
 Function | Arguments
 --- | ---
@@ -116,10 +141,13 @@ Example:
   temperature_t temp_data;
   readTemperature(&temp_data);
   Serial.println(temperatureToJSON("temperature", &temp_data));
-  >> ~{"sensorName": "temperature", "unit": "C", "value": 23.5}|
+  >> ~{"sensorName": "temperature", "unit": "C", "value": 23.5, "cs": 43}|
 ```
 
 ### CSV Format
+The CSV format includes a simple timestamp, in milliseconds since the Arduino began running,
+followed by a sensor name and a list of sensor values. The last value is an integer checksum.
+
 Function | Arguments
 --- | ---
 **accelerationToCSV** | `const char *sensor_name, acceleration_t *acceleration_data`
@@ -134,7 +162,7 @@ Example:
   temperature_t temp_data;
   readTemperature(&temp_data);
   Serial.println(temperatureToCSV("temperature", &temp_data));
-  >> 123,acceleration,0.1,0.3,9.81
+  >> 123,temperature,23.5,43
 ```
 
 ### Serial Library

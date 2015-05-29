@@ -184,13 +184,14 @@ void readMagnetic(magnetic_t * mag);
 boolean beginBarometricPressureSensor();
 void readBarometricPressure(pressure_t *pressure);
 
-void calculateOrientation(const acceleration_t *accel, const magnetic_t *mag,
-													orientation_t *orient);
+void calculateOrientation(const acceleration_t *accel, const magnetic_t *mag, orientation_t *orient);
+
+int calculateCheckSum(const char *sensorName, int numValues, ...);
 
 /**
  * toCSV output functions create a string representation of the data in CSV format.
  */
-const char * valuesToCSV(const char *sensorName, float values[], int numValues, unsigned long timestamp=0);
+const char * valuesToCSV(const char *sensorName, unsigned long timestamp, int numValues, ...);
 const char * valueToCSV(const char *sensorName, float value, unsigned long timestamp=0);
 const char * accelerationToCSV(const char *sensorName, acceleration_t * input);
 const char * magneticToCSV(const char *sensorName, magnetic_t *input);
@@ -203,8 +204,8 @@ const char * pressureToCSV(const char *sensorName, pressure_t *pressure);
 
 /**
  * toJSON output functions create a string representation of the data in a JSON format
- * that can be used with http://experiments.ardusat.com to visualize and log data. 
- * 
+ * that can be used with http://experiments.ardusat.com to visualize and log data.
+ *
  * Format is:
  * ~{"sensorName": "name", "unit": "C", "value": 35.3}|
  */
@@ -221,14 +222,14 @@ const char * pressureToJSON(const char *sensorName, pressure_t *input);
 /**
  * Write functions take care of persisting data to an SD card
  *
- * Data can be written in any format, including a custom binary format for 
+ * Data can be written in any format, including a custom binary format for
  * space efficiency, by using the writeBytes function that takes a byte array.
  *
  * The individual helpers write functions automate the process of saving data
  * for each individual value, but write in CSV format, which is easier to consume
  * after the experiment, but takes up more space.
  *
- * Finally, binaryWrite functions write optimized binary representations of the 
+ * Finally, binaryWrite functions write optimized binary representations of the
  * data. This helps save SD card space, but means that the data must be decoded
  * after download before it can be used.
  */
@@ -258,7 +259,7 @@ int binaryWritePressure(const uint8_t sensorId, pressure_t *data);
  * Setup and use the RTC chip, if found
  *
  * The clock must be set before it can be used. This is achieved by compiling
- * and running a basic script (examples/set_rtc). After this, the library 
+ * and running a basic script (examples/set_rtc). After this, the library
  * automatically uses the RTC if available to timestamp.
  */
 bool setRTC();
