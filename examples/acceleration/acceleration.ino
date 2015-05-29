@@ -2,6 +2,8 @@
 #include <Wire.h>
 #include <ArdusatSDK.h>
 
+acceleration_t accel;
+
 void setup(void)
 {
   Serial.begin(9600);
@@ -13,8 +15,6 @@ void setup(void)
 
 void loop(void)
 {
-  acceleration_t accel;
-
   readAcceleration(&accel);
 
   Serial.println(accelerationToJSON("acceleration", &accel));
