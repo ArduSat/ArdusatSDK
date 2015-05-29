@@ -16,6 +16,7 @@
 
 static config_lsm303_accel_t _lsm303_d_accel_config;
 static config_lsm303_mag_t _lsm303_d_mag_config;
+static config_l3gd20_t _l3gd20_config;
 
 /**
  * Generic I2C Read function
@@ -114,7 +115,18 @@ boolean l3gd20h_init() {
   //0x00 = 250DPS
   //0x10 = 500DPS
   //0x20 = 2000DPS
-  buf = 0x00;
+  // Ctrl register 4 selects scale
+  // BDU BLE FS1 FS0 - 0 0 SIM
+  //  0   0   0   0  0 0 0  0
+  //
+  // FS1/FS 0 Values:
+  // 0x00 = 250 DPS
+  // 0x10 = 500 DPS
+  // 0x20 = 2000 DPS
+  // 0x30 = 2000 DPS
+  buf = 0x20;
+  _l3gd20_config.sensitivity = L3GD20_GYRO_SENSITIVITY_2000DPS;
+
   if (_writeToRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_CTRL_REG4, &buf, 1))
     return false;
 
@@ -154,10 +166,9 @@ void l3gd20h_getOrientation(float *x, float *y, float *z) {
   if (_2bit_xyz_read(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_OUT_X_L | 0x80,
                      &vals[0], &vals[1], &vals[2], false) == 0) {
 
-    // Need different compensation values here if we give ability to adjust gyro range
-    *x = vals[0] * L3GD20_GYRO_SENSITIVITY_250DPS * SENSORS_DPS_TO_RADS;
-    *y = vals[1] * L3GD20_GYRO_SENSITIVITY_250DPS * SENSORS_DPS_TO_RADS;
-    *z = vals[2] * L3GD20_GYRO_SENSITIVITY_250DPS * SENSORS_DPS_TO_RADS;
+    *x = vals[0] * _l3gd20_config.sensitivity * SENSORS_DPS_TO_RADS;
+    *y = vals[1] * _l3gd20_config.sensitivity * SENSORS_DPS_TO_RADS;
+    *z = vals[2] * _l3gd20_config.sensitivity * SENSORS_DPS_TO_RADS;
   }
 }
 
@@ -211,8 +222,8 @@ void _lsm303_set_sdk_options() {
     // BDU BLE FS1 FS0 HR 0 0 SIM
     // 0    0   0   0   1 0 0  0
     // 0b00011000 = 0x18 (High res, +/- 4g)
-    lsm.writeAccReg(LSM303::CTRL_REG4_A, 0x18);
-    _lsm303_d_accel_config.gain = LSM303_ACCEL_GAIN4G;
+    lsm.writeAccReg(LSM303::CTRL_REG4_A, 0x38);
+    _lsm303_d_accel_config.gain = LSM303_ACCEL_GAIN16G;
   }
 
   // update mag scaling

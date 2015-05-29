@@ -66,6 +66,7 @@ typedef enum {
   LSM303_MAG_SCALE12GAUSS =  0b01100000,
 } lsm303_mag_scale_e;
 #define SENSORS_MGAUSS_TO_UTESLA 0.1F
+
 typedef struct
 {
   lsm303_accel_gain_e gain;
@@ -75,6 +76,11 @@ typedef struct
 {
   lsm303_mag_scale_e scale;
 } config_lsm303_mag_t;
+
+typedef struct {
+  uint8_t sensitivity;
+} config_l3gd20_t;
+
 boolean l3gd20h_init();
 void l3gd20h_getOrientation(float *x, float *y, float *z);
 void l3gd20h_getRawAngularRates(int16_t *pX, int16_t *pY, int16_t *pZ);
