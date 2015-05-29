@@ -12,6 +12,7 @@ function usage() {
 
 Options:
   -v, --version-string   Specify a new version string for this version
+  -z, --zip-only	 Only package zip, don't upload to S3
   -n, --no-version       Don't update the version string
   -h, --help             Display this help and exit
 "
@@ -24,14 +25,21 @@ function deploy () {
     cd tmp_ArdusatSDK
     rm -rf ./ArdusatSDK/.git ./ArdusatSDK/decode_binary ./ArdusatSDK/.ycm* ./ArdusatSDK/*.pyc ./ArdusatSDK/deploy_sdk.sh ./ArdusatSDK/.gitignore
     zip -r ArdusatSDK.zip ./ArdusatSDK
-    aws s3 cp ./ArdusatSDK.zip s3://ardusatweb/ArdusatSDK.zip
     cp -f ArdusatSDK.zip ~/Downloads/ArdusatSDK.zip
+}
+
+function upload () {
+    aws s3 cp ./ArdusatSDK.zip s3://ardusatweb/ArdusatSDK.zip
+}
+
+function clean () {
     cd ../
     rm -rf ./tmp_ArdusatSDK
 }
 
 no_update=0
-while getopts "hnv:" opt; do
+upload=1
+while getopts "hznv:" opt; do
     case $opt in
 	h)
 	    usage
@@ -42,6 +50,9 @@ while getopts "hnv:" opt; do
 	    ;;
 	n)
 	    no_update=1
+	    ;;
+	z)
+	    no_upload=0
 	    ;;
 	\?)
 	    echo "Invalid option -$OPTARG"
@@ -79,3 +90,7 @@ if [[ $no_update -eq 0 ]]; then
 fi
 
 deploy
+if [[ $no_upload -eq 1 ]]; then
+  upload
+fi
+clean
