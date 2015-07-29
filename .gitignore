@@ -33,3 +33,6 @@
 
 # Compiled decode utility
 decode_binary
+
+# Development files
+*.swp
