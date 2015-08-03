@@ -29,8 +29,6 @@ typedef enum {
 	SENSORID_BMP180 = 0x07
 } sensor_id_t;
 
-#define OUTPUT_BUFFER_MAXSIZE 500
-
 /**
  * Unit definitions
  */
@@ -145,6 +143,16 @@ typedef struct {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifdef SDK_LOGGING_INCLUDED
+const int OUTPUT_BUF_SIZE = 512;
+const int OUTPUT_BUFFER_MAXSIZE = 500;
+#else
+const int OUTPUT_BUF_SIZE = 256;
+const int OUTPUT_BUFFER_MAXSIZE = 250;
+#endif
+
+char * _getOutBuf();
 
 /**
  * Get a string representation of a unit constant

@@ -8,19 +8,18 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "ArdusatSensors.h"
 #include "ArdusatLogging.h"
 
 RTC_DS1307 RTC;
 
 SdVolume vol;
-#define _output_buffer vol.cacheAddress()->output_buf
-
 SdFat sd;
 File file;
 prog_char sd_card_error[] = "Not enough RAM for SD card sys(free: ";
 prog_char csv_header_fmt[] = "timestamp: %lu at millis %lu\n";
 
-
+#define SDK_LOGGING_INCLUDED
 #define write_if_init(gen_fn) return writeString(gen_fn);
 
 /**
@@ -59,7 +58,7 @@ int writeBytes(const uint8_t *buffer, uint8_t numBytes)
   }
 
   if (file.isOpen()) {
-    if (buffer == (uint8_t *) vol.cacheAddress()->output_buf) {
+    if (buffer == (uint8_t *) _getOutBuf()) {
       buf = (uint8_t *) malloc(numBytes);
       buf_allocated = true;
       memcpy(buf, buffer, numBytes);
@@ -271,10 +270,10 @@ int _write_csv_time_header(DateTime *now, unsigned long curr_millis)
 
   strcpy_P(fmt_buf, csv_header_fmt);
 
-  memset(_output_buffer, 0, 512);
+  memset(_getOutBuf(), 0, OUTPUT_BUF_SIZE);
 
-  sprintf(_output_buffer, fmt_buf, now->unixtime(), curr_millis);
-  write_if_init(_output_buffer);
+  sprintf(_getOutBuf(), fmt_buf, now->unixtime(), curr_millis);
+  write_if_init(_getOutBuf());
 }
 
 int _write_binary_time_header(DateTime *now, unsigned long curr_millis)
@@ -322,8 +321,8 @@ bool beginDataLog(int chipSelectPin, const char *fileNamePrefix, bool csvData)
   }
 
   if (freeMemory() < 400) {
-    strcpy_P(_output_buffer, sd_card_error);
-    Serial.print(_output_buffer);
+    strcpy_P(_getOutBuf(), sd_card_error);
+    Serial.print(_getOutBuf());
     Serial.print(freeMemory());
     Serial.println(", need 400)");
     ret = false;
