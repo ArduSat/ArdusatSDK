@@ -30,6 +30,20 @@ static char JSON_PREFIX = '~';
 static char JSON_SUFFIX = '|';
 prog_char json_format[] = "%c{\"sensorName\":\"%s\",\"unit\":\"%s\",\"value\":%s,\"cs\":%d}%c\n";
 
+char * _getOutBuf() {
+#ifdef SDK_LOGGING_INCLUDED
+  return vol.cacheAddress()->output_buf
+#else
+  if (!BUF_INITIALIZED) {
+    _output_buffer[OUTPUT_BUF_SIZE] = {0};
+    BUF_INITIALIZED = true;
+    return _output_buffer;
+  } else {
+    return _output_buffer;
+  }
+#endif
+}
+
 /**
  * Gets the output buffer used for storing sensor data, or initializes
  * it if it doesn't yet exist

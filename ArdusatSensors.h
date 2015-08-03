@@ -145,6 +145,16 @@ typedef struct {
 extern "C" {
 #endif
 
+#ifdef SDK_LOGGING_INCLUDED
+const int OUTPUT_BUF_SIZE = 512;
+const int OUTPUT_BUFFER_MAXSIZE = 500;
+#else
+const int OUTPUT_BUF_SIZE = 256;
+const int OUTPUT_BUFFER_MAXSIZE = 250;
+#endif
+
+char * _getOutBuf();
+
 /**
  * Where all of the sensor data is kept before being printed
  */
