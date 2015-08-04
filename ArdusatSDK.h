@@ -10,6 +10,7 @@
 #include <Arduino.h>
 #include <utility/drivers.h>
 #include <avr/pgmspace.h>
+#include <utility/serial.h>
 
 #define prog_char const char PROGMEM
 
