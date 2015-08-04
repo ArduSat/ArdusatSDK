@@ -8,7 +8,7 @@
 
 #include <stdlib.h>
 
-#include <ArdusatSensors.h>
+#include <ArdusatSDK.h>
 #include "serial.h"
 
 prog_char no_software_params_err_msg[] = "Uh oh, you specified a software serial mode but didn't specify transmit/recieve pins! Halting program...";

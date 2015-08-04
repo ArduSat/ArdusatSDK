@@ -1,11 +1,11 @@
 /**
- * @file   ArdusatSensors.h
+ * @file   ArdusatSDK.h
  * @Author Ben Peters (ben@ardusat.com)
  * @date   December 3, 2014
- * @brief  ArdusatSensors generic sensor reading & configuration for Space Kit Sensors
+ * @brief  ArdusatSDK generic sensor reading & configuration for Space Kit Sensors
  */
-#ifndef ARDUSATSENSORS_H_
-#define ARDUSATSENSORS_H_
+#ifndef ARDUSATSDK_H_ 
+#define ARDUSATSDK_H_ 
 
 #include <Arduino.h>
 #include <utility/drivers.h>
@@ -222,4 +222,4 @@ const char * pressureToJSON(const char *sensorName, pressure_t *input);
 } // extern "C"
 #endif
 
-#endif /* ARDUSATSENSORS_H_ */
+#endif /* ARDUSATSDK_H_ */
