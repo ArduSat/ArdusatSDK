@@ -31,17 +31,10 @@ static char JSON_SUFFIX = '|';
 prog_char json_format[] = "%c{\"sensorName\":\"%s\",\"unit\":\"%s\",\"value\":%s,\"cs\":%d}%c\n";
 
 char * _getOutBuf() {
-#ifdef SDK_LOGGING_INCLUDED
-  return vol.cacheAddress()->output_buf
-#else
-  if (!BUF_INITIALIZED) {
-    _output_buffer[OUTPUT_BUF_SIZE] = {0};
-    BUF_INITIALIZED = true;
-    return _output_buffer;
-  } else {
-    return _output_buffer;
+  if (_output_buffer == NULL) {
+    _output_buffer = new char[OUTPUT_BUF_SIZE];
   }
-#endif
+  return _output_buffer;
 }
 
 /**
