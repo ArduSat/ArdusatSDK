@@ -1,5 +1,5 @@
 /**
- * @file   ArdusatSensors.cpp
+ * @file   ArdusatSDK.cpp
  * @Author Ben Peters (ben@ardusat.com)
  * @date   December 3, 2014
  * @brief  Implements ArdusatSDK generic sensor read & configuration functions
@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ArdusatSensors.h"
+#include "ArdusatSDK.h"
 
 int OUTPUT_BUF_SIZE = 256;
 bool ARDUSAT_SHIELD = false;
