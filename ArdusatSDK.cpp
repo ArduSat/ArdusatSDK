@@ -30,6 +30,12 @@ static char JSON_PREFIX = '~';
 static char JSON_SUFFIX = '|';
 prog_char json_format[] = "%c{\"sensorName\":\"%s\",\"unit\":\"%s\",\"value\":%s,\"cs\":%d}%c\n";
 
+/**
+ * Gets the output buffer used for storing sensor data, or initializes
+ * it if it doesn't yet exist
+ *
+ * @return the current output buffer
+ */
 char * _getOutBuf() {
   if (_output_buffer == NULL) {
     _output_buffer = new char[OUTPUT_BUF_SIZE];

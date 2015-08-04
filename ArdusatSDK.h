@@ -145,10 +145,12 @@ typedef struct {
 extern "C" {
 #endif
 
+/**
+ * Where all of the sensor data is kept before being printed
+ */
 extern int OUTPUT_BUF_SIZE;
 extern int OUTPUT_BUFFER_MAXSIZE;
 extern char * _output_buffer;
-
 char * _getOutBuf();
 
 /**
