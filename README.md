@@ -210,50 +210,6 @@ Name | Description
 #### Limitations
 SoftwareSerial does not appear to work reliably above 57600 baud. 
 
-#### Acceleration Data (18 bytes total)
-```
-header (6 bytes)
-float x;
-float y;
-float z;
-```
-
-#### Magnetic Data (18 bytes total)
-```
-header (6 bytes)
-float x;
-float y;
-float z;
-```
-
-#### Orientation Data (18 bytes total)
-```
-header (6 bytes)
-float x;
-float y;
-float z;
-```
-
-#### Temperature Data (10 bytes total)
-```
-header (6 bytes)
-float temp;
-```
-
-#### Luminosity Data (10 bytes total)
-```
-header (6 bytes)
-float lux;
-```
-
-#### UV Light Data (10 bytes total)
-```
-header (6 bytes)
-float uv;
-```
-
-See `examples/sd_card/sd_card.ino` for a usage example.
-
 # Getting Help
 If you're having trouble running the examples, chances are something is messed up with the external
 library locations in your Arduino IDE. Double check that the ArdusatSDK library is imported into
