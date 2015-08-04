@@ -10,10 +10,11 @@
 
 #include "ArdusatSensors.h"
 
+int OUTPUT_BUF_SIZE = 256;
+int OUTPUT_BUFFER_MAXSIZE = 250;
 int _output_buf_len = 0;
 bool ARDUSAT_SHIELD = false;
-bool BUF_INITIALIZED = false;
-static char* _output_buffer;
+char * _output_buffer;
 
 prog_char begin_error_msg[] = "Uh oh, begin%s failed. Check your wiring!";
 prog_char orientation_sensor_name[] = "Orientation";
@@ -31,17 +32,10 @@ static char JSON_SUFFIX = '|';
 prog_char json_format[] = "%c{\"sensorName\":\"%s\",\"unit\":\"%s\",\"value\":%s,\"cs\":%d}%c\n";
 
 char * _getOutBuf() {
-#ifdef SDK_LOGGING_INCLUDED
-  return vol.cacheAddress()->output_buf
-#else
-  if (!BUF_INITIALIZED) {
-    _output_buffer[OUTPUT_BUF_SIZE] = {0};
-    BUF_INITIALIZED = true;
-    return _output_buffer;
-  } else {
-    return _output_buffer;
+  if (_output_buffer == NULL) {
+    _output_buffer = new char[OUTPUT_BUF_SIZE];
   }
-#endif
+  return _output_buffer;
 }
 
 /**

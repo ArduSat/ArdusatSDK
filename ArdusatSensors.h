@@ -144,13 +144,9 @@ typedef struct {
 extern "C" {
 #endif
 
-#ifdef SDK_LOGGING_INCLUDED
-const int OUTPUT_BUF_SIZE = 512;
-const int OUTPUT_BUFFER_MAXSIZE = 500;
-#else
-const int OUTPUT_BUF_SIZE = 256;
-const int OUTPUT_BUFFER_MAXSIZE = 250;
-#endif
+extern int OUTPUT_BUF_SIZE;
+extern int OUTPUT_BUFFER_MAXSIZE;
+extern char * _output_buffer;
 
 char * _getOutBuf();
 

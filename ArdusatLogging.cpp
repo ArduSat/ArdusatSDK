@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ArdusatSensors.h"
 #include "ArdusatLogging.h"
 
 RTC_DS1307 RTC;
@@ -19,7 +18,6 @@ File file;
 prog_char sd_card_error[] = "Not enough RAM for SD card sys(free: ";
 prog_char csv_header_fmt[] = "timestamp: %lu at millis %lu\n";
 
-#define SDK_LOGGING_INCLUDED
 #define write_if_init(gen_fn) return writeString(gen_fn);
 
 /**
@@ -310,6 +308,13 @@ bool beginDataLog(int chipSelectPin, const char *fileNamePrefix, bool csvData)
   char rootPath[] = "/data";
   unsigned long curr_millis = 0;
   DateTime now;
+
+  if (_output_buffer != NULL) {
+    delete []_output_buffer;
+  }
+  OUTPUT_BUF_SIZE = 512;
+  OUTPUT_BUFFER_MAXSIZE = 500;
+  _output_buffer = vol.cacheAddress()->output_buf;
 
   // Try to get the current time from the RTC, if available. This will be prepended to the log file
   // to be used to convert relative timestamps to real time values.
