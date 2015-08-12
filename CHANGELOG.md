@@ -1,6 +1,11 @@
 # Ardusat SDK Changelog
 This logs all changes to released SDK versions
 
+## [0.0.5] - 2015-08-11
+### Added Codebender compatibility and bug fixes
+- Fixed reference to `lroundf` not found in Codebender's old stdlib
+- Fixed L3GD20 `sensitivity` type bug
+
 ## [0.0.4] - 2015-05-29
 ### Added checksums & updated examples
 - Addded checksum values to JSON & CSV output formats
