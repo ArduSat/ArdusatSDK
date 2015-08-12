@@ -78,7 +78,7 @@ typedef struct
 } config_lsm303_mag_t;
 
 typedef struct {
-  uint8_t sensitivity;
+  float sensitivity;
 } config_l3gd20_t;
 
 boolean l3gd20h_init();
