@@ -351,7 +351,7 @@ int calculateCheckSum(const char *sensor_name, int num_vals, ...) {
   va_start(values, num_vals);
   for (int i = 0; i < num_vals; ++i)
   {
-    cs += lroundf(va_arg(values, double));
+    cs += lround(va_arg(values, double));
   }
   va_end(values);
 
