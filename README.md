@@ -5,7 +5,9 @@ The Ardusat Sensor SDK is a software package designed to make interacting with t
 the [Ardusat Space Kit](http://www.ardusat.com/products) as easy as possible, while also providing
 a powerful unified interface to use the same code to interact with ground-based sensors as well as
 satellite systems. It builds on top of popular open source libraries provided by
-[Adafruit](https://github.com/adafruit) and others.
+[Adafruit](https://github.com/adafruit) and others. If you're interested in using the SDK for
+logging data to an SD card, you'll need to include our other
+[Logging SDK Library](http://github.com/ardusat/ardusatsdk-logging)
 
 # Installing the SDK
 Installing the SDK is easy - it works like any other third party Arduino library. Just download 
@@ -64,21 +66,29 @@ function calculates `roll` (rotation about `x` axis), `pitch` (rotation about `y
 `heading` (rotation about `z` axis), and has the following signature:
 
 ```
-void calculateOrientation(const acceleration_t *, const magnetic_t *, orientation_t *);
+void calculateOrientation(const acceleration_t, const magnetic_t, orientation_t);
 ```
 
 Usage example:
 ```
 #import <ArdusatSDK.h>
 
-Serial.begin(9600);
 temperature_t temp_data;
-if (!beginTemperatureSensor()) {
-  Serial.println("There was a problem initializing the temperature sensor.");
-  while (1);
+
+void setup(void)
+{
+  Serial.begin(9600);
+  if (!beginTemperatureSensor()) {
+    Serial.println("There was a problem initializing the temperature sensor.");
+    while (1);
+  }
 }
-readTemperature(&temp_data);
-Serial.println(temp_data.t);
+
+void loop(void)
+{
+  readTemperature(temp_data);
+  Serial.println(temp_data.t);
+}
 ```
 
 The Barometric Pressure sensor has two additional convenience functions to calculate altitude (which
@@ -128,19 +138,19 @@ int calculate_checksum(const char *sensorName, float value) {
 ### JSON Format
 Function | Arguments
 --- | ---
-**valueToJSON** | `const char *sensor_name, uint8_t unit_definition, float value`
-**accelerationToJSON** | `const char *sensor_name, acceleration_t *acceleration_data`
-**magneticToJSON** | `const char *sensor_name, magnetic_t *magnetic_data`
-**orientationToJSON** | `const char *sensor_name, orientation_t *orientation_data`
-**temperatureToJSON** | `const char *sensor_name, temperature_t *temp_data`
-**luminosityToJSON** | `const char *sensor_name, luminosity_t *luminosity_data`
-**uvlightToJSON** | `const char *sensor_name, uvlight_t *uvlight_data`
+**valueToJSON** | `const char *sensor_name, unsigned char unit_definition, float value`
+**accelerationToJSON** | `const char *sensor_name, acceleration_t acceleration_data`
+**magneticToJSON** | `const char *sensor_name, magnetic_t magnetic_data`
+**orientationToJSON** | `const char *sensor_name, orientation_t orientation_data`
+**temperatureToJSON** | `const char *sensor_name, temperature_t temp_data`
+**luminosityToJSON** | `const char *sensor_name, luminosity_t luminosity_data`
+**uvlightToJSON** | `const char *sensor_name, uvlight_t uvlight_data`
 
 Example:
 ```
   temperature_t temp_data;
-  readTemperature(&temp_data);
-  Serial.println(temperatureToJSON("temperature", &temp_data));
+  readTemperature(temp_data);
+  Serial.println(temperatureToJSON("temperature", temp_data));
   >> ~{"sensorName": "temperature", "unit": "C", "value": 23.5, "cs": 43}|
 ```
 
@@ -150,18 +160,18 @@ followed by a sensor name and a list of sensor values. The last value is an inte
 
 Function | Arguments
 --- | ---
-**accelerationToCSV** | `const char *sensor_name, acceleration_t *acceleration_data`
-**magneticToCSV** | `const char *sensor_name, magnetic_t *magnetic_data`
-**orientationToCSV** | `const char *sensor_name, orientation_t *orientation_data`
-**temperatureToCSV** | `const char *sensor_name, temperature_t *temp_data`
-**luminosityToCSV** | `const char *sensor_name, luminosity_t *luminosity_data`
-**uvlightToCSV** | `const char *sensor_name, uvlight_t *uvlight_data`
+**accelerationToCSV** | `const char *sensor_name, acceleration_t acceleration_data`
+**magneticToCSV** | `const char *sensor_name, magnetic_t magnetic_data`
+**orientationToCSV** | `const char *sensor_name, orientation_t orientation_data`
+**temperatureToCSV** | `const char *sensor_name, temperature_t temp_data`
+**luminosityToCSV** | `const char *sensor_name, luminosity_t luminosity_data`
+**uvlightToCSV** | `const char *sensor_name, uvlight_t uvlight_data`
 
 Example:
 ```
   temperature_t temp_data;
-  readTemperature(&temp_data);
-  Serial.println(temperatureToCSV("temperature", &temp_data));
+  readTemperature(temp_data);
+  Serial.println(temperatureToCSV("temperature", temp_data));
   >> 123,temperature,23.5,43
 ```
 
@@ -177,7 +187,7 @@ If a software serial mode is selected, the `ArdusatSerial` constructor must be s
 arguments for `softwareReceivePin` and `softwareTransmitPin`:
 
 ```
-ArdusatSerial(serialMode mode, uint8_t softwareReceivePin, uint8_t softwareTransmitPin);
+ArdusatSerial(serialMode mode, unsigned char softwareReceivePin, unsigned char softwareTransmitPin);
 ```
 
 Usage:
@@ -194,8 +204,8 @@ void setup()
 void loop()
 {
   temperature_t temp_data;
-  readTemperature(&temp_data);
-  serialConnection.println(temperatureToCSV("temperature", &temp_data));
+  readTemperature(temp_data);
+  serialConnection.println(temperatureToCSV("temperature", temp_data));
 }
 
 ```
@@ -204,7 +214,7 @@ void loop()
 Name | Description
 --- | ---
 **SERIAL_MODE_HARDWARE** | Output serial data on built-in USB hardware serial
-**SERIAL_MODE_SOFTWARE** | Output serial data on software serial (must specify transmit & receive pins in the constructor, see arguments in example above)
+**SERIAL_MODE_SOFTWARE** | Output serial data on software serial (must specify transmit and receive pins in the constructor, see arguments in example above)
 **SERIAL_MODE_HARDWARE_AND_SOFTWARE** | Output to both hardware and software serial interfaces
 
 #### Limitations

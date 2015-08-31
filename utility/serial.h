@@ -28,7 +28,7 @@ class ArdusatSerial : public Stream
 
   public:
     ArdusatSerial(serialMode mode);
-    ArdusatSerial(serialMode mode, uint8_t softwareReceivePin, uint8_t softwareTransmitPin, 
+    ArdusatSerial(serialMode mode, unsigned char softwareReceivePin, unsigned char softwareTransmitPin, 
                   bool softwareInverseLogic = false);
     ~ArdusatSerial();
 
@@ -40,11 +40,11 @@ class ArdusatSerial : public Stream
     virtual int available();
     virtual void flush();
 
-    virtual size_t write(uint8_t);
-    inline size_t write(unsigned long n) { return write((uint8_t)n); }
-    inline size_t write(long n) { return write((uint8_t)n); }
-    inline size_t write(unsigned int n) { return write((uint8_t)n); }
-    inline size_t write(int n) { return write((uint8_t)n); }
+    virtual size_t write(unsigned char);
+    inline size_t write(unsigned long n) { return write((unsigned char)n); }
+    inline size_t write(long n) { return write((unsigned char)n); }
+    inline size_t write(unsigned int n) { return write((unsigned char)n); }
+    inline size_t write(int n) { return write((unsigned char)n); }
 
     using Print::write;
     operator bool();
