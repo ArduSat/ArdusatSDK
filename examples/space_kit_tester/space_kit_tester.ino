@@ -76,7 +76,7 @@ pressure_t pressure;
  *                the program ready to begin logging data.
  * =====================================================================================
  */
-void setup()
+void setup(void)
 {
   serialConnection.begin(9600);
 
@@ -113,7 +113,7 @@ void setup()
  *                before repeating the loop again.
  * =====================================================================================
  */
-void loop()
+void loop(void)
 {
   byte byteRead;
   float temp_val;
