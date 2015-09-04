@@ -5,20 +5,27 @@ The Ardusat Sensor SDK is a software package designed to make interacting with t
 the [Ardusat Space Kit](http://www.ardusat.com/products) as easy as possible, while also providing
 a powerful unified interface to use the same code to interact with ground-based sensors as well as
 satellite systems. It builds on top of popular open source libraries provided by
-[Adafruit](https://github.com/adafruit) and others. If you're interested in using the SDK for
-logging data to an SD card, you'll need to include our other
-[Logging SDK Library](http://github.com/ardusat/ardusatsdk-logging)
+[Adafruit](https://github.com/adafruit) and others.
 
 # Installing the SDK
-Installing the SDK is easy - it works like any other third party Arduino library. Just download 
-the SDK at https://s3-us-west-2.amazonaws.com/ardusatweb/ArdusatSDK.zip or clone this repository
-to your hard drive, then open the Arduino IDE, go to Sketch -> Import Library -> Add Library and
-navigate to your download (zip file or the directory cloned with git). You now should be able
-to use the SDK in your sketches.
+The first step to getting going is to install the Arduino Integrated Development Environment (IDE).
+Downloads for all major OS versions can be found at
+[http://arduino.cc/en/Main/Software](http://arduino.cc/en/Main/Software).
+
+Once you have the IDE, installing the SDK is easy - it works like any other third party Arduino
+library. Just [download the SDK](https://s3-us-west-2.amazonaws.com/ardusatweb/ArdusatSDK.zip) or
+clone this repository to your hard drive, then open the Arduino IDE, go to 'Sketch -> Import Library
+-> Add Library' and navigate to your download (zip file or the directory cloned with Git). You now
+should be able to use the SDK in your sketches.
+
+If you're interested in using the SDK for logging data to an SD card, you'll need to do this same
+thing with our other
+[Ardusat Logging SDK Library](http://github.com/ardusat/ardusatsdk-logging)
 
 # Using the SDK
 The first step to using the SDK is to import it into your sketch. This can be done with a simple
 import statement:
+
 ```
 #import <ArdusatSDK.h>
 ```
