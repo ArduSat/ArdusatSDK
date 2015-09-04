@@ -1,5 +1,4 @@
-Ardusat Sensor SDK
-==================
+# Ardusat SDK
 
 The Ardusat Sensor SDK is a software package designed to make interacting with the sensors found in
 the [Ardusat Space Kit](http://www.ardusat.com/products) as easy as possible, while also providing
@@ -7,7 +6,7 @@ a powerful unified interface to use the same code to interact with ground-based 
 satellite systems. It builds on top of popular open source libraries provided by
 [Adafruit](https://github.com/adafruit) and others.
 
-# Installing the SDK
+## Installing the SDK
 The first step to getting going is to install the Arduino Integrated Development Environment (IDE).
 Downloads for all major OS versions can be found at
 [http://arduino.cc/en/Main/Software](http://arduino.cc/en/Main/Software).
@@ -22,7 +21,7 @@ If you're interested in using the SDK for logging data to an SD card, you'll nee
 thing with our other
 [Ardusat Logging SDK Library](http://github.com/ardusat/ardusatsdk-logging)
 
-# Using the SDK
+## Using the SDK
 The first step to using the SDK is to import it into your sketch. This can be done with a simple
 import statement:
 
