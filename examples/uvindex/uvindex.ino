@@ -76,8 +76,8 @@ void setup(void)
  */
 void loop(void)
 {
-	readUVLight(uvIndex);
-	serialConnection.println(uvlightToJSON("uv", uvIndex));
+  readUVLight(uvIndex);
+  serialConnection.println(uvlightToJSON("uv", uvIndex));
 
-	delay(1000);
+  delay(1000);
 }
