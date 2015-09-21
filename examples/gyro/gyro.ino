@@ -1,9 +1,9 @@
 /*
  * =====================================================================================
  *
- *       Filename:  acceleration.ino
+ *       Filename:  gyro.ino
  *
- *    Description:  Outputs the acceleration sensor readings in a JSON format that
+ *    Description:  Outputs the gyroscope sensor readings in a JSON format that
  *                  can be read by the Ardusat Experiment Platform
  *                  (http://experiments.ardusat.com).
  *
@@ -43,7 +43,7 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
-acceleration_t accel;
+gyro_t gyro;
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -57,7 +57,7 @@ void setup(void)
 {
   serialConnection.begin(9600);
 
-  if (!beginAccelerationSensor()) {
+  if (!beginGyroSensor()) {
     serialConnection.println("Can't initialize IMU! Check your wiring.");
   }
 
@@ -76,8 +76,8 @@ void setup(void)
  */
 void loop(void)
 {
-  readAcceleration(accel);
-  serialConnection.println(accelerationToJSON("acceleration", accel));
+  readGyro(gyro);
+  serialConnection.println(gyroToJSON("gyro", gyro));
 
   delay(1000);
 }
