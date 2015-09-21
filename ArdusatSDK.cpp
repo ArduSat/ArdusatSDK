@@ -11,10 +11,9 @@
 #include "ArdusatSDK.h"
 
 int OUTPUT_BUF_SIZE = 256;
-int OUTPUT_BUFFER_MAXSIZE = 250;
 bool ARDUSAT_SHIELD = false;
 char * _output_buffer;
-int _output_buf_len = 0;
+static int _output_buf_len = 0;
 
 prog_char begin_error_msg[] = "Uh oh, begin%s failed. Check your wiring!";
 prog_char orientation_sensor_name[] = "Orientation";
@@ -409,10 +408,13 @@ const char * _headerToCSV(_data_header_t * header, const char *sensorName) {
   _output_buf_len = strlen(_getOutBuf())
 
 #define _add_checksum_to_csv_buffer(sensor_name, num_vals, ...) \
-  int cs = calculateCheckSum(sensor_name, num_vals, __VA_ARGS__); \
-  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR; \
-  itoa(cs, _getOutBuf() + _output_buf_len, 10); \
-  _output_buf_len = strlen(_getOutBuf());
+  do { \
+  if (_output_buf_len > OUTPUT_BUF_SIZE - 10) { \
+    int cs = calculateCheckSum(sensor_name, num_vals, __VA_ARGS__); \
+    _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR; \
+    itoa(cs, _getOutBuf() + _output_buf_len, 10); \
+    _output_buf_len = strlen(_getOutBuf()); \
+  } } while (0)
 
 /**
  * Create a CSV string with a generic float value and a sensor name. Optional timestamp
@@ -465,7 +467,9 @@ const char * valuesToCSV(const char *sensorName, unsigned long timestamp, int nu
 
   va_start(args, numValues);
   for (i = 0; i < numValues; ++i) {
-    if (_output_buf_len > OUTPUT_BUFFER_MAXSIZE - 10) {
+    // We don't know *exactly* how long the floating point value is
+    // going to be, so just take a guess here...
+    if (_output_buf_len > OUTPUT_BUF_SIZE - 10) {
       break;
     }
     add_float_to_csv_buffer(va_arg(args, double));
@@ -636,7 +640,7 @@ int _writeJSONValue(char *buf, const char *sensor_name, const char *unit, float 
   char num [32];
   char format_str[80];
   // inexact estimate on the number of characters the value will take up...
-  if (strlen(sensor_name) + strlen(unit) + 10 + _output_buf_len > OUTPUT_BUFFER_MAXSIZE) {
+  if (strlen(sensor_name) + strlen(unit) + 10 + _output_buf_len > OUTPUT_BUF_SIZE) {
     return -1;
   }
   dtostrf(value, 4, 2, num);
