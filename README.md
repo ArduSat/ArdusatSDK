@@ -12,7 +12,7 @@ Downloads for all major OS versions can be found at
 [http://arduino.cc/en/Main/Software](http://arduino.cc/en/Main/Software).
 
 Once you have the IDE, installing the SDK is easy - it works like any other third party Arduino
-library. Just [download the SDK](https://s3-us-west-2.amazonaws.com/ardusatweb/ArdusatSDK.zip) or
+library. Just [download the SDK](https://www.ardusat.com/downloads/ArdusatSDK.zip) or
 clone this repository to your hard drive, then open the Arduino IDE, go to 'Sketch -> Import Library
 -> Add Library' and navigate to your download (zip file or the directory cloned with Git). You now
 should be able to use the SDK in your sketches.

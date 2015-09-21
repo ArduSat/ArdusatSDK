@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  orientation.ino
+ *       Filename:  gyro.ino
  *
  *    Description:  Outputs the gyroscope sensor readings in a JSON format that
  *                  can be read by the Ardusat Experiment Platform
@@ -43,7 +43,7 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
-gyro_t orient;
+gyro_t gyro;
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -76,8 +76,8 @@ void setup(void)
  */
 void loop(void)
 {
-  readGyro(orient);
-  serialConnection.println(gyroToJSON("orientation", orient));
+  readGyro(gyro);
+  serialConnection.println(gyroToJSON("gyro", gyro));
 
   delay(1000);
 }

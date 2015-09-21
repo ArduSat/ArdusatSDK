@@ -1,27 +1,8 @@
-/*
- * =====================================================================================
- *
- *       Filename:  ArdusatSDK.h
- *
- *    Description:  Implements ArdusatSDK generic sensor read and configuration
- *                  functions for Space Kit Sensors.
- *
- *                  This SDK uses many third-party libraries available from
- *                  Adafruit (https://github.com/adafruit). These libraries are
- *                  mostly under an Apache License, Version 2.0.
- *
- *                  http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Organization:  Ardusat
- *        Version:  2.0
- *       Compiler:  Arduino
- *
- *        Created:  12/3/2014
- *         Author:  Ben Peters (ben@ardusat.com)
- *   Last Updated:  8/25/2015
- *   Last Updater:  Sam Olds (sam@ardusat.com)
- *
- * =====================================================================================
+/**
+ * @file   ArdusatSDK.h
+ * @Author Ben Peters (ben@ardusat.com)
+ * @date   December 3, 2014
+ * @brief  Implements ArdusatSDK generic sensor reading and configuration for Space Kit Sensors.
  */
 
 #ifndef ARDUSATSDK_H_ 
@@ -72,9 +53,9 @@ typedef enum {
  * The data header contains generic information about the data record.
  */
 struct _data_header_v1 {
-	char unit;			// unit (standard) of the values (e.g. meter, m/s^2, etc.)
-	char sensor_id;		// id of the sensor that generated this data
-	unsigned int timestamp;		// millis for timestamping the data
+	unsigned char unit;       // unit (standard) of the values (e.g. meter, m/s^2, etc.)
+	unsigned char sensor_id;  // id of the sensor that generated this data
+	unsigned long timestamp;  // millis for timestamping the data
 };
 
 typedef struct _data_header_v1 _data_header_t;
