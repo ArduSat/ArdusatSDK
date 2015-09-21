@@ -4,8 +4,9 @@
  * @date   December 3, 2014
  * @brief  Implements ArdusatSDK generic sensor reading and configuration for Space Kit Sensors.
  */
-#ifndef ARDUSATSDK_H_
-#define ARDUSATSDK_H_
+
+#ifndef ARDUSATSDK_H_ 
+#define ARDUSATSDK_H_ 
 
 #include <Arduino.h>
 #include <utility/drivers.h>
