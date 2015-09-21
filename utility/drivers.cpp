@@ -757,14 +757,14 @@ float ml8511_getUV(int pin)
 /*
  * SI1145 UV/Light
  */
-Adafruit_SI1145 uv = Adafruit_SI1145();
+Adafruit_SI1145 si1145_uv = Adafruit_SI1145();
 
 boolean si1145_init() {
-  return uv.begin();
+  return si1145_uv.begin();
 }
 
 float si1145_getUVIndex() {
-  float UVindex = uv.readUV();
+  float UVindex = si1145_uv.readUV();
 
   // the index is multiplied by 100 so to get the integer index, divide by 100
   UVindex /= 100.0;

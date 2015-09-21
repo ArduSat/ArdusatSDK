@@ -49,8 +49,8 @@ ArdusatSerial::ArdusatSerial(serialMode mode)
 /**
  * Constructor with serial mode and connection params for software serial.
  */
-ArdusatSerial::ArdusatSerial(serialMode mode, uint8_t softwareReceivePin,
-                             uint8_t softwareTransmitPin, bool softwareInverseLogic)
+ArdusatSerial::ArdusatSerial(serialMode mode, unsigned char softwareReceivePin,
+                             unsigned char softwareTransmitPin, bool softwareInverseLogic)
 {
   if (mode == SERIAL_MODE_SOFTWARE || mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
     _soft_serial = new SoftwareSerial(softwareReceivePin, softwareTransmitPin,
@@ -117,7 +117,7 @@ void ArdusatSerial::flush()
   send_to_serial(flush())
 }
 
-size_t ArdusatSerial::write(uint8_t b) {
+size_t ArdusatSerial::write(unsigned char b) {
   size_t ret = 1;
 
   if (_soft_serial != NULL && 
@@ -191,7 +191,7 @@ int _enter_xbee_cmd_mode(SoftwareSerial *serial, unsigned long speed)
 void set_xbee_baud_rate(Stream *serial, unsigned long speed)
 {
   char buf [30];
-  uint8_t rate;
+  unsigned char rate;
 
   if (_enter_xbee_cmd_mode((SoftwareSerial *) serial, speed) == 0) {
     switch(speed) {
