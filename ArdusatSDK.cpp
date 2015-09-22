@@ -298,6 +298,24 @@ void calculateOrientation(const acceleration_t & accel, const magnetic_t & mag,
 									       mag.header.timestamp;
 }
 
+/*
+ * Internal helper to do shared checksum logic
+ */
+int _calculateCheckSumV(const char *sensor_name, int num_vals, va_list values) {
+  int cs = 0;
+  const char *c_ptr = sensor_name;
+
+  for (int i = 0; i < num_vals; ++i)
+  {
+    cs += lround(va_arg(values, double));
+  }
+
+  while (*c_ptr != NULL) {
+    cs += *c_ptr++;
+  }
+  return cs;
+}
+
 /**
  * Calculates a checksum value for a given sensorName and value
  *
@@ -308,20 +326,10 @@ void calculateOrientation(const acceleration_t & accel, const magnetic_t & mag,
  * @return checksum
  */
 int calculateCheckSum(const char *sensor_name, int num_vals, ...) {
-  int cs = 0;
-  const char *c_ptr = sensor_name;
-
   va_list values;
   va_start(values, num_vals);
-  for (int i = 0; i < num_vals; ++i)
-  {
-    cs += lround(va_arg(values, double));
-  }
+  int cs = _calculateCheckSumV(sensor_name, num_vals, values);
   va_end(values);
-
-  while (*c_ptr != NULL) {
-    cs += *c_ptr++;
-  }
   return cs;
 }
 
@@ -436,9 +444,14 @@ const char * valuesToCSV(const char *sensorName, unsigned long timestamp, int nu
   }
   va_end(args);
 
-  va_start(args, numValues);
-  _add_checksum_to_csv_buffer(sensorName, numValues, args);
-  va_end(args);
+  if (_output_buf_len < OUTPUT_BUF_SIZE - 10) {
+    va_start(args, numValues);
+    int cs = _calculateCheckSumV(sensorName, numValues, args);
+    va_end(args);
+    _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+    itoa(cs, _getOutBuf() + _output_buf_len, 10);
+    _output_buf_len = strlen(_getOutBuf());
+  }
   _getOutBuf()[_output_buf_len++] = '\n';
 
   return _getOutBuf();
