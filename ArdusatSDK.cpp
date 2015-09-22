@@ -369,7 +369,7 @@ const char * _headerToCSV(_data_header_t * header, const char *sensorName) {
 
 #define _add_checksum_to_csv_buffer(sensor_name, num_vals, ...) \
   do { \
-  if (_output_buf_len > OUTPUT_BUF_SIZE - 10) { \
+  if (_output_buf_len < OUTPUT_BUF_SIZE - 10) { \
     int cs = calculateCheckSum(sensor_name, num_vals, __VA_ARGS__); \
     _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR; \
     itoa(cs, _getOutBuf() + _output_buf_len, 10); \
