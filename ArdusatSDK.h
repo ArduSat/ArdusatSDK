@@ -186,4 +186,15 @@ const char * pressureToJSON(const char *sensorName, pressure_t & input);
 } // extern "C"
 #endif
 
+// versions of functions using the default names for each sensor to save memory
+const char * accelerationToCSV( acceleration_t & input );
+const char * magneticToCSV( magnetic_t & input );
+const char * gyroToCSV( gyro_t & input );
+const char * temperatureToCSV( temperature_t & input );
+const char * luminosityToCSV( luminosity_t & input );
+const char * uvlightToCSV( uvlight_t & input );
+const char * orientationToCSV( orientation_t & input );
+const char * pressureToCSV( pressure_t & pressure );
+
+
 #endif /* ARDUSATSDK_H_ */

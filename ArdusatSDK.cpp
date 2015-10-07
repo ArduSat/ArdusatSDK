@@ -453,6 +453,16 @@ const char * valuesToCSV(const char *sensorName, unsigned long timestamp, int nu
   return _getOutBuf();
 }
 
+// Define a version of a ToCSV function that uses the default name for that
+// sensor type
+#define _DEFAULT_SENSOR_NAME_TO_CSV_FXN(NAME) \
+  const char * NAME ## ToCSV( NAME ## _t &input) { \
+    char sensor[50]; \
+    strcpy_P(sensor, NAME ## _sensor_name); \
+    return NAME ## ToCSV ( sensor, input ); \
+  }
+
+_DEFAULT_SENSOR_NAME_TO_CSV_FXN(acceleration)
 const char * accelerationToCSV(const char *sensorName, acceleration_t & input) {
   _headerToCSV(&(input.header), sensorName);
 
@@ -472,6 +482,7 @@ const char * accelerationToCSV(const char *sensorName, acceleration_t & input) {
   return _getOutBuf();
 }
 
+_DEFAULT_SENSOR_NAME_TO_CSV_FXN(magnetic)
 const char * magneticToCSV(const char *sensorName, magnetic_t & input) {
   _headerToCSV(&(input.header), sensorName);
 
@@ -492,6 +503,7 @@ const char * magneticToCSV(const char *sensorName, magnetic_t & input) {
   return _getOutBuf();
 }
 
+_DEFAULT_SENSOR_NAME_TO_CSV_FXN(temperature)
 const char * temperatureToCSV(const char *sensorName, temperature_t & input) {
   _headerToCSV(&(input.header), sensorName);// warning : resets the internal buffer
 
@@ -504,6 +516,7 @@ const char * temperatureToCSV(const char *sensorName, temperature_t & input) {
   return _getOutBuf();
 }
 
+_DEFAULT_SENSOR_NAME_TO_CSV_FXN(gyro)
 const char * gyroToCSV(const char *sensorName, gyro_t & input) {
   _headerToCSV(&(input.header), sensorName);// warning : resets the internal buffer
 
@@ -524,6 +537,7 @@ const char * gyroToCSV(const char *sensorName, gyro_t & input) {
   return _getOutBuf();
 }
 
+_DEFAULT_SENSOR_NAME_TO_CSV_FXN(luminosity)
 const char * luminosityToCSV(const char *sensorName, luminosity_t & input) {
   _headerToCSV(&(input.header), sensorName);// warning : resets the internal buffer
 
@@ -535,6 +549,7 @@ const char * luminosityToCSV(const char *sensorName, luminosity_t & input) {
   return _getOutBuf();
 }
 
+_DEFAULT_SENSOR_NAME_TO_CSV_FXN(uvlight)
 const char * uvlightToCSV(const char *sensorName, uvlight_t & input) {
   _headerToCSV(&(input.header), sensorName);// warning : resets the internal buffer
 
@@ -564,6 +579,7 @@ const char * orientationToCSV(const char *sensorName, orientation_t & input) {
   return _getOutBuf();
 }
 
+_DEFAULT_SENSOR_NAME_TO_CSV_FXN(pressure)
 const char * pressureToCSV(const char *sensorName, pressure_t & input) {
   _headerToCSV(&(input.header), sensorName);
 
