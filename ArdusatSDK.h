@@ -12,7 +12,7 @@
 #include <avr/pgmspace.h>
 #include <utility/serial.h>
 
-#define prog_char const char PROGMEM
+typedef char PROGMEM prog_char;
 
 extern bool ARDUSAT_SHIELD;
 
@@ -112,6 +112,7 @@ extern "C" {
 extern int OUTPUT_BUF_SIZE;
 extern char * _output_buffer;
 char * _getOutBuf();
+void _resetOutBuf();
 
 /**
  * Get a string representation of a unit constant
@@ -184,5 +185,16 @@ const char * pressureToJSON(const char *sensorName, pressure_t & input);
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+// versions of functions using the default names for each sensor to save memory
+const char * accelerationToCSV( acceleration_t & input );
+const char * magneticToCSV( magnetic_t & input );
+const char * gyroToCSV( gyro_t & input );
+const char * temperatureToCSV( temperature_t & input );
+const char * luminosityToCSV( luminosity_t & input );
+const char * uvlightToCSV( uvlight_t & input );
+const char * orientationToCSV( orientation_t & input );
+const char * pressureToCSV( pressure_t & pressure );
+
 
 #endif /* ARDUSATSDK_H_ */

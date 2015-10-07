@@ -14,20 +14,20 @@ int OUTPUT_BUF_SIZE = 256;
 char * _output_buffer;
 static int _output_buf_len = 0;
 
-prog_char begin_error_msg[] = "Uh oh, begin%s failed. Check your wiring!";
-prog_char orientation_sensor_name[] = "Orientation";
-prog_char accel_sensor_name[] = "Acceleration";
-prog_char mag_sensor_name[] = "Magnetic";
-prog_char uv_sensor_name[] = "UVLight";
-prog_char luminosity_sensor_name[] = "Luminosity";
-prog_char temperature_sensor_name[] = "Temperature";
-prog_char ir_temperature_sensor_name[] = "IRTemperature";
-prog_char pressure_sensor_name[] = "BarometricPressureSensor";
+const prog_char begin_error_msg[] = "begin%s failed. Check wiring!";
+const prog_char gyro_sensor_name[] = "Gyro";
+const prog_char acceleration_sensor_name[] = "Acceleration";
+const prog_char magnetic_sensor_name[] = "Magnetic";
+const prog_char uvlight_sensor_name[] = "UVLight";
+const prog_char luminosity_sensor_name[] = "Luminosity";
+const prog_char temperature_sensor_name[] = "Temperature";
+const prog_char ir_temperature_sensor_name[] = "IRTemperature";
+const prog_char pressure_sensor_name[] = "BarometricPressure";
 
 static char CSV_SEPARATOR = ',';
 static char JSON_PREFIX = '~';
 static char JSON_SUFFIX = '|';
-prog_char json_format[] = "%c{\"sensorName\":\"%s\",\"unit\":\"%s\",\"value\":%s,\"cs\":%d}%c\n";
+const prog_char json_format[] = "%c{\"sensorName\":\"%s\",\"unit\":\"%s\",\"value\":%s,\"cs\":%d}%c\n";
 
 /**
  * Gets the output buffer used for storing sensor data, or initializes
@@ -40,6 +40,11 @@ char * _getOutBuf() {
     _output_buffer = new char[OUTPUT_BUF_SIZE];
   }
   return _output_buffer;
+}
+
+void _resetOutBuf() {
+  memset(_getOutBuf(), 0, OUTPUT_BUF_SIZE);
+  _output_buf_len = 0;
 }
 
 /**
@@ -62,16 +67,12 @@ const char * unit_to_str(unsigned char unit)
       return "uT";
     case (DATA_UNIT_DEGREES_CELSIUS):
       return "C";
-    case (DATA_UNIT_DEGREES_FAHRENHEIT):
-      return "F";
     case (DATA_UNIT_METER_PER_SECOND):
       return "m/s";
     case (DATA_UNIT_LUX):
       return "lux";
     case (DATA_UNIT_MILLIWATT_PER_CMSQUARED):
       return "mW/cm^2";
-    case (DATA_UNIT_RADIAN):
-      return "rad";
     case (DATA_UNIT_HECTOPASCAL):
       return "hPa";
     default:
@@ -86,18 +87,17 @@ const char * unit_to_str(unsigned char unit)
  *
  * @param sensorName name of sensor that failed.
  */
-void _beginError(prog_char sensorName[])
+void _writeBeginError(const prog_char sensorName[])
 {
   char err_msg[50];
   char sensor[50];
-  char output_buffer[100];
 
   strcpy_P(err_msg, begin_error_msg);
   strcpy_P(sensor, sensorName);
 
   //Make SURE sensorName isn't too long for the output buffer!!!
-  sprintf(output_buffer, err_msg, sensor);
-  Serial.println(output_buffer);
+  _resetOutBuf();
+  sprintf(_getOutBuf(), err_msg, sensor);
 }
 
 /**
@@ -107,9 +107,10 @@ void _beginError(prog_char sensorName[])
  * @param sensorName name of sensor that failed.
  * @param init_func function to try and initialize sensor
  */
-boolean start_sensor_or_err(prog_char sensorName[], boolean (*init_func)(void)) {
+boolean start_sensor_or_err(const prog_char sensorName[], boolean (*init_func)(void)) {
   if (!init_func()) {
-    _beginError(sensorName);
+    _writeBeginError(sensorName);
+    Serial.println(_getOutBuf());
     return false;
   } else {
     return true;
@@ -175,9 +176,9 @@ void readLuminosity(luminosity_t & output) {
  */
 boolean beginUVLightSensor() {
 #if defined(SI1145_UV_LIGHT)
-  return start_sensor_or_err(uv_sensor_name, si1145_init);
+  return start_sensor_or_err(uvlight_sensor_name, si1145_init);
 #else
-  return start_sensor_or_err(uv_sensor_name, ml8511_init);
+  return start_sensor_or_err(uvlight_sensor_name, ml8511_init);
 #endif
 }
 
@@ -198,7 +199,7 @@ void readUVLight(uvlight_t & output, int pin) {
  * Acceleration
  */
 boolean beginAccelerationSensor() {
-  return start_sensor_or_err(accel_sensor_name, lsm303_accel_init);
+  return start_sensor_or_err(acceleration_sensor_name, lsm303_accel_init);
 }
 
 void readAcceleration(acceleration_t & output) {
@@ -213,7 +214,7 @@ void readAcceleration(acceleration_t & output) {
  * Magnetic Field
  */
 boolean beginMagneticSensor() {
-  return start_sensor_or_err(mag_sensor_name, lsm303_mag_init);
+  return start_sensor_or_err(magnetic_sensor_name, lsm303_mag_init);
 }
 
 void readMagnetic(magnetic_t & output) {
@@ -228,7 +229,7 @@ void readMagnetic(magnetic_t & output) {
  * Gyroscope
  */
 boolean beginGyroSensor() {
-  return start_sensor_or_err(orientation_sensor_name, l3gd20h_init);
+  return start_sensor_or_err(gyro_sensor_name, l3gd20h_init);
 }
 
 void readGyro(gyro_t & output) {
@@ -310,7 +311,7 @@ int _calculateCheckSumV(const char *sensor_name, int num_vals, va_list values) {
     cs += lround(va_arg(values, double));
   }
 
-  while (*c_ptr != NULL) {
+  while (*c_ptr != 0) {
     cs += *c_ptr++;
   }
   return cs;
@@ -336,11 +337,6 @@ int calculateCheckSum(const char *sensor_name, int num_vals, ...) {
 /*
  * toCSV Output functions
  */
-void _resetOutBuf() {
-  memset(_getOutBuf(), 0, OUTPUT_BUF_SIZE);
-  _output_buf_len = 0;
-}
-
 const char * _headerToCSV(_data_header_t * header, const char *sensorName) {
   int name_len;
 
@@ -457,6 +453,16 @@ const char * valuesToCSV(const char *sensorName, unsigned long timestamp, int nu
   return _getOutBuf();
 }
 
+// Define a version of a ToCSV function that uses the default name for that
+// sensor type
+#define _DEFAULT_SENSOR_NAME_TO_CSV_FXN(NAME) \
+  const char * NAME ## ToCSV( NAME ## _t &input) { \
+    char sensor[50]; \
+    strcpy_P(sensor, NAME ## _sensor_name); \
+    return NAME ## ToCSV ( sensor, input ); \
+  }
+
+_DEFAULT_SENSOR_NAME_TO_CSV_FXN(acceleration)
 const char * accelerationToCSV(const char *sensorName, acceleration_t & input) {
   _headerToCSV(&(input.header), sensorName);
 
@@ -476,6 +482,7 @@ const char * accelerationToCSV(const char *sensorName, acceleration_t & input) {
   return _getOutBuf();
 }
 
+_DEFAULT_SENSOR_NAME_TO_CSV_FXN(magnetic)
 const char * magneticToCSV(const char *sensorName, magnetic_t & input) {
   _headerToCSV(&(input.header), sensorName);
 
@@ -496,6 +503,7 @@ const char * magneticToCSV(const char *sensorName, magnetic_t & input) {
   return _getOutBuf();
 }
 
+_DEFAULT_SENSOR_NAME_TO_CSV_FXN(temperature)
 const char * temperatureToCSV(const char *sensorName, temperature_t & input) {
   _headerToCSV(&(input.header), sensorName);// warning : resets the internal buffer
 
@@ -508,6 +516,7 @@ const char * temperatureToCSV(const char *sensorName, temperature_t & input) {
   return _getOutBuf();
 }
 
+_DEFAULT_SENSOR_NAME_TO_CSV_FXN(gyro)
 const char * gyroToCSV(const char *sensorName, gyro_t & input) {
   _headerToCSV(&(input.header), sensorName);// warning : resets the internal buffer
 
@@ -528,6 +537,7 @@ const char * gyroToCSV(const char *sensorName, gyro_t & input) {
   return _getOutBuf();
 }
 
+_DEFAULT_SENSOR_NAME_TO_CSV_FXN(luminosity)
 const char * luminosityToCSV(const char *sensorName, luminosity_t & input) {
   _headerToCSV(&(input.header), sensorName);// warning : resets the internal buffer
 
@@ -539,6 +549,7 @@ const char * luminosityToCSV(const char *sensorName, luminosity_t & input) {
   return _getOutBuf();
 }
 
+_DEFAULT_SENSOR_NAME_TO_CSV_FXN(uvlight)
 const char * uvlightToCSV(const char *sensorName, uvlight_t & input) {
   _headerToCSV(&(input.header), sensorName);// warning : resets the internal buffer
 
@@ -568,6 +579,7 @@ const char * orientationToCSV(const char *sensorName, orientation_t & input) {
   return _getOutBuf();
 }
 
+_DEFAULT_SENSOR_NAME_TO_CSV_FXN(pressure)
 const char * pressureToCSV(const char *sensorName, pressure_t & input) {
   _headerToCSV(&(input.header), sensorName);
 
