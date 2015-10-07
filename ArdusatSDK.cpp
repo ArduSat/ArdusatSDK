@@ -14,20 +14,20 @@ int OUTPUT_BUF_SIZE = 256;
 char * _output_buffer;
 static int _output_buf_len = 0;
 
-prog_char begin_error_msg[] = "Uh oh, begin%s failed. Check your wiring!";
-prog_char orientation_sensor_name[] = "Orientation";
-prog_char accel_sensor_name[] = "Acceleration";
-prog_char mag_sensor_name[] = "Magnetic";
-prog_char uv_sensor_name[] = "UVLight";
-prog_char luminosity_sensor_name[] = "Luminosity";
-prog_char temperature_sensor_name[] = "Temperature";
-prog_char ir_temperature_sensor_name[] = "IRTemperature";
-prog_char pressure_sensor_name[] = "BarometricPressureSensor";
+const prog_char begin_error_msg[] = "begin%s failed. Check wiring!";
+const prog_char gyro_sensor_name[] = "Gyro";
+const prog_char acceleration_sensor_name[] = "Acceleration";
+const prog_char magnetic_sensor_name[] = "Magnetic";
+const prog_char uvlight_sensor_name[] = "UVLight";
+const prog_char luminosity_sensor_name[] = "Luminosity";
+const prog_char temperature_sensor_name[] = "Temperature";
+const prog_char ir_temperature_sensor_name[] = "IRTemperature";
+const prog_char pressure_sensor_name[] = "BarometricPressure";
 
 static char CSV_SEPARATOR = ',';
 static char JSON_PREFIX = '~';
 static char JSON_SUFFIX = '|';
-prog_char json_format[] = "%c{\"sensorName\":\"%s\",\"unit\":\"%s\",\"value\":%s,\"cs\":%d}%c\n";
+const prog_char json_format[] = "%c{\"sensorName\":\"%s\",\"unit\":\"%s\",\"value\":%s,\"cs\":%d}%c\n";
 
 /**
  * Gets the output buffer used for storing sensor data, or initializes
@@ -86,7 +86,7 @@ const char * unit_to_str(unsigned char unit)
  *
  * @param sensorName name of sensor that failed.
  */
-void _beginError(prog_char sensorName[])
+void _writeBeginError(const prog_char sensorName[])
 {
   char err_msg[50];
   char sensor[50];
@@ -107,7 +107,7 @@ void _beginError(prog_char sensorName[])
  * @param sensorName name of sensor that failed.
  * @param init_func function to try and initialize sensor
  */
-boolean start_sensor_or_err(prog_char sensorName[], boolean (*init_func)(void)) {
+boolean start_sensor_or_err(const prog_char sensorName[], boolean (*init_func)(void)) {
   if (!init_func()) {
     _beginError(sensorName);
     return false;
@@ -175,9 +175,9 @@ void readLuminosity(luminosity_t & output) {
  */
 boolean beginUVLightSensor() {
 #if defined(SI1145_UV_LIGHT)
-  return start_sensor_or_err(uv_sensor_name, si1145_init);
+  return start_sensor_or_err(uvlight_sensor_name, si1145_init);
 #else
-  return start_sensor_or_err(uv_sensor_name, ml8511_init);
+  return start_sensor_or_err(uvlight_sensor_name, ml8511_init);
 #endif
 }
 
@@ -198,7 +198,7 @@ void readUVLight(uvlight_t & output, int pin) {
  * Acceleration
  */
 boolean beginAccelerationSensor() {
-  return start_sensor_or_err(accel_sensor_name, lsm303_accel_init);
+  return start_sensor_or_err(acceleration_sensor_name, lsm303_accel_init);
 }
 
 void readAcceleration(acceleration_t & output) {
@@ -213,7 +213,7 @@ void readAcceleration(acceleration_t & output) {
  * Magnetic Field
  */
 boolean beginMagneticSensor() {
-  return start_sensor_or_err(mag_sensor_name, lsm303_mag_init);
+  return start_sensor_or_err(magnetic_sensor_name, lsm303_mag_init);
 }
 
 void readMagnetic(magnetic_t & output) {
@@ -228,7 +228,7 @@ void readMagnetic(magnetic_t & output) {
  * Gyroscope
  */
 boolean beginGyroSensor() {
-  return start_sensor_or_err(orientation_sensor_name, l3gd20h_init);
+  return start_sensor_or_err(gyro_sensor_name, l3gd20h_init);
 }
 
 void readGyro(gyro_t & output) {

@@ -12,7 +12,7 @@
 #include <avr/pgmspace.h>
 #include <utility/serial.h>
 
-#define prog_char const char PROGMEM
+typedef char PROGMEM prog_char;
 
 extern bool ARDUSAT_SHIELD;
 
