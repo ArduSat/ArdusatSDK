@@ -21,15 +21,6 @@
 
 LSM303::LSM303(void)
 {
-  /*
-  These values lead to an assumed magnetometer bias of 0.
-  Use the Calibrate example program to determine appropriate values
-  for your particular unit. The Heading example demonstrates how to
-  adjust these values in your own sketch.
-  */
-  m_min = (LSM303::vector<int16_t>){-32767, -32767, -32767};
-  m_max = (LSM303::vector<int16_t>){+32767, +32767, +32767};
-
   _device = device_auto;
 
   io_timeout = 0;  // 0 = no timeout
@@ -37,24 +28,6 @@ LSM303::LSM303(void)
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
-
-// Did a timeout occur in readAcc(), readMag(), or read() since the last call to timeoutOccurred()?
-bool LSM303::timeoutOccurred()
-{
-  bool tmp = did_timeout;
-  did_timeout = false;
-  return tmp;
-}
-
-void LSM303::setTimeout(unsigned int timeout)
-{
-  io_timeout = timeout;
-}
-
-unsigned int LSM303::getTimeout()
-{
-  return io_timeout;
-}
 
 bool LSM303::init(deviceType device, sa0State sa0)
 {
@@ -438,35 +411,6 @@ void LSM303::read(void)
 {
   readAcc();
   readMag();
-}
-
-/*
-Returns the angular difference in the horizontal plane between a
-default vector and north, in degrees.
-
-The default vector here is chosen to point along the surface of the
-PCB, in the direction of the top of the text on the silkscreen.
-This is the +X axis on the Pololu LSM303D carrier and the -Y axis on
-the Pololu LSM303DLHC, LSM303DLM, and LSM303DLH carriers.
-*/
-float LSM303::heading(void)
-{
-  if (_device == device_D)
-  {
-    return heading((vector<int>){1, 0, 0});
-  }
-  else
-  {
-    return heading((vector<int>){0, -1, 0});
-  }
-}
-
-void LSM303::vector_normalize(vector<float> *a)
-{
-  float mag = sqrt(vector_dot(a, a));
-  a->x /= mag;
-  a->y /= mag;
-  a->z /= mag;
 }
 
 // Private Methods //////////////////////////////////////////////////////////////

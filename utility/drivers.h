@@ -19,7 +19,6 @@
 
 #include <Arduino.h>
 #include <utility/mlx90614.h>
-#include <utility/Adafruit_Sensor.h>
 #include <utility/Adafruit_L3GD20_U.h>
 #include <utility/Adafruit_SI1145.h>
 #include <utility/BMP180.h>
@@ -36,6 +35,17 @@
 #define DRIVER_LSM303_DTR_ADDR          0x1E
 #define DRIVER_ML8511_UV_PIN            A0
 #define DRIVER_ML8511_REF_PIN           A1
+
+/* Constants */
+#define SENSORS_GRAVITY_EARTH             (9.80665F)              /**< Earth's gravity in m/s^2 */
+#define SENSORS_GRAVITY_MOON              (1.6F)                  /**< The moon's gravity in m/s^2 */
+#define SENSORS_GRAVITY_SUN               (275.0F)                /**< The sun's gravity in m/s^2 */
+#define SENSORS_GRAVITY_STANDARD          (SENSORS_GRAVITY_EARTH)
+#define SENSORS_MAGFIELD_EARTH_MAX        (60.0F)                 /**< Maximum magnetic field on Earth's surface */
+#define SENSORS_MAGFIELD_EARTH_MIN        (30.0F)                 /**< Minimum magnetic field on Earth's surface */
+#define SENSORS_PRESSURE_SEALEVELHPA      (1013.25F)              /**< Average sea level pressure is 1013.25 hPa */
+#define SENSORS_DPS_TO_RADS               (0.017453293F)          /**< Degrees/s to rad/s multiplier */
+#define SENSORS_GAUSS_TO_MICROTESLA       (100)                   /**< Gauss to micro-Tesla multiplier */
 
 #ifdef __cplusplus
 extern "C" {

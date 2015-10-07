@@ -112,6 +112,7 @@ extern "C" {
 extern int OUTPUT_BUF_SIZE;
 extern char * _output_buffer;
 char * _getOutBuf();
+void _resetOutBuf();
 
 /**
  * Get a string representation of a unit constant

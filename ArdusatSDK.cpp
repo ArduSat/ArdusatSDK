@@ -42,6 +42,11 @@ char * _getOutBuf() {
   return _output_buffer;
 }
 
+void _resetOutBuf() {
+  memset(_getOutBuf(), 0, OUTPUT_BUF_SIZE);
+  _output_buf_len = 0;
+}
+
 /**
  * Convert an enumerated unit code to a string representation.
  *
@@ -62,16 +67,12 @@ const char * unit_to_str(unsigned char unit)
       return "uT";
     case (DATA_UNIT_DEGREES_CELSIUS):
       return "C";
-    case (DATA_UNIT_DEGREES_FAHRENHEIT):
-      return "F";
     case (DATA_UNIT_METER_PER_SECOND):
       return "m/s";
     case (DATA_UNIT_LUX):
       return "lux";
     case (DATA_UNIT_MILLIWATT_PER_CMSQUARED):
       return "mW/cm^2";
-    case (DATA_UNIT_RADIAN):
-      return "rad";
     case (DATA_UNIT_HECTOPASCAL):
       return "hPa";
     default:
@@ -90,14 +91,13 @@ void _writeBeginError(const prog_char sensorName[])
 {
   char err_msg[50];
   char sensor[50];
-  char output_buffer[100];
 
   strcpy_P(err_msg, begin_error_msg);
   strcpy_P(sensor, sensorName);
 
   //Make SURE sensorName isn't too long for the output buffer!!!
-  sprintf(output_buffer, err_msg, sensor);
-  Serial.println(output_buffer);
+  _resetOutBuf();
+  sprintf(_getOutBuf(), err_msg, sensor);
 }
 
 /**
@@ -109,7 +109,8 @@ void _writeBeginError(const prog_char sensorName[])
  */
 boolean start_sensor_or_err(const prog_char sensorName[], boolean (*init_func)(void)) {
   if (!init_func()) {
-    _beginError(sensorName);
+    _writeBeginError(sensorName);
+    Serial.println(_getOutBuf());
     return false;
   } else {
     return true;
@@ -310,7 +311,7 @@ int _calculateCheckSumV(const char *sensor_name, int num_vals, va_list values) {
     cs += lround(va_arg(values, double));
   }
 
-  while (*c_ptr != NULL) {
+  while (*c_ptr != 0) {
     cs += *c_ptr++;
   }
   return cs;
@@ -336,11 +337,6 @@ int calculateCheckSum(const char *sensor_name, int num_vals, ...) {
 /*
  * toCSV Output functions
  */
-void _resetOutBuf() {
-  memset(_getOutBuf(), 0, OUTPUT_BUF_SIZE);
-  _output_buf_len = 0;
-}
-
 const char * _headerToCSV(_data_header_t * header, const char *sensorName) {
   int name_len;
 
