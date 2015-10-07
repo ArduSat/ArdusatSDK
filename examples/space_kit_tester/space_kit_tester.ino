@@ -123,7 +123,6 @@ void loop(void)
   byte byteRead;
   float temp_val;
   float infrared_temp;
-  float tempIMU;
 
   // To test sending serial data from the computer, we can turn the serialConnection Read
   // LED on or off
@@ -199,7 +198,5 @@ void loop(void)
   //  Read Barometer BMP180
   readBarometricPressure(pressure);
   Serial.println(pressureToJSON("pressure", pressure));
-  Serial.println(valueToJSON("tempIMU", 4, tempIMU)); // data type 4 = Degrees C
-
   delay(READ_INTERVAL);
 }
