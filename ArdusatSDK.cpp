@@ -14,20 +14,20 @@ int OUTPUT_BUF_SIZE = 256;
 char * _output_buffer;
 static int _output_buf_len = 0;
 
-const prog_char begin_error_msg[] = "begin%s failed. Check wiring!";
-const prog_char gyro_sensor_name[] = "Gyro";
-const prog_char acceleration_sensor_name[] = "Acceleration";
-const prog_char magnetic_sensor_name[] = "Magnetic";
-const prog_char uvlight_sensor_name[] = "UVLight";
-const prog_char luminosity_sensor_name[] = "Luminosity";
-const prog_char temperature_sensor_name[] = "Temperature";
-const prog_char ir_temperature_sensor_name[] = "IRTemperature";
-const prog_char pressure_sensor_name[] = "BarometricPressure";
+const char begin_error_msg[] PROGMEM = "begin%s failed. Check wiring!";
+const char gyro_sensor_name[] PROGMEM = "Gyro";
+const char acceleration_sensor_name[] PROGMEM = "Acceleration";
+const char magnetic_sensor_name[] PROGMEM = "Magnetic";
+const char uvlight_sensor_name[] PROGMEM = "UVLight";
+const char luminosity_sensor_name[] PROGMEM = "Luminosity";
+const char temperature_sensor_name[] PROGMEM = "Temperature";
+const char ir_temperature_sensor_name[] PROGMEM = "IRTemperature";
+const char pressure_sensor_name[] PROGMEM = "BarometricPressure";
 
 static char CSV_SEPARATOR = ',';
 static char JSON_PREFIX = '~';
 static char JSON_SUFFIX = '|';
-const prog_char json_format[] = "%c{\"sensorName\":\"%s\",\"unit\":\"%s\",\"value\":%s,\"cs\":%d}%c\n";
+const char json_format[] PROGMEM = "%c{\"sensorName\":\"%s\",\"unit\":\"%s\",\"value\":%s,\"cs\":%d}%c\n";
 
 /**
  * Gets the output buffer used for storing sensor data, or initializes
@@ -87,7 +87,7 @@ const char * unit_to_str(unsigned char unit)
  *
  * @param sensorName name of sensor that failed.
  */
-void _writeBeginError(const prog_char sensorName[])
+void _writeBeginError(const char sensorName[] PROGMEM)
 {
   char err_msg[50];
   char sensor[50];
@@ -107,7 +107,7 @@ void _writeBeginError(const prog_char sensorName[])
  * @param sensorName name of sensor that failed.
  * @param init_func function to try and initialize sensor
  */
-boolean start_sensor_or_err(const prog_char sensorName[], boolean (*init_func)(void)) {
+boolean start_sensor_or_err(const char sensorName[] PROGMEM, boolean (*init_func)(void)) {
   if (!init_func()) {
     _writeBeginError(sensorName);
     Serial.println(_getOutBuf());
