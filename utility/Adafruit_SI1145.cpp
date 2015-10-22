@@ -152,7 +152,6 @@ uint8_t Adafruit_SI1145::readParam(uint8_t p) {
 /*********************************************************************/
 
 uint8_t  Adafruit_SI1145::read8(uint8_t reg) {
-  uint16_t val;
     Wire.beginTransmission(_addr);
     Wire.write((uint8_t)reg);
     Wire.endTransmission();
