@@ -22,11 +22,13 @@ thing with our other
 [Ardusat Logging SDK Library](http://github.com/ardusat/ardusatsdk-logging)
 
 ## Using the SDK
-The first step to using the SDK is to import it into your sketch. This can be done with a simple
-import statement:
+The first step to using the SDK is to import it into your sketch. This can be done with a few simple
+import statements:
 
 ```
 #import <ArdusatSDK.h>
+#import <SoftwareSerial.h>
+#import <Wire.h>
 ```
 
 After the SDK is imported, the basic I/O functions and sensor drivers should be available.
@@ -78,6 +80,8 @@ void calculateOrientation(const acceleration_t, const magnetic_t, orientation_t)
 Usage example:
 ```
 #import <ArdusatSDK.h>
+#import <SoftwareSerial.h>
+#import <Wire.h>
 
 temperature_t temp_data;
 
