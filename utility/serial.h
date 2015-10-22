@@ -9,10 +9,10 @@
 #define ARDUSAT_SERIAL_H_
 
 #include <HardwareSerial.h>
+#include <SoftwareSerial.h>
 #include <inttypes.h>
 #include <Stream.h>
 
-#include "SoftwareSerial.h"
 
 typedef enum {
   SERIAL_MODE_HARDWARE=0,
