@@ -213,7 +213,27 @@ void loop()
   readTemperature(temp_data);
   serialConnection.println(temperatureToCSV("temperature", temp_data));
 }
+```
 
+To use the the wireless bluetooth module, follow
+[this bluetooth setup guide](https://github.com/ArduSat/ArdusatSDK/wiki/Bluetooth-Setup-Guide). Then you
+can do the following.
+```
+ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 2, 3);
+
+void setup()
+{
+  serialConnection.beginBluetooth(9600);
+  serialConnection.println("This message will go out on hardware serial and software serial!");
+  beginTemperatureSensor();
+}
+
+void loop()
+{
+  temperature_t temp_data;
+  readTemperature(temp_data);
+  serialConnection.println(temperatureToCSV("temperature", temp_data));
+}
 ```
 
 #### Serial Modes
