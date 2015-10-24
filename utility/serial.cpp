@@ -92,6 +92,60 @@ void ArdusatSerial::begin(unsigned long baud, bool setXbeeSpeed)
   }
 }
 
+/**
+ * Begin serial communications with a Sparkfun BlueSMiRF module at the specified baud
+ * rate.
+ *
+ * Note that baud rates above ~57600 are not well-supported by SoftwareSerial, and 
+ * even 57600 may cause some bugs.
+ *
+ * @param baud rate for serial communications
+ */
+void ArdusatSerial::beginBluetooth(unsigned long baud)
+{
+  if (_mode == SERIAL_MODE_HARDWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
+    Serial.begin(baud);
+
+    _soft_serial->end();
+    _soft_serial->begin(115200); // bluesmirf defaults to baudrate of 115200
+
+    _soft_serial->print("$"); // enter command mode
+    _soft_serial->print("$");
+    _soft_serial->print("$");
+    delay(100);
+
+    _soft_serial->println("S~,0"); // Set to serial port profile
+
+    bool valid = true;
+
+    // Supported bluesmirf baud rates
+    switch(baud) { // Set Baud rate
+      case 1200: _soft_serial->println("U,1200,N");
+      case 2400: _soft_serial->println("U,2400,N");
+      case 4800: _soft_serial->println("U,4800,N");
+      case 9600: _soft_serial->println("U,9600,N");
+      case 19200: _soft_serial->println("U,192K,N");
+      case 38400: _soft_serial->println("U,384K,N");
+      case 57600: _soft_serial->println("U,576K,N");
+      case 115000: _soft_serial->println("U,115K,N");
+      case 230000: _soft_serial->println("U,230K,N");
+      case 460000: _soft_serial->println("U,460K,N");
+      case 921000: _soft_serial->println("U,921K,N");
+      default: valid = false;
+    }
+
+    if (valid) {
+      _soft_serial->end();
+      _soft_serial->begin(baud);
+    } else {
+      _soft_serial->println("U,9600,N");
+      _soft_serial->end();
+      _soft_serial->begin(9600);
+      _soft_serial->println("Error: specified baud rate not available.");
+    }
+  }
+}
+
 void ArdusatSerial::end()
 {
   send_to_serial(end())
