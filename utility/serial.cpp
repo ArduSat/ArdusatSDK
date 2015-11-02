@@ -104,44 +104,37 @@ void ArdusatSerial::begin(unsigned long baud, bool setXbeeSpeed)
 void ArdusatSerial::beginBluetooth(unsigned long baud)
 {
   if (_mode == SERIAL_MODE_HARDWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
-    Serial.begin(baud);
-
-    _soft_serial->end();
-    _soft_serial->begin(115200); // bluesmirf defaults to baudrate of 115200
-
-    _soft_serial->print("$"); // enter command mode
-    _soft_serial->print("$");
-    _soft_serial->print("$");
-    delay(100);
-
-    _soft_serial->println("S~,0"); // Set to serial port profile
-
     bool valid = true;
+    if (baud != 9600) {
+      _soft_serial->end();
+      _soft_serial->begin(9600); // shipping bluesmirf with default of 9600
+      _soft_serial->print("$");  // enter command mode
+      _soft_serial->print("$");
+      _soft_serial->print("$");
+      delay(100);
 
-    // Supported bluesmirf baud rates
-    switch(baud) { // Set Baud rate
-      case 1200: _soft_serial->println("U,1200,N");
-      case 2400: _soft_serial->println("U,2400,N");
-      case 4800: _soft_serial->println("U,4800,N");
-      case 9600: _soft_serial->println("U,9600,N");
-      case 19200: _soft_serial->println("U,192K,N");
-      case 38400: _soft_serial->println("U,384K,N");
-      case 57600: _soft_serial->println("U,576K,N");
-      case 115000: _soft_serial->println("U,115K,N");
-      case 230000: _soft_serial->println("U,230K,N");
-      case 460000: _soft_serial->println("U,460K,N");
-      case 921000: _soft_serial->println("U,921K,N");
-      default: valid = false;
+      // Supported bluesmirf baud rates
+      switch(baud) { // Set Baud rate
+        case 1200: _soft_serial->println("U,1200,N"); break;
+        case 2400: _soft_serial->println("U,2400,N"); break;
+        case 4800: _soft_serial->println("U,4800,N"); break;
+        case 9600: _soft_serial->println("U,9600,N"); break;
+        case 19200: _soft_serial->println("U,192K,N"); break;
+        case 38400: _soft_serial->println("U,384K,N"); break;
+        case 57600: _soft_serial->println("U,576K,N"); break;
+        case 115000: _soft_serial->println("U,115K,N"); break;
+        default: _soft_serial->println("---"); valid = false;
+      }
     }
 
     if (valid) {
+      Serial.begin(baud);
       _soft_serial->end();
       _soft_serial->begin(baud);
     } else {
-      _soft_serial->println("U,9600,N");
-      _soft_serial->end();
-      _soft_serial->begin(9600);
-      _soft_serial->println("Error: specified baud rate not available.");
+      Serial.begin(9600);
+      Serial.print(baud);
+      Serial.println(" is not a supported bluetooth baud rate.");
     }
   }
 }
