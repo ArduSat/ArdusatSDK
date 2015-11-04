@@ -100,42 +100,60 @@ void ArdusatSerial::begin(unsigned long baud, bool setXbeeSpeed)
  * even 57600 may cause some bugs.
  *
  * @param baud rate for serial communications
+ *
+ * NOTE: If this function is called multiple times with different values for 'baud'
+ *       without losing power in between calls, the baud rate will not be updated
+ *       after the first call.
  */
 void ArdusatSerial::beginBluetooth(unsigned long baud)
 {
-  if (_mode == SERIAL_MODE_HARDWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
-    bool valid = true;
-    if (baud != 9600) {
-      _soft_serial->end();
-      _soft_serial->begin(9600); // shipping bluesmirf with default of 9600
-      _soft_serial->print("$");  // enter command mode
-      _soft_serial->print("$");
-      _soft_serial->print("$");
-      delay(100);
+  bool validBaud = true;
+  char baudCmd[8];
 
-      // Supported bluesmirf baud rates
-      switch(baud) { // Set Baud rate
-        case 1200: _soft_serial->println("U,1200,N"); break;
-        case 2400: _soft_serial->println("U,2400,N"); break;
-        case 4800: _soft_serial->println("U,4800,N"); break;
-        case 9600: _soft_serial->println("U,9600,N"); break;
-        case 19200: _soft_serial->println("U,192K,N"); break;
-        case 38400: _soft_serial->println("U,384K,N"); break;
-        case 57600: _soft_serial->println("U,576K,N"); break;
-        case 115000: _soft_serial->println("U,115K,N"); break;
-        default: _soft_serial->println("---"); valid = false;
+  // Temporarily sets baud rate until power loss
+  switch (baud) {
+    case 1200:  strcpy(baudCmd, "U,1200,N"); break;
+    case 2400:  strcpy(baudCmd, "U,2400,N"); break;
+    case 4800:  strcpy(baudCmd, "U,4800,N"); break;
+    case 9600:  strcpy(baudCmd, "U,9600,N"); break;
+    case 19200: strcpy(baudCmd, "U,192K,N"); break;
+    case 38400: strcpy(baudCmd, "U,384K,N"); break;
+    case 57600: strcpy(baudCmd, "U,576K,N"); break;
+    default:    validBaud = false;
+  }
+
+  if (validBaud) {
+    if (_mode == SERIAL_MODE_HARDWARE) {
+      if (baud != 9600) {
+        Serial.begin(9600);   // shipping bluesmirf with default of 9600
+        Serial.print("$$$");  // enter command mode
+        delay(100);
+        Serial.println(baudCmd);
       }
+      Serial.begin(baud);
     }
 
-    if (valid) {
-      Serial.begin(baud);
+    if (_mode == SERIAL_MODE_SOFTWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
+      if (baud != 9600) {
+        _soft_serial->end();
+        _soft_serial->begin(9600);   // shipping bluesmirf with default of 9600
+        _soft_serial->print("$$$");  // enter command mode
+        delay(100);
+        _soft_serial->println(baudCmd);
+      }
       _soft_serial->end();
       _soft_serial->begin(baud);
-    } else {
-      Serial.begin(9600);
-      Serial.print(baud);
-      Serial.println(" is not a supported bluetooth baud rate.");
     }
+
+    if (_mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
+      Serial.begin(baud);
+    }
+  } else {
+    Serial.begin(9600);
+    Serial.print(baud);
+    Serial.println(" is not a supported bluetooth baud rate.");
+    Serial.println("Supported baud rates are:");
+    Serial.println("1200 2400 4800 9600 19200 38400 57600");
   }
 }
 
