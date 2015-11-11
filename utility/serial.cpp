@@ -17,7 +17,19 @@ const char xbee_cmd_ack[] PROGMEM = "OK";
 const char xbee_cmd_baud[] PROGMEM = "ATBD ";
 const char xbee_cmd_write[] PROGMEM = "ATWR";
 const char xbee_cmd_close[] PROGMEM = "ATCN";
-const char xbee_baud_success[] PROGMEM = "Set XBEE baud rate to ";
+const char xbee_baud_success[] PROGMEM = "Set BEE baud rate to ";
+
+const char bt_cmd_mode[] PROGMEM = "$$$";
+const char bt_1200_baud_cmd[] PROGMEM = "U,1200,N";
+const char bt_2400_baud_cmd[] PROGMEM = "U,2400,N";
+const char bt_4800_baud_cmd[] PROGMEM = "U,4800,N";
+const char bt_9600_baud_cmd[] PROGMEM = "U,9600,N";
+const char bt_19200_baud_cmd[] PROGMEM = "U,192K,N";
+const char bt_38400_baud_cmd[] PROGMEM = "U,384K,N";
+const char bt_57600_baud_cmd[] PROGMEM = "U,576K,N";
+const char bt_bad_baud_err1[] PROGMEM = " isn't a supported bluetooth baud rate.";
+const char bt_bad_baud_err2[] PROGMEM = "Supported baud rates are:";
+const char bt_bad_baud_err3[] PROGMEM = "1200 2400 4800 9600 19200 38400 57600";
 
 #define send_to_serial(function) \
   if (_mode == SERIAL_MODE_HARDWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) { \
@@ -107,28 +119,31 @@ void ArdusatSerial::begin(unsigned long baud, bool setXbeeSpeed)
  */
 void ArdusatSerial::beginBluetooth(unsigned long baud)
 {
-  bool validBaud = true;
-  char baudCmd[8];
+  bool valid_baud = true;
+  char baud_cmd[9];
+  char cmd_mode[4];
+  char bad_baud_err[40];
+  strcpy_P(cmd_mode, bt_cmd_mode);
 
   // Temporarily sets baud rate until power loss
   switch (baud) {
-    case 1200:  strcpy(baudCmd, "U,1200,N"); break;
-    case 2400:  strcpy(baudCmd, "U,2400,N"); break;
-    case 4800:  strcpy(baudCmd, "U,4800,N"); break;
-    case 9600:  strcpy(baudCmd, "U,9600,N"); break;
-    case 19200: strcpy(baudCmd, "U,192K,N"); break;
-    case 38400: strcpy(baudCmd, "U,384K,N"); break;
-    case 57600: strcpy(baudCmd, "U,576K,N"); break;
-    default:    validBaud = false;
+    case 1200:  strcpy_P(baud_cmd, bt_1200_baud_cmd);  break;
+    case 2400:  strcpy_P(baud_cmd, bt_2400_baud_cmd);  break;
+    case 4800:  strcpy_P(baud_cmd, bt_4800_baud_cmd);  break;
+    case 9600:  strcpy_P(baud_cmd, bt_9600_baud_cmd);  break;
+    case 19200: strcpy_P(baud_cmd, bt_19200_baud_cmd); break;
+    case 38400: strcpy_P(baud_cmd, bt_38400_baud_cmd); break;
+    case 57600: strcpy_P(baud_cmd, bt_57600_baud_cmd); break;
+    default:    valid_baud = false;
   }
 
-  if (validBaud) {
+  if (valid_baud) {
     if (_mode == SERIAL_MODE_HARDWARE) {
       if (baud != 9600) {
-        Serial.begin(9600);   // shipping bluesmirf with default of 9600
-        Serial.print("$$$");  // enter command mode
+        Serial.begin(9600);      // shipping bluesmirf with default of 9600
+        Serial.print(cmd_mode);  // enter command mode
         delay(100);
-        Serial.println(baudCmd);
+        Serial.println(baud_cmd);
       }
       Serial.begin(baud);
     }
@@ -136,10 +151,10 @@ void ArdusatSerial::beginBluetooth(unsigned long baud)
     if (_mode == SERIAL_MODE_SOFTWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
       if (baud != 9600) {
         _soft_serial->end();
-        _soft_serial->begin(9600);   // shipping bluesmirf with default of 9600
-        _soft_serial->print("$$$");  // enter command mode
+        _soft_serial->begin(9600);      // shipping bluesmirf with default of 9600
+        _soft_serial->print(cmd_mode);  // enter command mode
         delay(100);
-        _soft_serial->println(baudCmd);
+        _soft_serial->println(baud_cmd);
       }
       _soft_serial->end();
       _soft_serial->begin(baud);
@@ -151,9 +166,12 @@ void ArdusatSerial::beginBluetooth(unsigned long baud)
   } else {
     Serial.begin(9600);
     Serial.print(baud);
-    Serial.println(" is not a supported bluetooth baud rate.");
-    Serial.println("Supported baud rates are:");
-    Serial.println("1200 2400 4800 9600 19200 38400 57600");
+    strcpy_P(bad_baud_err, bt_bad_baud_err1);
+    Serial.println(bad_baud_err);
+    strcpy_P(bad_baud_err, bt_bad_baud_err2);
+    Serial.println(bad_baud_err);
+    strcpy_P(bad_baud_err, bt_bad_baud_err3);
+    Serial.println(bad_baud_err);
   }
 }
 
