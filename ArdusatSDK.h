@@ -12,9 +12,7 @@
 #include <avr/pgmspace.h>
 #include <utility/serial.h>
 
-typedef char PROGMEM prog_char;
-
-extern bool ARDUSAT_SHIELD;
+extern bool ARDUSAT_SPACEBOARD;
 
 /**
  * Unique numeric id for each physical sensor
@@ -25,9 +23,11 @@ typedef enum {
 	SENSORID_TSL2561 = 0x02,
 	SENSORID_MLX90614 = 0x03,
 	SENSORID_ADAFRUIT9DOFIMU = 0x04,
-	SENSORID_SI1145	= 0x05,
+	SENSORID_SI1132	= 0x05,
 	SENSORID_ML8511	= 0x06,
-	SENSORID_BMP180 = 0x07
+	SENSORID_BMP180 = 0x07,
+	SENSORID_ISL29125 = 0x08,
+	SENSORID_TCS34725 = 0x09,
 } sensor_id_t;
 
 /**
@@ -102,6 +102,11 @@ typedef struct {
 	float pressure;
 } pressure_t;
 
+typedef struct {
+	_data_header_t header;
+	float red, green, blue;
+} rgblight_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -123,28 +128,31 @@ const char * unit_to_str(unsigned char);
  * setup and read functions are used to initialize sensors and read data from them.
  */
 //TODO: expand setup functions with options
-boolean beginTemperatureSensor();
+boolean beginTemperatureSensor(void);
 void readTemperature(temperature_t & temp);
 
-boolean beginInfraredTemperatureSensor();
+boolean beginInfraredTemperatureSensor(void);
 void readInfraredTemperature(temperature_t & temp);
 
-boolean beginLuminositySensor();
+boolean beginLuminositySensor(void);
 void readLuminosity(luminosity_t & lum);
 
-boolean beginUVLightSensor();
+boolean beginUVLightSensor(sensor_id_t sensor_id=SENSORID_ML8511);
 void readUVLight(uvlight_t & uv, int pin=DRIVER_ML8511_UV_PIN);
 
-boolean beginAccelerationSensor();
+boolean beginAccelerationSensor(); // ------ Advanced Configuration?
 void readAcceleration(acceleration_t & accel);
 
-boolean beginGyroSensor();
+boolean beginGyroSensor(); // ------ Advanced Configuration?
 void readGyro(gyro_t & orient);
 
-boolean beginMagneticSensor();
+boolean beginMagneticSensor(); // ------ Advanced Configuration?
 void readMagnetic(magnetic_t & mag);
 
-boolean beginBarometricPressureSensor();
+boolean beginRGBLightSensor(sensor_id_t sensor_id=SENSORID_TCS34725); // ------ Advanced Configuration?
+void readRGBLight(rgblight_t & rgblight);
+
+boolean beginBarometricPressureSensor(bmp085_mode_t mode=BMP085_MODE_ULTRAHIGHRES);
 void readBarometricPressure(pressure_t & pressure);
 
 void calculateOrientation(const acceleration_t & accel, const magnetic_t & mag, orientation_t & orient);
@@ -163,6 +171,7 @@ const char * temperatureToCSV(const char *sensorName, temperature_t & input);
 const char * luminosityToCSV(const char *sensorName, luminosity_t & input);
 const char * uvlightToCSV(const char *sensorName, uvlight_t & input);
 const char * orientationToCSV(const char *sensorName, orientation_t & input);
+const char * rgblightToCSV(const char *sensorName, rgblight_t & input );
 const char * pressureToCSV(const char *sensorName, pressure_t & pressure);
 
 /**
@@ -180,6 +189,7 @@ const char * gyroToJSON(const char *sensorName, gyro_t & input);
 const char * luminosityToJSON(const char *sensorName, luminosity_t & input);
 const char * uvlightToJSON(const char *sensorName, uvlight_t & input);
 const char * orientationToJSON(const char *sensorName, orientation_t & input);
+const char * rgblightToJSON(const char *sensorName, rgblight_t & input);
 const char * pressureToJSON(const char *sensorName, pressure_t & input);
 
 #ifdef __cplusplus
@@ -194,7 +204,8 @@ const char * temperatureToCSV( temperature_t & input );
 const char * luminosityToCSV( luminosity_t & input );
 const char * uvlightToCSV( uvlight_t & input );
 const char * orientationToCSV( orientation_t & input );
-const char * pressureToCSV( pressure_t & pressure );
+const char * rgblightToCSV( rgblight_t & input );
+const char * pressureToCSV( pressure_t & input );
 
 
 #endif /* ARDUSATSDK_H_ */

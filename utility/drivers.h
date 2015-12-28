@@ -21,7 +21,10 @@
 #include <utility/mlx90614.h>
 #include <utility/Adafruit_L3GD20_U.h>
 #include <utility/Adafruit_SI1145.h>
+#include <utility/Adafruit_TCS34725.h>
 #include <utility/BMP180.h>
+#include <utility/ML8511_ADC.h>
+#include <utility/SparkFunISL29125.h>
 #include <utility/TSL2561.h>
 #include <utility/pololu_LSM303.h>
 
@@ -30,11 +33,14 @@
 #define DRIVER_TMP102_ADDR		          0x48 // 0x4B for lemsens
 #define DRIVER_LEMSENS_TMP102_1_ADDR		0x4B // (lemsens)
 #define DRIVER_MLX90614_ADDR	          0x5A
-#define DRIVER_SI1145_ADDR		          0x60
 #define DRIVER_BMP180_ADDR              0x77
 #define DRIVER_LSM303_DTR_ADDR          0x1E
 #define DRIVER_ML8511_UV_PIN            A0
 #define DRIVER_ML8511_REF_PIN           A1
+#define DRIVER_ML8511_ADDR              0x51  // UV
+#define DRIVER_ISL29125_ADDR            0x44  // RGB
+#define DRIVER_TCS34725_ADDR            0x29  // RGB
+#define DRIVER_SI1132_ADDR              0x60  // UV
 
 /* Constants */
 #define SENSORS_GRAVITY_EARTH             (9.80665F)              /**< Earth's gravity in m/s^2 */
@@ -109,7 +115,7 @@ void lsm303_getRawMag(int16_t *pX, int16_t *pY, int16_t *pZ);
  *
  * http://www.adafruit.com/product/1604
  */
-boolean bmp180_init();
+boolean bmp180_init(bmp085_mode_t mode);
 void bmp180_getRawTemperature(uint16_t *temp);
 void bmp180_getTemperature(float *temp);
 void bmp180_getRawPressure(uint32_t *pressure);
@@ -126,15 +132,6 @@ float seaLevelPressureForAltitude(float altitude, float atmosphericPressure);
  */
 boolean ml8511_init();
 float ml8511_getUV(int pin);
-
-/**
- * SI1145 breakout board is a UV/Light sensor from Adafruit. It was included in earlier
- * versions of the SpaceKit and is still supported, though not enabled by default.
- *
- * https://learn.adafruit.com/adafruit-si1145-breakout-board-uv-ir-visible-sensor/overview
- */
-boolean si1145_init();
-float si1145_getUVIndex();
 
 /**
  * MLX90614 IR Thermometer for non-contact temperature sensing.
@@ -159,6 +156,31 @@ float tmp102_getTempCelsius();
  */
 boolean tsl2561_init();
 float tsl2561_getLux();
+
+/**
+ * ISL29125 RGB Sensor
+ *
+ * http://www.sparkfun.com/products/12829
+ */
+boolean isl29125_init();
+void isl29125_getRGB(float * red, float * green, float * blue);
+
+/**
+ * TCS34725 RGB Sensor
+ *
+ * https://learn.adafruit.com/adafruit-color-sensors
+ */
+boolean tcs34725_init(tcs34725IntegrationTime_t it, tcs34725Gain_t gain);
+void tcs34725_getRGB(float * red, float * green, float * blue);
+
+/**
+ * SI1132 UV/Light sensor uses the SI1145 driver provided by Adafruit.
+ *
+ * https://www.silabs.com/Support%20Documents/TechnicalDocs/Si1132.pdf
+ * https://learn.adafruit.com/adafruit-si1145-breakout-board-uv-ir-visible-sensor/overview
+ */
+boolean si1132_init();
+float si1132_getUVIndex();
 
 #ifdef __cplusplus
 } // extern "C"

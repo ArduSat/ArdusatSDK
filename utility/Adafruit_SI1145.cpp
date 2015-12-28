@@ -19,6 +19,11 @@
  * Modified by Ben Peters (Ardusat) to avoid namespace collisions 
  */
 
+/*
+ * Modified by Sam Olds (Ardusat) to also support SI1132 sensor
+ * https://hackaday.io/project/5684/logs
+ */
+
 #include "Adafruit_SI1145.h"
 
 Adafruit_SI1145::Adafruit_SI1145() {
@@ -30,7 +35,8 @@ boolean Adafruit_SI1145::begin(void) {
   Wire.begin();
  
   uint8_t id = read8(SI1145_REG_PARTID);
-  if (id != 0x45) return false; // look for SI1145
+  //if (id != 0x45) return false; // look for SI1145
+  if (id != 0x32) return false; // look for SI1132 instead of SI1145
   
   reset();
   

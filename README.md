@@ -26,10 +26,27 @@ The first step to using the SDK is to import it into your sketch. This can be do
 import statement:
 
 ```
-#import <ArdusatSDK.h>
+#include <ArdusatSDK.h>
 ```
 
 After the SDK is imported, the basic I/O functions and sensor drivers should be available.
+
+### Have one of our new Spaceboard Sensors?
+If you're using one of our new Spaceboards instead of the break out Space Kit, just add
+`ARDUSAT_SPACEBOARD = true;` inside the `setup()` function. It should look something like
+this:
+```
+void setup(void)
+{
+  ARDUSAT_SPACEBOARD = true;
+
+  Serial.begin(9600);
+  if (!beginTemperatureSensor()) {
+    Serial.println("There was a problem initializing the temperature sensor.");
+    while (1);
+  }
+}
+```
 
 ## Initializing Sensors
 
@@ -45,8 +62,9 @@ Function | Sensor | Config Arguments
 **beginAccelerationSensor** | LSM303 (9DOF breakout) | None
 **beginMagneticSensor** | LSM303 (9DOF breakout) | None
 **beginOrientationSensor** | L3GD20 (9DOF breakout) | None
-**beginUVLightSensor** | ML8511 | None
+**beginUVLightSensor** | ML8511 (Default) or SI1132 | Optional `SENSORID_ML8511` or `SENSORID_SI1132`
 **beginBarometricPressureSensor** | BMP180 | None
+**beginRGBLightSensor** | TCS34725 (Default) or ISL29125 | Optional `SENSORID_TCS34725` or `SENSORID_ISL29125`
 
 `begin` functions return `true` on success or `false` on failure.
 
@@ -65,6 +83,7 @@ Read Function | Data Structure | Data Elements | Sensor
 `readGyro` | `orientation_t` | `x, y, z` | L3GD20 (10DOF breakout)
 `readUVLight` | `uvlight_t` | `uvindex` | ML8511
 `readBarometricPressure` | `pressure_t` | `pressure` | BMP180 (10DOF breakout)
+`readRGBLight` | `rgblight_t` | `red, green, blue` | TCS34725
 
 In addition to these `read` functions, a convenience function `calculateOrientation` is provided
 to calculate the 3-axis orientation from raw data from the accelerometer and magnetometer. This 
@@ -151,6 +170,7 @@ Function | Arguments
 **temperatureToJSON** | `const char *sensor_name, temperature_t temp_data`
 **luminosityToJSON** | `const char *sensor_name, luminosity_t luminosity_data`
 **uvlightToJSON** | `const char *sensor_name, uvlight_t uvlight_data`
+**rgblightToJSON** | `const char *sensor_name, rgblight_t rgblight_data`
 
 Example:
 ```
@@ -172,6 +192,7 @@ Function | Arguments
 **temperatureToCSV** | `const char *sensor_name, temperature_t temp_data`
 **luminosityToCSV** | `const char *sensor_name, luminosity_t luminosity_data`
 **uvlightToCSV** | `const char *sensor_name, uvlight_t uvlight_data`
+**rgblightToCSV** | `const char *sensor_name, rgblight_t rgblight_data`
 
 Example:
 ```

@@ -498,10 +498,9 @@ int32_t _bmp180_compute_b5(int32_t ut)
 /**
  * Initialize the BMP180. Sets ultra high res mode.
  */
-boolean bmp180_init()
+boolean bmp180_init(bmp085_mode_t mode)
 {
   uint8_t res;
-  bmp085_mode_t mode = BMP085_MODE_ULTRAHIGHRES;
 
   Wire.begin();
 
@@ -727,12 +726,17 @@ float map_float(float x, float in_min, float in_max, float out_min, float out_ma
  *
  * @return true
  */
+ML8511_ADC ml8511_uv_adc = ML8511_ADC(DRIVER_ML8511_ADDR);
+
 boolean ml8511_init()
 {
-  pinMode(DRIVER_ML8511_UV_PIN, INPUT);
-  pinMode(DRIVER_ML8511_REF_PIN, INPUT);
-
-  return true;
+  if (ARDUSAT_SPACEBOARD) {
+    return ml8511_uv_adc.init();
+  } else {
+    pinMode(DRIVER_ML8511_UV_PIN, INPUT);
+    pinMode(DRIVER_ML8511_REF_PIN, INPUT);
+    return true;
+  }
 }
 
 /**
@@ -747,29 +751,17 @@ boolean ml8511_init()
  */
 float ml8511_getUV(int pin)
 {
-  int uv_v = average_analog_read(pin);
-  int ref_v = average_analog_read(DRIVER_ML8511_REF_PIN);
-  float scaled_uv_v = 3.3 / ref_v * uv_v;
+  float scaled_uv_v;
+  if (ARDUSAT_SPACEBOARD) {
+    scaled_uv_v = ml8511_uv_adc.read_uv();
+  } else {
+    int uv_v = average_analog_read(pin);
+    int ref_v = average_analog_read(DRIVER_ML8511_REF_PIN);
+    scaled_uv_v = 3.3 / ref_v * uv_v;
+  }
   return map_float(scaled_uv_v, 0.99, 2.9, 0.0, 15.0);
 }
 
-
-/*
- * SI1145 UV/Light
- */
-Adafruit_SI1145 si1145_uv = Adafruit_SI1145();
-
-boolean si1145_init() {
-  return si1145_uv.begin();
-}
-
-float si1145_getUVIndex() {
-  float UVindex = si1145_uv.readUV();
-
-  // the index is multiplied by 100 so to get the integer index, divide by 100
-  UVindex /= 100.0;
-  return (UVindex);
-}
 
 /*
  * MLX90614 IR Temperature
@@ -841,7 +833,7 @@ float tmp102_getTempCelsius() {
   uint8_t temp_byte;
   float tmp;
 
-  if (ARDUSAT_SHIELD) {
+  if (ARDUSAT_SPACEBOARD) {
     temp_byte = DRIVER_LEMSENS_TMP102_1_ADDR;
   } else {
     temp_byte = DRIVER_TMP102_ADDR;
@@ -865,7 +857,7 @@ TSL2561 *tsl2561;
 boolean tsl2561_init() {
   uint8_t addr;
   if (!tsl2561) {
-    if (ARDUSAT_SHIELD) {
+    if (ARDUSAT_SPACEBOARD) {
       addr = DRIVER_LEMSENS_TSL2561_ADDR;
     } else {
       addr = DRIVER_TSL2561_ADDR;
@@ -882,7 +874,6 @@ boolean tsl2561_init() {
   }
 
   return result;
-
 }
 
 float tsl2561_getLux() {
@@ -890,4 +881,60 @@ float tsl2561_getLux() {
 
   tsl2561->getLuminosity(&broadband, &ir);
   return tsl2561->calculateLux(broadband, ir);
+}
+
+
+/*
+ * ISL29125 RGB Light Sensor
+ */
+SFE_ISL29125 isl29125;
+
+boolean isl29125_init() {
+  return isl29125.init();
+}
+
+void isl29125_getRGB(float *red, float *green, float *blue) {
+  *red = isl29125.readRed();
+  *green = isl29125.readGreen();
+  *blue = isl29125.readBlue();
+}
+
+
+/*
+ * TCS34725 RGB Light Sensor
+ */
+Adafruit_TCS34725 tcs34725 = Adafruit_TCS34725();
+
+boolean tcs34725_init(tcs34725IntegrationTime_t it, tcs34725Gain_t gain) {
+  boolean init = tcs34725.begin();
+  tcs34725.setIntegrationTime(it);
+  tcs34725.setGain(gain);
+  return init;
+}
+
+void tcs34725_getRGB(float *red, float *green, float *blue) {
+  uint16_t r, g, b, clear;
+
+  tcs34725.getRawData(&r, &g, &b, &clear);
+  *red = r;
+  *green = g;
+  *blue = b;
+}
+
+
+/*
+ * SI1132 UV Light Sensor
+ */
+Adafruit_SI1145 si1132_uv = Adafruit_SI1145();
+
+boolean si1132_init() {
+  return si1132_uv.begin();
+}
+
+float si1132_getUVIndex() {
+  float UVindex = si1132_uv.readUV();
+
+  // the index is multiplied by 100 so to get the integer index, divide by 100
+  UVindex /= 100.0;
+  return UVindex;
 }
