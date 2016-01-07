@@ -17,7 +17,7 @@ const char xbee_cmd_ack[] PROGMEM = "OK";
 const char xbee_cmd_baud[] PROGMEM = "ATBD ";
 const char xbee_cmd_write[] PROGMEM = "ATWR";
 const char xbee_cmd_close[] PROGMEM = "ATCN";
-const char xbee_baud_success[] PROGMEM = "Set BEE baud rate to ";
+const char xbee_baud_success[] PROGMEM = "Set XBEE baud rate to ";
 
 const char bt_cmd_mode[] PROGMEM = "$$$";
 const char bt_1200_baud_cmd[] PROGMEM = "U,1200,N";
