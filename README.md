@@ -22,14 +22,14 @@ thing with our other
 [Ardusat Logging SDK Library](http://github.com/ardusat/ardusatsdk-logging)
 
 ## Using the SDK
-The first step to using the SDK is to import it into your sketch. This can be done with a simple
-import statement:
+The first step to using the SDK is to include it into your sketch. This can be done with a simple
+include statement:
 
 ```
 #include <ArdusatSDK.h>
 ```
 
-After the SDK is imported, the basic I/O functions and sensor drivers should be available.
+After the SDK is included, the basic I/O functions and sensor drivers should be available.
 
 ### Have one of our new Spaceboard Sensors?
 If you're using one of our new Spaceboards instead of the break out Space Kit, just add
@@ -96,7 +96,7 @@ void calculateOrientation(const acceleration_t, const magnetic_t, orientation_t)
 
 Usage example:
 ```
-#import <ArdusatSDK.h>
+#include <ArdusatSDK.h>
 
 temperature_t temp_data;
 
@@ -249,7 +249,7 @@ SoftwareSerial does not appear to work reliably above 57600 baud.
 
 # Getting Help
 If you're having trouble running the examples, chances are something is messed up with the external
-library locations in your Arduino IDE. Double check that the ArdusatSDK library is imported into
+library locations in your Arduino IDE. Double check that the ArdusatSDK library is included into
 your Arduino libraries (Sketch -> Import Libraries -> Contributed). If the sketches are compiling 
 and uploading but not behaving as expected, make sure you double check your wiring, it's always easy
 to accidentally plug something in wrong! 

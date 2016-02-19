@@ -43,7 +43,7 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
-temperature_t temp;
+Temperature temp;
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -55,9 +55,10 @@ temperature_t temp;
  */
 void setup(void)
 {
+  //ARDUSAT_SPACEBOARD = true;
   serialConnection.begin(9600);
 
-  if (!beginTemperatureSensor()) {
+  if (!temp.begin()) {
     serialConnection.println("Can't initialize temperature sensor! Check your wiring.");
   }
 
@@ -76,8 +77,7 @@ void setup(void)
  */
 void loop(void)
 {
-  readTemperature(temp);
-  serialConnection.println(temperatureToJSON("ambient_temp", temp));
+  serialConnection.println(temp.readToJSON("ambient_temp"));
 
   delay(1000);
 }

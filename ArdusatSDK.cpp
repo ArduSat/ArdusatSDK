@@ -119,220 +119,9 @@ boolean start_sensor_or_err(const char sensorName[] PROGMEM, boolean initialized
 }
 
 /*
- * Temperature
- */
-boolean beginTemperatureSensor(void) {
-  return start_sensor_or_err(temperature_sensor_name, tmp102_init());
-}
-
-void readTemperature(temperature_t & output) {
-  output.header.unit = DATA_UNIT_DEGREES_CELSIUS;
-  output.header.timestamp = millis();
-
-  output.header.sensor_id = SENSORID_TMP102;
-  output.t = tmp102_getTempCelsius();
-}
-
-/*
- * IR Temperature
- */
-boolean beginInfraredTemperatureSensor(void) {
-  return start_sensor_or_err(ir_temperature_sensor_name, mlx90614_init());
-}
-
-void readInfraredTemperature(temperature_t & output) {
-  output.header.unit = DATA_UNIT_DEGREES_CELSIUS;
-  output.header.timestamp = millis();
-
-  output.header.sensor_id = SENSORID_MLX90614;
-  output.t = mlx90614_getTempCelsius();
-}
-
-/*
- * Luminosity
- */
-boolean beginLuminositySensor(void) {
-  return start_sensor_or_err(luminosity_sensor_name, tsl2561_init());
-}
-
-void readLuminosity(luminosity_t & output) {
-  output.header.unit = DATA_UNIT_LUX;
-  output.header.timestamp = millis();
-
-  output.header.sensor_id = SENSORID_TSL2561;
-  output.lux = tsl2561_getLux();
-}
-
-/*
- * UV Light
- */
-sensor_id_t uvLightSensorID;
-boolean beginUVLightSensor(sensor_id_t sensor_id) {
-  uvLightSensorID = sensor_id;
-  if (sensor_id == SENSORID_SI1132)
-    return start_sensor_or_err(uvlight_sensor_name, si1132_init());
-  else if (sensor_id == SENSORID_ML8511)
-    return start_sensor_or_err(uvlight_sensor_name, ml8511_init());
-  else
-    return false;
-}
-
-void readUVLight(uvlight_t & output, int pin) {
-  output.header.unit = DATA_UNIT_MILLIWATT_PER_CMSQUARED;
-  output.header.timestamp = millis();
-
-  if (uvLightSensorID == SENSORID_SI1132) {
-    output.header.sensor_id = SENSORID_SI1132;
-    output.uvindex = si1132_getUVIndex();
-  } else if (uvLightSensorID == SENSORID_ML8511) {
-    output.header.sensor_id = SENSORID_ML8511;
-    output.uvindex = ml8511_getUV(pin);
-  }
-}
-
-/*
- * Acceleration
- */
-boolean beginAccelerationSensor() {
-  return start_sensor_or_err(acceleration_sensor_name, lsm303_accel_init());
-}
-
-void readAcceleration(acceleration_t & output) {
-  output.header.unit = DATA_UNIT_METER_PER_SECONDSQUARED;
-  output.header.timestamp = millis();
-
-  output.header.sensor_id = SENSORID_ADAFRUIT9DOFIMU;
-  lsm303_getAccel(&(output.x), &(output.y), &(output.z));
-}
-
-/*
- * Magnetic Field
- */
-boolean beginMagneticSensor() {
-  return start_sensor_or_err(magnetic_sensor_name, lsm303_mag_init());
-}
-
-void readMagnetic(magnetic_t & output) {
-  output.header.unit = DATA_UNIT_MICROTESLA;
-  output.header.timestamp = millis();
-
-  output.header.sensor_id = SENSORID_ADAFRUIT9DOFIMU;
-  lsm303_getMag(&(output.x), &(output.y), &(output.z));
-}
-
-/*
- * Gyroscope
- */
-boolean beginGyroSensor() {
-  return start_sensor_or_err(gyro_sensor_name, l3gd20h_init());
-}
-
-void readGyro(gyro_t & output) {
-  output.header.unit = DATA_UNIT_RADIAN_PER_SECOND;
-  output.header.timestamp = millis();
-
-  output.header.sensor_id = SENSORID_ADAFRUIT9DOFIMU;
-  l3gd20h_getOrientation(&(output.x), &(output.y), &(output.z));
-}
-
-/*
- * RGB Light
- */
-sensor_id_t rgbLightSensorID;
-boolean beginRGBLightSensor(sensor_id_t sensor_id) {
-  rgbLightSensorID = sensor_id;
-  if (sensor_id == SENSORID_ISL29125) {
-    // TODO: Support advance sensor configuration:
-    //       https://github.com/sparkfun/ISL29125_Breakout/blob/V_H1.0_L1.0.1/Libraries/
-    //               Arduino/examples/ISL29125Interrupts/ISL29125Interrupts.ino
-    return start_sensor_or_err(rgblight_sensor_name, isl29125_init());
-  } else if (sensor_id ==  SENSORID_TCS34725) {
-    // TODO: Support advance sensor configuration:
-    //       https://learn.adafruit.com/adafruit-color-sensors/program-it
-    return start_sensor_or_err(rgblight_sensor_name, tcs34725_init(TCS34725_INTEGRATIONTIME_700MS, TCS34725_GAIN_1X));
-  } else
-    return false;
-}
-
-void readRGBLight(rgblight_t & output) {
-  output.header.unit = DATA_UNIT_LUX;
-  output.header.timestamp = millis();
-
-  // TODO: Adjust RGB for relative luminance?
-  //       Y = 0.2126 * R + 0.7152 * G + 0.0722 * B
-
-  if (rgbLightSensorID == SENSORID_ISL29125) {
-    output.header.sensor_id = SENSORID_ISL29125;
-    isl29125_getRGB(&(output.red), &(output.green), &(output.blue));
-  } else if (rgbLightSensorID ==  SENSORID_TCS34725) {
-    output.header.sensor_id = SENSORID_TCS34725;
-    tcs34725_getRGB(&(output.red), &(output.green), &(output.blue));
-  }
-}
-
-/*
- * Barometric Pressure
- */
-boolean beginBarometricPressureSensor(bmp085_mode_t mode) {
-  return start_sensor_or_err(pressure_sensor_name, bmp180_init(mode));
-}
-
-void readBarometricPressure(pressure_t & output) {
-  output.header.unit = DATA_UNIT_HECTOPASCAL;
-  output.header.timestamp = millis();
-
-  output.header.sensor_id = SENSORID_BMP180;
-  bmp180_getPressure(&output.pressure);
-}
-
-/**
- * Calculate the orientation (pitch, roll, heading) from raw magnetometer and
- * accelerometer readings.
- *
- * Calculation based on Adafruit 9DOF library
- * (https://github.com/adafruit/Adafruit_9DOF/)
- *
- * @param accel Acceleration reading to use in calculation
- * @param mag Magnetometer reading to use in calculation
- * @param orient Orientation structure to save calculated orientation in
- */
-void calculateOrientation(const acceleration_t & accel, const magnetic_t & mag,
-			  orientation_t & orient)
-{
-  const float PI_F = 3.141592653F;
-
-  // Roll is rotation around x-axis (-180 <= roll <= 180)
-  // Positive roll is clockwise rotation wrt positive x axis
-  orient.roll = (float) atan2(accel.y, accel.z);
-
-  // Pitch is rotation around y-axis (-180 <= pitch <= 180)
-  // Positive pitch is clockwise rotation wrt positive y axis
-  if (accel.y * sin(orient.roll) + accel.z * cos(orient.roll) == 0) {
-    orient.pitch = accel.x > 0 ? (PI_F / 2) : (-PI_F / 2);
-  } else {
-    orient.pitch = (float)atan(-accel.x / (accel.y * sin(orient.roll) +
-					     accel.z * cos(orient.roll)));
-  }
-
-  // Heading is rotation around z-axis
-  // Positive heading is clockwise rotation wrt positive z axis
-  orient.heading = (float)atan2(mag.z * sin(orient.roll) - mag.y * cos(orient.roll),
-			         mag.x * cos(orient.pitch) + mag.y * sin(orient.pitch) * sin(orient.roll) +
-				 mag.z * sin(orient.pitch) * cos(orient.roll));
-
-  // Convert radians to degrees
-  orient.roll = orient.roll * 180 / PI_F;
-  orient.pitch = orient.pitch * 180 / PI_F;
-  orient.heading = orient.heading * 180 / PI_F;
-  orient.header.unit = DATA_UNIT_DEGREES;
-  orient.header.timestamp = accel.header.timestamp > mag.header.timestamp ? accel.header.timestamp :
-									       mag.header.timestamp;
-}
-
-/*
  * Internal helper to do shared checksum logic
  */
-int _calculateCheckSumV(const char *sensor_name, int num_vals, va_list values) {
+int _calculateCheckSumValue(const char *sensor_name, int num_vals, va_list values) {
   int cs = 0;
   const char *c_ptr = sensor_name;
 
@@ -359,51 +148,10 @@ int _calculateCheckSumV(const char *sensor_name, int num_vals, va_list values) {
 int calculateCheckSum(const char *sensor_name, int num_vals, ...) {
   va_list values;
   va_start(values, num_vals);
-  int cs = _calculateCheckSumV(sensor_name, num_vals, values);
+  int cs = _calculateCheckSumValue(sensor_name, num_vals, values);
   va_end(values);
   return cs;
 }
-
-/*
- * toCSV Output functions
- */
-const char * _headerToCSV(_data_header_t * header, const char *sensorName) {
-  int name_len;
-
-  if (header == NULL)
-    return (NULL);
-
-  _resetOutBuf();
-
-  ultoa(header->timestamp, _getOutBuf(), 10);
-  _output_buf_len = strlen(_getOutBuf());
-  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
-
-  if (sensorName != NULL) {
-    if ((name_len = strlen(sensorName)) > 50) {
-      name_len = 50;
-    }
-
-    memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
-    _output_buf_len += name_len;
-    _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
-  } else {
-    utoa(header->sensor_id, _getOutBuf() + _output_buf_len, 10);
-    _output_buf_len = strlen(_getOutBuf());
-    _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
-  }
-
-  return _getOutBuf();
-}
-
-#define _add_checksum_to_csv_buffer(sensor_name, num_vals, ...) \
-  do { \
-  if (_output_buf_len < OUTPUT_BUF_SIZE - 10) { \
-    int cs = calculateCheckSum(sensor_name, num_vals, __VA_ARGS__); \
-    _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR; \
-    itoa(cs, _getOutBuf() + _output_buf_len, 10); \
-    _output_buf_len = strlen(_getOutBuf()); \
-  } } while (0)
 
 /**
  * Create a CSV string with a generic float value and a sensor name. Optional timestamp
@@ -469,146 +217,12 @@ const char * valuesToCSV(const char *sensorName, unsigned long timestamp, int nu
 
   if (_output_buf_len < OUTPUT_BUF_SIZE - 10) {
     va_start(args, numValues);
-    int cs = _calculateCheckSumV(sensorName, numValues, args);
+    int cs = _calculateCheckSumValue(sensorName, numValues, args);
     va_end(args);
     _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
     itoa(cs, _getOutBuf() + _output_buf_len, 10);
     _output_buf_len = strlen(_getOutBuf());
   }
-  _getOutBuf()[_output_buf_len++] = '\n';
-
-  return _getOutBuf();
-}
-
-// Define a version of a ToCSV function that uses the default name for that
-// sensor type
-#define _DEFAULT_SENSOR_NAME_TO_CSV_FXN(NAME) \
-  const char * NAME ## ToCSV( NAME ## _t &input) { \
-    char sensor[50]; \
-    strcpy_P(sensor, NAME ## _sensor_name); \
-    return NAME ## ToCSV ( sensor, input ); \
-  }
-
-int _writeCSVTripleEntry(float a, float b, float c)
-{
-  dtostrf(a, 2, 3, _getOutBuf() + _output_buf_len);
-  _output_buf_len = strlen(_getOutBuf());
-  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
-
-  dtostrf(b, 2, 3, _getOutBuf() + _output_buf_len);
-  _output_buf_len = strlen(_getOutBuf());
-  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
-
-  dtostrf(c, 2, 3, _getOutBuf() + _output_buf_len);
-  _output_buf_len = strlen(_getOutBuf());
-
-  return _output_buf_len;
-}
-
-_DEFAULT_SENSOR_NAME_TO_CSV_FXN(acceleration)
-const char * accelerationToCSV(const char *sensorName, acceleration_t & input) {
-  _headerToCSV(&(input.header), sensorName);
-
-  _writeCSVTripleEntry(input.x, input.y, input.z);
-
-  _add_checksum_to_csv_buffer(sensorName, 3, input.x, input.y, input.z);
-  _getOutBuf()[_output_buf_len++] = '\n';
-  return _getOutBuf();
-}
-
-_DEFAULT_SENSOR_NAME_TO_CSV_FXN(magnetic)
-const char * magneticToCSV(const char *sensorName, magnetic_t & input) {
-  _headerToCSV(&(input.header), sensorName);
-
-  _writeCSVTripleEntry(input.x, input.y, input.z);
-
-  _add_checksum_to_csv_buffer(sensorName, 3, input.x, input.y, input.z);
-  _getOutBuf()[_output_buf_len++] = '\n';
-
-  return _getOutBuf();
-}
-
-_DEFAULT_SENSOR_NAME_TO_CSV_FXN(temperature)
-const char * temperatureToCSV(const char *sensorName, temperature_t & input) {
-  _headerToCSV(&(input.header), sensorName);// warning : resets the internal buffer
-
-  dtostrf(input.t, 2, 3, _getOutBuf() + _output_buf_len);
-  _output_buf_len = strlen(_getOutBuf());
-
-  _add_checksum_to_csv_buffer(sensorName, 1, input.t);
-  _getOutBuf()[_output_buf_len++] = '\n';
-
-  return _getOutBuf();
-}
-
-_DEFAULT_SENSOR_NAME_TO_CSV_FXN(gyro)
-const char * gyroToCSV(const char *sensorName, gyro_t & input) {
-  _headerToCSV(&(input.header), sensorName);// warning : resets the internal buffer
-
-  _writeCSVTripleEntry(input.x, input.y, input.z);
-
-  _add_checksum_to_csv_buffer(sensorName, 3, input.x, input.y, input.z);
-  _getOutBuf()[_output_buf_len++] = '\n';
-
-  return _getOutBuf();
-}
-
-_DEFAULT_SENSOR_NAME_TO_CSV_FXN(luminosity)
-const char * luminosityToCSV(const char *sensorName, luminosity_t & input) {
-  _headerToCSV(&(input.header), sensorName);// warning : resets the internal buffer
-
-  dtostrf(input.lux, 2, 3, _getOutBuf() + _output_buf_len);
-  _output_buf_len = strlen(_getOutBuf());
-
-  _add_checksum_to_csv_buffer(sensorName, 1, input.lux);
-  _getOutBuf()[_output_buf_len++] = '\n';
-
-  return _getOutBuf();
-}
-
-_DEFAULT_SENSOR_NAME_TO_CSV_FXN(uvlight)
-const char * uvlightToCSV(const char *sensorName, uvlight_t & input) {
-  _headerToCSV(&(input.header), sensorName);// warning : resets the internal buffer
-
-  dtostrf(input.uvindex, 2, 3, _getOutBuf() + _output_buf_len);
-  _output_buf_len = strlen(_getOutBuf());
-
-  _add_checksum_to_csv_buffer(sensorName, 1, input.uvindex);
-  _getOutBuf()[_output_buf_len++] = '\n';
-
-  return _getOutBuf();
-}
-
-const char * orientationToCSV(const char *sensorName, orientation_t & input) {
-  _headerToCSV(&(input.header), sensorName);
-
-  _writeCSVTripleEntry(input.roll, input.pitch, input.heading);
-
-  _add_checksum_to_csv_buffer(sensorName, 3, input.roll, input.pitch, input.heading);
-  _getOutBuf()[_output_buf_len++] = '\n';
-
-  return _getOutBuf();
-}
-
-_DEFAULT_SENSOR_NAME_TO_CSV_FXN(rgblight)
-const char * rgblightToCSV(const char *sensorName, rgblight_t & input) {
-  _headerToCSV(&(input.header), sensorName);
-
-  _writeCSVTripleEntry(input.red, input.green, input.blue);
-
-  _add_checksum_to_csv_buffer(sensorName, 3, input.red, input.green, input.blue);
-  _getOutBuf()[_output_buf_len++] = '\n';
-  return _getOutBuf();
-}
-
-_DEFAULT_SENSOR_NAME_TO_CSV_FXN(pressure)
-const char * pressureToCSV(const char *sensorName, pressure_t & input) {
-  _headerToCSV(&(input.header), sensorName);
-
-  dtostrf(input.pressure, 2, 3, _getOutBuf() + _output_buf_len);
-  _output_buf_len = strlen(_getOutBuf());
-
-  _add_checksum_to_csv_buffer(sensorName, 1, input.pressure);
   _getOutBuf()[_output_buf_len++] = '\n';
 
   return _getOutBuf();
@@ -633,104 +247,504 @@ int _writeJSONValue(char *buf, const char *sensor_name, const char *unit, float 
   return _output_buf_len;
 }
 
-int _writeFullJSONEntry(char *buf, char *label, const char *sensor, unsigned char unit, float value)
+const char * _tripleValueToJSON(const char *sensorName, int labelLength, unsigned char unit,
+             char *labelA, float valueA, char *labelB, float valueB, char *labelC, float valueC)
 {
-  sprintf(buf, label, sensor);
-  _writeJSONValue(&_getOutBuf()[_output_buf_len], buf, unit_to_str(unit), value);
-  return _output_buf_len;
-}
-
-const char * valueToJSON(const char *sensor_name, unsigned char unit, float value)
-{
+  int nameLength = strlen(sensorName);
+  char nameBuf[nameLength + labelLength];
   _resetOutBuf();
-  _writeJSONValue(_getOutBuf(), sensor_name, unit_to_str(unit), value);
+
+  sprintf(nameBuf, labelA, sensorName);
+  _writeJSONValue(&_getOutBuf()[_output_buf_len], nameBuf, unit_to_str(unit), valueA);
+
+  sprintf(nameBuf, labelB, sensorName);
+  _writeJSONValue(&_getOutBuf()[_output_buf_len], nameBuf, unit_to_str(unit), valueB);
+
+  sprintf(nameBuf, labelC, sensorName);
+  _writeJSONValue(&_getOutBuf()[_output_buf_len], nameBuf, unit_to_str(unit), valueC);
   return _getOutBuf();
 }
 
-const char * accelerationToJSON(const char *sensor_name, acceleration_t & acceleration)
+const char * valueToJSON(const char *sensorName, unsigned char unit, float value)
 {
-  int nameLength = strlen(sensor_name);
-  char nameBuf[nameLength + 2];
   _resetOutBuf();
-
-  _writeFullJSONEntry(nameBuf, "%sX", sensor_name, acceleration.header.unit, acceleration.x);
-  _writeFullJSONEntry(nameBuf, "%sY", sensor_name, acceleration.header.unit, acceleration.y);
-  _writeFullJSONEntry(nameBuf, "%sZ", sensor_name, acceleration.header.unit, acceleration.z);
+  _writeJSONValue(_getOutBuf(), sensorName, unit_to_str(unit), value);
   return _getOutBuf();
 }
 
-const char * magneticToJSON(const char *sensor_name, magnetic_t & mag)
-{
-  int nameLength = strlen(sensor_name);
-  char nameBuf[nameLength + 2];
-  _resetOutBuf();
-
-  _writeFullJSONEntry(nameBuf, "%sX", sensor_name, mag.header.unit, mag.x);
-  _writeFullJSONEntry(nameBuf, "%sY", sensor_name, mag.header.unit, mag.y);
-  _writeFullJSONEntry(nameBuf, "%sZ", sensor_name, mag.header.unit, mag.z);
-  return _getOutBuf();
+/*
+ * UV Light
+ * ========================================================================================
+ */
+UVLight::UVLight(sensor_id_t sensor_id) {
+  UVLight::sensorId = sensor_id;
+  UVLight::header.unit = DATA_UNIT_MILLIWATT_PER_CMSQUARED;
 }
 
-const char * gyroToJSON(const char *sensor_name, gyro_t & orient)
-{
-  int nameLength = strlen(sensor_name);
-  char nameBuf[nameLength + 8];
-  _resetOutBuf();
-
-  _writeFullJSONEntry(nameBuf, "%sX", sensor_name, orient.header.unit, orient.x);
-  _writeFullJSONEntry(nameBuf, "%sY", sensor_name, orient.header.unit, orient.y);
-  _writeFullJSONEntry(nameBuf, "%sZ", sensor_name, orient.header.unit, orient.z);
-  return _getOutBuf();
+UVLight::~UVLight() {
 }
 
-const char * temperatureToJSON(const char *sensor_name, temperature_t & temp)
-{
-  _resetOutBuf();
-  _writeJSONValue(_getOutBuf(), sensor_name, unit_to_str(temp.header.unit), temp.t);
-  return _getOutBuf();
+boolean UVLight::begin(void) {
+  return UVLight::begin(UVLight::ML8511_pin);
 }
 
-const char * luminosityToJSON(const char *sensor_name, luminosity_t & lum)
-{
-  _resetOutBuf();
-  _writeJSONValue(_getOutBuf(), sensor_name, unit_to_str(lum.header.unit), lum.lux);
-  return _getOutBuf();
+boolean UVLight::begin(int pin) {
+  UVLight::ML8511_pin = pin;
+  if (UVLight::sensorId == SENSORID_SI1132)
+    return start_sensor_or_err(uvlight_sensor_name, si1132_init());
+  else if (UVLight::sensorId == SENSORID_ML8511)
+    return start_sensor_or_err(uvlight_sensor_name, ml8511_init());
+  else
+    return false;
 }
 
-const char * uvlightToJSON(const char *sensor_name, uvlight_t & input)
-{
-  _resetOutBuf();
-  _writeJSONValue(_getOutBuf(), sensor_name, unit_to_str(input.header.unit), input.uvindex);
-  return _getOutBuf();
+void UVLight::read(void) {
+  UVLight::header.timestamp = millis();
+
+  if (UVLight::sensorId == SENSORID_SI1132) {
+    UVLight::header.sensor_id = SENSORID_SI1132;
+    UVLight::uvindex = si1132_getUVIndex();
+  } else if (UVLight::sensorId == SENSORID_ML8511) {
+    UVLight::header.sensor_id = SENSORID_ML8511;
+    UVLight::uvindex = ml8511_getUV(UVLight::ML8511_pin);
+  }
 }
 
-const char * orientationToJSON(const char *sensor_name, orientation_t & orient)
-{
-  int nameLength = strlen(sensor_name);
-  char nameBuf[nameLength + 8];
-  _resetOutBuf();
-
-  _writeFullJSONEntry(nameBuf, "%sRoll", sensor_name, orient.header.unit, orient.roll);
-  _writeFullJSONEntry(nameBuf, "%sPitch", sensor_name, orient.header.unit, orient.pitch);
-  _writeFullJSONEntry(nameBuf, "%sHeading", sensor_name, orient.header.unit, orient.heading);
-  return _getOutBuf();
+const char * UVLight::readToCSV(const char * sensorName) {
+  UVLight::read();
+  return UVLight::toCSV(sensorName);
 }
 
-const char * rgblightToJSON(const char *sensor_name, rgblight_t & rgblight)
-{
-  int nameLength = strlen(sensor_name);
-  char nameBuf[nameLength + 8];
-  _resetOutBuf();
-
-  _writeFullJSONEntry(nameBuf, "%sRed", sensor_name, rgblight.header.unit, rgblight.red);
-  _writeFullJSONEntry(nameBuf, "%sGreen", sensor_name, rgblight.header.unit, rgblight.green);
-  _writeFullJSONEntry(nameBuf, "%sBlue", sensor_name, rgblight.header.unit, rgblight.blue);
-  return _getOutBuf();
+const char * UVLight::readToJSON(const char * sensorName) {
+  UVLight::read();
+  return UVLight::toJSON(sensorName);
 }
 
-const char * pressureToJSON(const char *sensor_name, pressure_t & pressure)
-{
-  _resetOutBuf();
-  _writeJSONValue(_getOutBuf(), sensor_name, unit_to_str(pressure.header.unit), pressure.pressure);
-  return _getOutBuf();
+const char * UVLight::toCSV(const char * sensorName) {
+  return valueToCSV(sensorName, UVLight::uvindex, UVLight::header.timestamp);
+}
+
+const char * UVLight::toJSON(const char * sensorName) {
+  return valueToJSON(sensorName, UVLight::header.unit, UVLight::uvindex);
+}
+
+
+/*
+ * RGB Light
+ * ========================================================================================
+ */
+RGBLight::RGBLight(sensor_id_t sensor_id) {
+  RGBLight::sensorId = sensor_id;
+  RGBLight::header.unit = DATA_UNIT_LUX;
+}
+
+RGBLight::~RGBLight() {
+}
+
+boolean RGBLight::begin(void) {
+  if (RGBLight::sensorId == SENSORID_ISL29125)
+    // TODO: Support advance sensor configuration:
+    //       https://github.com/sparkfun/ISL29125_Breakout/blob/V_H1.0_L1.0.1/Libraries/
+    //               Arduino/examples/ISL29125Interrupts/ISL29125Interrupts.ino
+    return start_sensor_or_err(rgblight_sensor_name, isl29125_init());
+  else if (RGBLight::sensorId == SENSORID_TCS34725)
+    // TODO: Support advance sensor configuration:
+    //       https://learn.adafruit.com/adafruit-color-sensors/program-it
+    return start_sensor_or_err(rgblight_sensor_name, tcs34725_init(TCS34725_INTEGRATIONTIME_700MS, TCS34725_GAIN_1X));
+  else
+    return false;
+}
+
+void RGBLight::read(void) {
+  RGBLight::header.timestamp = millis();
+  RGBLight::header.sensor_id = RGBLight::sensorId;
+
+  // TODO: Adjust RGB for relative luminance?
+  //       Y = 0.2126 * R + 0.7152 * G + 0.0722 * B
+
+  if (RGBLight::sensorId == SENSORID_ISL29125)
+    isl29125_getRGB(&(RGBLight::red), &(RGBLight::green), &(RGBLight::blue));
+  else if (RGBLight::sensorId == SENSORID_TCS34725)
+    tcs34725_getRGB(&(RGBLight::red), &(RGBLight::green), &(RGBLight::blue));
+}
+
+const char * RGBLight::readToCSV(const char * sensorName) {
+  RGBLight::read();
+  return RGBLight::toCSV(sensorName);
+}
+
+const char * RGBLight::readToJSON(const char * sensorName) {
+  RGBLight::read();
+  return RGBLight::toJSON(sensorName);
+}
+
+const char * RGBLight::toCSV(const char * sensorName) {
+  return valuesToCSV(sensorName, RGBLight::header.timestamp, 3,
+                     RGBLight::red, RGBLight::green, RGBLight::blue);
+}
+
+const char * RGBLight::toJSON(const char * sensorName) {
+  return _tripleValueToJSON(sensorName, 6, RGBLight::header.unit, "%sRed", RGBLight::red,
+                           "%sGreen", RGBLight::green, "%sBlue", RGBLight::blue);
+}
+
+/*
+ * Temperature
+ * ========================================================================================
+ */
+Temperature::Temperature(sensor_id_t sensor_id) {
+  Temperature::sensorId = sensor_id;
+  Temperature::header.unit = DATA_UNIT_DEGREES_CELSIUS;
+}
+
+Temperature::~Temperature() {
+}
+
+boolean Temperature::begin(void) {
+  if (Temperature::sensorId == SENSORID_TMP102)
+    return start_sensor_or_err(temperature_sensor_name, tmp102_init());
+  else if (Temperature::sensorId == SENSORID_MLX90614)
+    return start_sensor_or_err(ir_temperature_sensor_name, mlx90614_init());
+  else
+    return false;
+}
+
+void Temperature::read(void) {
+  Temperature::header.timestamp = millis();
+  Temperature::header.sensor_id = Temperature::sensorId;
+
+  if (Temperature::sensorId == SENSORID_TMP102)
+    Temperature::t = tmp102_getTempCelsius();
+  else if (Temperature::sensorId == SENSORID_MLX90614)
+    Temperature::t = mlx90614_getTempCelsius();
+}
+
+const char * Temperature::readToCSV(const char * sensorName) {
+  Temperature::read();
+  return Temperature::toCSV(sensorName);
+}
+
+const char * Temperature::readToJSON(const char * sensorName) {
+  Temperature::read();
+  return Temperature::toJSON(sensorName);
+}
+
+const char * Temperature::toCSV(const char * sensorName) {
+  return valueToCSV(sensorName, Temperature::t, Temperature::header.timestamp);
+}
+
+
+const char * Temperature::toJSON(const char * sensorName) {
+  return valueToJSON(sensorName, Temperature::header.unit, Temperature::t);
+}
+
+/*
+ * Luminosity
+ * ========================================================================================
+ */
+Luminosity::Luminosity(void) {
+  Luminosity::sensorId = SENSORID_TSL2561;
+  Luminosity::header.unit = DATA_UNIT_LUX;
+}
+
+Luminosity::~Luminosity() {
+}
+
+boolean Luminosity::begin(void) {
+  return start_sensor_or_err(luminosity_sensor_name, tsl2561_init());
+}
+
+void Luminosity::read(void) {
+  Luminosity::header.timestamp = millis();
+
+  Luminosity::header.sensor_id = Luminosity::sensorId;
+  Luminosity::lux = tsl2561_getLux();
+}
+
+const char * Luminosity::readToCSV(const char * sensorName) {
+  Luminosity::read();
+  return Luminosity::toCSV(sensorName);
+}
+
+const char * Luminosity::readToJSON(const char * sensorName) {
+  Luminosity::read();
+  return Luminosity::toJSON(sensorName);
+}
+
+const char * Luminosity::toCSV(const char * sensorName) {
+  return valueToCSV(sensorName, Luminosity::lux, Luminosity::header.timestamp);
+}
+
+const char * Luminosity::toJSON(const char * sensorName) {
+  return valueToJSON(sensorName, Luminosity::header.unit, Luminosity::lux);
+}
+
+/*
+ * Pressure
+ * ========================================================================================
+ */
+Pressure::Pressure(void) {
+  Pressure::sensorId = SENSORID_BMP180;
+  Pressure::header.unit = DATA_UNIT_HECTOPASCAL;
+}
+
+Pressure::~Pressure() {
+}
+
+boolean Pressure::begin(void) {
+  return Pressure::begin(Pressure::bmp085_mode);
+}
+
+boolean Pressure::begin(bmp085_mode_t mode) {
+  return start_sensor_or_err(pressure_sensor_name, bmp180_init(mode));
+}
+
+void Pressure::read(void) {
+  Pressure::header.timestamp = millis();
+
+  Pressure::header.sensor_id = Pressure::sensorId;
+  bmp180_getPressure(&(Pressure::pressure));
+}
+
+const char * Pressure::readToCSV(const char * sensorName) {
+  Pressure::read();
+  return Pressure::toCSV(sensorName);
+}
+
+const char * Pressure::readToJSON(const char * sensorName) {
+  Pressure::read();
+  return Pressure::toJSON(sensorName);
+}
+
+const char * Pressure::toCSV(const char * sensorName) {
+  return valueToCSV(sensorName, Pressure::pressure, Pressure::header.timestamp);
+}
+
+const char * Pressure::toJSON(const char * sensorName) {
+  return valueToJSON(sensorName, Pressure::header.unit, Pressure::pressure);
+}
+
+/*
+ * Acceleration
+ * ========================================================================================
+ */
+Acceleration::Acceleration(void) {
+  Acceleration::sensorId = SENSORID_ADAFRUIT9DOFIMU;
+  Acceleration::header.unit = DATA_UNIT_METER_PER_SECONDSQUARED;
+}
+
+Acceleration::~Acceleration() {
+}
+
+boolean Acceleration::begin(void) {
+  return start_sensor_or_err(acceleration_sensor_name, lsm303_accel_init());
+}
+
+void Acceleration::read(void) {
+  Acceleration::header.timestamp = millis();
+
+  Acceleration::header.sensor_id = Acceleration::sensorId;
+  lsm303_getAccel(&(Acceleration::x), &(Acceleration::y), &(Acceleration::z));
+}
+
+const char * Acceleration::readToCSV(const char * sensorName) {
+  Acceleration::read();
+  return Acceleration::toCSV(sensorName);
+}
+
+const char * Acceleration::readToJSON(const char * sensorName) {
+  Acceleration::read();
+  return Acceleration::toJSON(sensorName);
+}
+
+const char * Acceleration::toCSV(const char * sensorName) {
+  return valuesToCSV(sensorName, Acceleration::header.timestamp, 3,
+                     Acceleration::x, Acceleration::y, Acceleration::z);
+}
+
+const char * Acceleration::toJSON(const char * sensorName) {
+  return _tripleValueToJSON(sensorName, 2, Acceleration::header.unit, "%sX", Acceleration::x,
+                           "%sY", Acceleration::y, "%sZ", Acceleration::z);
+}
+
+/*
+ * Magnetic
+ * ========================================================================================
+ */
+Magnetic::Magnetic(void) {
+  Magnetic::sensorId = SENSORID_ADAFRUIT9DOFIMU;
+  Magnetic::header.unit = DATA_UNIT_MICROTESLA;
+}
+
+Magnetic::~Magnetic() {
+}
+
+boolean Magnetic::begin(void) {
+  return start_sensor_or_err(magnetic_sensor_name, lsm303_mag_init());
+}
+
+void Magnetic::read(void) {
+  Magnetic::header.timestamp = millis();
+
+  Magnetic::header.sensor_id = Magnetic::sensorId;
+  lsm303_getMag(&(Magnetic::x), &(Magnetic::y), &(Magnetic::z));
+}
+
+const char * Magnetic::readToCSV(const char * sensorName) {
+  Magnetic::read();
+  return Magnetic::toCSV(sensorName);
+}
+
+const char * Magnetic::readToJSON(const char * sensorName) {
+  Magnetic::read();
+  return Magnetic::toJSON(sensorName);
+}
+
+const char * Magnetic::toCSV(const char * sensorName) {
+  return valuesToCSV(sensorName, Magnetic::header.timestamp, 3,
+                     Magnetic::x, Magnetic::y, Magnetic::z);
+}
+
+const char * Magnetic::toJSON(const char * sensorName) {
+  return _tripleValueToJSON(sensorName, 2, Magnetic::header.unit, "%sX", Magnetic::x,
+                           "%sY", Magnetic::y, "%sZ", Magnetic::z);
+}
+
+/*
+ * Gyro
+ * ========================================================================================
+ */
+Gyro::Gyro(void) {
+  Gyro::sensorId = SENSORID_ADAFRUIT9DOFIMU;
+  Gyro::header.unit = DATA_UNIT_RADIAN_PER_SECOND;
+}
+
+Gyro::~Gyro() {
+}
+
+boolean Gyro::begin(void) {
+  return start_sensor_or_err(gyro_sensor_name, l3gd20h_init());
+}
+
+void Gyro::read(void) {
+  Gyro::header.timestamp = millis();
+
+  Gyro::header.sensor_id = Gyro::sensorId;
+  l3gd20h_getOrientation(&(Gyro::x), &(Gyro::y), &(Gyro::z));
+}
+
+const char * Gyro::readToCSV(const char * sensorName) {
+  Gyro::read();
+  return Gyro::toCSV(sensorName);
+}
+
+const char * Gyro::readToJSON(const char * sensorName) {
+  Gyro::read();
+  return Gyro::toJSON(sensorName);
+}
+
+const char * Gyro::toCSV(const char * sensorName) {
+  return valuesToCSV(sensorName, Gyro::header.timestamp, 3,
+                     Gyro::x, Gyro::y, Gyro::z);
+}
+
+const char * Gyro::toJSON(const char * sensorName) {
+  return _tripleValueToJSON(sensorName, 2, Gyro::header.unit, "%sX", Gyro::x,
+                           "%sY", Gyro::y, "%sZ", Gyro::z);
+}
+
+/*
+ * Orientation
+ * ========================================================================================
+ */
+Orientation::Orientation(void) {
+  Orientation::sensorId = SENSORID_ADAFRUIT9DOFIMU;
+  Orientation::header.unit = DATA_UNIT_DEGREES;
+}
+
+Orientation::~Orientation() {
+}
+
+boolean Orientation::begin(void) {
+  Orientation::accel = Acceleration();
+  Orientation::mag = Magnetic();
+  return Orientation::accel.begin() && Orientation::mag.begin();
+}
+
+boolean Orientation::begin(Acceleration & accel, Magnetic & mag) {
+  Orientation::accel = accel;
+  Orientation::mag = mag;
+  return true;
+}
+
+void Orientation::read(void) {
+  Orientation::accel.read();
+  Orientation::mag.read();
+  Orientation::read(Orientation::accel, Orientation::mag);
+}
+
+void Orientation::read(Acceleration & acc, Magnetic & mag) {
+  float roll;
+  float pitch;
+  float heading;
+  unsigned long acctime;
+  unsigned long magtime;
+  const float PI_F = 3.141592653F;
+
+  acctime = acc.header.timestamp;
+  magtime = mag.header.timestamp;
+
+  // Roll is rotation around x-axis (-180 <= roll <= 180)
+  // Positive roll is clockwise rotation wrt positive x axis
+  roll = (float) atan2(acc.y, acc.z);
+
+  // Pitch is rotation around y-axis (-180 <= pitch <= 180)
+  // Positive pitch is clockwise rotation wrt positive y axis
+  if (acc.y * sin(roll) + acc.z * cos(roll) == 0) {
+    pitch = acc.x > 0 ? (PI_F / 2) : (-PI_F / 2);
+  } else {
+    pitch = (float)atan(-acc.x / (acc.y * sin(roll) + acc.z * cos(roll)));
+  }
+
+  // Heading is rotation around z-axis
+  // Positive heading is clockwise rotation wrt positive z axis
+  heading = (float)atan2(mag.z * sin(roll) - mag.y * cos(roll),
+			         mag.x * cos(pitch) + mag.y * sin(pitch) * sin(roll) +
+				 mag.z * sin(pitch) * cos(roll));
+
+  // Convert radians to degrees
+  Orientation::roll = roll * 180 / PI_F;
+  Orientation::pitch = pitch * 180 / PI_F;
+  Orientation::heading = heading * 180 / PI_F;
+  Orientation::header.timestamp = acctime > magtime ? acctime : magtime;
+}
+
+const char * Orientation::readToCSV(const char * sensorName) {
+  Orientation::read();
+  return Orientation::toCSV(sensorName);
+}
+
+const char * Orientation::readToJSON(const char * sensorName) {
+  Orientation::read();
+  return Orientation::toJSON(sensorName);
+}
+
+const char * Orientation::readToCSV(Acceleration & acc, Magnetic & mag, const char * sensorName) {
+  Orientation::read(acc, mag);
+  return Orientation::toCSV(sensorName);
+}
+
+const char * Orientation::readToJSON(Acceleration & acc, Magnetic & mag, const char * sensorName) {
+  Orientation::read(acc, mag);
+  return Orientation::toJSON(sensorName);
+}
+
+const char * Orientation::toCSV(const char * sensorName) {
+  return valuesToCSV(sensorName, Orientation::header.timestamp, 3,
+                     Orientation::roll, Orientation::pitch, Orientation::heading);
+}
+
+const char * Orientation::toJSON(const char * sensorName) {
+  return _tripleValueToJSON(sensorName, 8, Orientation::header.unit, "%sRoll", Orientation::roll,
+                           "%sPitch", Orientation::pitch, "%sHeading", Orientation::heading);
 }

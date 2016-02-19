@@ -1,5 +1,5 @@
 /**
- * @file   drivers.c
+ * @file   drivers.cpp
  * @Author Ben Peters (ben@ardusat.com)
  * @date   December 3, 2014
  * @brief  Implements sensor-specific driver read/initialization functions

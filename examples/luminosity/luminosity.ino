@@ -43,7 +43,7 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
-luminosity_t lum;
+Luminosity lum;
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -55,9 +55,10 @@ luminosity_t lum;
  */
 void setup(void)
 {
+  //ARDUSAT_SPACEBOARD = true;
   serialConnection.begin(9600);
 
-  if (!beginLuminositySensor()) {
+  if (!lum.begin()) {
     serialConnection.println("Can't initialize luminosity sensor! Check your wiring.");
   }
 
@@ -76,8 +77,7 @@ void setup(void)
  */
 void loop(void)
 {
-  readLuminosity(lum);
-  serialConnection.println(luminosityToJSON("luminosity", lum));
+  serialConnection.println(lum.readToJSON());
 
   delay(1000);
 }

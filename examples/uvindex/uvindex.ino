@@ -43,7 +43,7 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
-uvlight_t uvIndex;
+UVLight uvIndex;
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -55,9 +55,10 @@ uvlight_t uvIndex;
  */
 void setup(void)
 {
+  //ARDUSAT_SPACEBOARD = true;
   serialConnection.begin(9600);
 
-  if (!beginUVLightSensor()) {
+  if (!uvIndex.begin()) {
     serialConnection.println("Can't initialize UV sensor! Check your wiring.");
   }
 
@@ -76,8 +77,7 @@ void setup(void)
  */
 void loop(void)
 {
-  readUVLight(uvIndex);
-  serialConnection.println(uvlightToJSON("uv", uvIndex));
+  serialConnection.println(uvIndex.readToJSON("uv"));
 
   delay(1000);
 }

@@ -64,14 +64,15 @@ const int MY_ALTITUDE_FEET = 4300;
 float myAltitude;
 float currentSeaLevelPressure = 1026.8;
 
-temperature_t temp;
-luminosity_t luminosity;
-uvlight_t uv_light;
-acceleration_t accel;
-magnetic_t mag;
-gyro_t gyro;
-orientation_t orientation;
-pressure_t pressure;
+Temperature ambient;
+Temperature infrared = Temperature(SENSORID_MLX90614);
+Luminosity lum;
+UVLight uv;
+Acceleration accel;
+Magnetic mag;
+Gyro gyro;
+Orientation orient;
+Pressure pressure;
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -83,16 +84,19 @@ pressure_t pressure;
  */
 void setup(void)
 {
+  //ARDUSAT_SPACEBOARD = true;
   serialConnection.begin(9600);
 
-  beginAccelerationSensor();
-  beginTemperatureSensor();
-  beginInfraredTemperatureSensor();
-  beginLuminositySensor();
-  beginUVLightSensor();
-  beginGyroSensor();
-  beginMagneticSensor();
-  beginBarometricPressureSensor();
+  ambient.begin();
+  infrared.begin();
+  lum.begin();
+  uv.begin();
+  accel.begin();
+  mag.begin();
+  gyro.begin();
+  orient.begin(accel, mag);
+  pressure.begin();
+
   myAltitude = MY_ALTITUDE_FEET * 0.3048;
 
   // initialize the digital pins as outputs for the LEDs
@@ -121,8 +125,6 @@ void setup(void)
 void loop(void)
 {
   byte byteRead;
-  float temp_val;
-  float infrared_temp;
 
   // To test sending serial data from the computer, we can turn the serialConnection Read
   // LED on or off
@@ -141,50 +143,41 @@ void loop(void)
   }
 
   // Read Accelerometer
-  readAcceleration(accel);
-  serialConnection.println(accelerationToJSON("accelerometer", accel));
+  serialConnection.println(accel.readToJSON("accelerometer"));
 
   // Read Magnetometer
-  readMagnetic(mag);
-  serialConnection.println(magneticToJSON("magnetic", mag));
+  serialConnection.println(mag.readToJSON("magnetic"));
 
   // Read Gyro
-  readGyro(gyro);
-  serialConnection.println(gyroToJSON("gyro", gyro));
+  serialConnection.println(gyro.readToJSON("gyro"));
 
   // Calculate Orientation from Accel + Magnet data
-  calculateOrientation(accel, mag, orientation);
-  serialConnection.println(orientationToJSON("orientation", orientation));
+  serialConnection.println(orient.readToJSON(accel, mag, "orientation"));
 
   // Read Temp from TMP102 (default in celcius)
-  readTemperature(temp);
-  serialConnection.println(temperatureToJSON("temp", temp));
-  temp_val = temp.t;
+  serialConnection.println(ambient.readToJSON("ambientTemp"));
 
   // Logic to turn on the temperature LED based on detected temp above ~29.5 C / 85 F
-  if (temp_val > 29.5) {
+  if (ambient.t > 29.5) {
     digitalWrite(LED_TMP102, HIGH);   // turn the LED on (HIGH is the voltage level)
   } else {
     digitalWrite(LED_TMP102, LOW);    // turn the LED off by making the voltage LOW
   }
 
   // Read MLX Infrared temp sensor
-  readInfraredTemperature(temp);
-  serialConnection.println(temperatureToJSON("infraredTemp", temp));
-  infrared_temp = temp.t;
+  serialConnection.println(infrared.readToJSON("infraredTemp"));
 
-  if (infrared_temp > 29.5) {
+  if (infrared.t > 29.5) {
     digitalWrite(LED_MLX90614, HIGH);   // turn the LED on (HIGH is the voltage level)
   } else {
     digitalWrite(LED_MLX90614, LOW);    // turn the LED off by making the voltage LOW
   }
 
   // Read TSL2561 Luminosity
-  readLuminosity(luminosity);
-  serialConnection.println(luminosityToJSON("luminosity", luminosity));
+  serialConnection.println(lum.readToJSON("luminosity"));
 
-  if (luminosity.lux) {
-    if (luminosity.lux < 100) {
+  if (lum.lux) {
+    if (lum.lux < 100) {
       digitalWrite(LED_TSL2561, HIGH);   // turn the LED on (HIGH is the voltage level)
     } else {
       digitalWrite(LED_TSL2561, LOW);    // turn the LED off by making the voltage LOW
@@ -192,11 +185,10 @@ void loop(void)
   }
 
   // Read MP8511 UV
-  readUVLight(uv_light);
-  serialConnection.println(uvlightToJSON("uv", uv_light));
+  serialConnection.println(uv.readToJSON("uv"));
 
   //  Read Barometer BMP180
-  readBarometricPressure(pressure);
-  Serial.println(pressureToJSON("pressure", pressure));
+  serialConnection.println(pressure.readToJSON("pressure"));
+
   delay(READ_INTERVAL);
 }

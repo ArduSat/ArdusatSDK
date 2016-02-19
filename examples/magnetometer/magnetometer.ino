@@ -43,7 +43,7 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
-magnetic_t mag;
+Magnetic mag;
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -55,9 +55,10 @@ magnetic_t mag;
  */
 void setup(void)
 {
+  //ARDUSAT_SPACEBOARD = true;
   serialConnection.begin(9600);
 
-  if (!beginMagneticSensor()) {
+  if (!mag.begin()) {
     serialConnection.println("Can't initialize IMU! Check your wiring.");
   }
 
@@ -76,8 +77,7 @@ void setup(void)
  */
 void loop(void)
 {
-  readMagnetic(mag);
-  serialConnection.println(magneticToJSON("magnetic", mag));
+  serialConnection.println(mag.readToJSON());
 
   delay(1000);
 }

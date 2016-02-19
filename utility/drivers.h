@@ -1,17 +1,11 @@
-/*
- * =====================================================================================
+/**
+ * @file   drivers.h
+ * @Author Ben Peters (ben@ardusat.com)
+ * @date   December 3, 2014
+ * @brief  Implements sensor-specific driver read/initialization functions
  *
- *       Filename:  drivers.h
- *
- *    Description:  Implementations of sensor-specific initialization and read driver 
- *                  functions for use by the higher-level Ardusat SDK
- *
- *        Version:  1.0
- *        Created:  12/03/2014 14:47:14
- *
- *         Author:  Ben Peters (ben@ardusat.com)
- *
- * =====================================================================================
+ * These functions are meant to provide a gateway interface that the higher-level
+ * generic interface uses to get data from individual sensors.
  */
 
 #ifndef DRIVERS_H_

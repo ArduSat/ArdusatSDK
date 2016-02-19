@@ -49,7 +49,7 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 const int MY_ALTITUDE_FEET = 4300;
 float currentSeaLevelPressure = 1026.8;
 float myAltitude;
-pressure_t pressure;
+Pressure pressure;
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -61,9 +61,10 @@ pressure_t pressure;
  */
 void setup(void)
 {
+  //ARDUSAT_SPACEBOARD = true;
   serialConnection.begin(9600);
 
-  if (!beginBarometricPressureSensor()) {
+  if (!pressure.begin()) {
     serialConnection.println("Can't initialize barometric pressure sensor! Check your wiring.");
   }
 
@@ -84,7 +85,7 @@ void setup(void)
  */
 void loop(void)
 {
-  readBarometricPressure(pressure);
+  pressure.read();
 
   serialConnection.print("Sea level pressure at altitude ");
   serialConnection.print(myAltitude * 3.28084);
@@ -102,6 +103,6 @@ void loop(void)
 
   serialConnection.println("");
 
-  serialConnection.println(pressureToJSON("pressure", pressure));
+  serialConnection.println(pressure.toJSON());
   delay(1000);
 }

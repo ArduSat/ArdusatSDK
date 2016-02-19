@@ -43,7 +43,7 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
-acceleration_t accel;
+Acceleration accel;
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -55,9 +55,10 @@ acceleration_t accel;
  */
 void setup(void)
 {
+  //ARDUSAT_SPACEBOARD = true;
   serialConnection.begin(9600);
 
-  if (!beginAccelerationSensor()) {
+  if (!accel.begin()) {
     serialConnection.println("Can't initialize IMU! Check your wiring.");
   }
 
@@ -76,8 +77,7 @@ void setup(void)
  */
 void loop(void)
 {
-  readAcceleration(accel);
-  serialConnection.println(accelerationToJSON("acceleration", accel));
+  serialConnection.println(accel.readToJSON());
 
   delay(1000);
 }

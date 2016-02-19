@@ -41,7 +41,7 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
-rgblight_t rgb;
+RGBLight rgb;
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -53,9 +53,10 @@ rgblight_t rgb;
  */
 void setup(void)
 {
+  //ARDUSAT_SPACEBOARD = true;
   serialConnection.begin(9600);
 
-  if (!beginRGBLightSensor()) {
+  if (!rgb.begin()) {
     serialConnection.println("Can't initialize RGB Sensor! Check your wiring.");
   }
 
@@ -74,8 +75,7 @@ void setup(void)
  */
 void loop(void)
 {
-  readRGBLight(rgb);
-  serialConnection.println(rgblightToJSON("rgb", rgb));
+  serialConnection.println(rgb.readToJSON());
 
   delay(1000);
 }
