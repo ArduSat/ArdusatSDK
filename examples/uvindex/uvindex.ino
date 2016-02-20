@@ -55,12 +55,9 @@ UVLight uvIndex;
  */
 void setup(void)
 {
-  //ARDUSAT_SPACEBOARD = true;
   serialConnection.begin(9600);
 
-  if (!uvIndex.begin()) {
-    serialConnection.println("Can't initialize UV sensor! Check your wiring.");
-  }
+  uvIndex.begin();
 
   /* We're ready to go! */
   serialConnection.println("");

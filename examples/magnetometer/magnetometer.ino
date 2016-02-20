@@ -55,12 +55,9 @@ Magnetic mag;
  */
 void setup(void)
 {
-  //ARDUSAT_SPACEBOARD = true;
   serialConnection.begin(9600);
 
-  if (!mag.begin()) {
-    serialConnection.println("Can't initialize IMU! Check your wiring.");
-  }
+  mag.begin();
 
   /* We're ready to go! */
   serialConnection.println("");

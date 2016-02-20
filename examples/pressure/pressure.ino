@@ -46,9 +46,9 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
-const int MY_ALTITUDE_FEET = 4300;
-float currentSeaLevelPressure = 1026.8;
-float myAltitude;
+float MY_ALTITUDE_FEET = 4300.0;    // My altitude in feet
+float seaLevelPressure = 1026.8;    // The assumed pressure (in hPa) at sea level
+float altitude;                     // My altitude in meters
 Pressure pressure;
 
 /*
@@ -61,14 +61,11 @@ Pressure pressure;
  */
 void setup(void)
 {
-  //ARDUSAT_SPACEBOARD = true;
   serialConnection.begin(9600);
 
-  if (!pressure.begin()) {
-    serialConnection.println("Can't initialize barometric pressure sensor! Check your wiring.");
-  }
+  pressure.begin();
 
-  myAltitude = MY_ALTITUDE_FEET * 0.3048;
+  altitude = convFeetToMeters(MY_ALTITUDE_FEET);
 
   /* We're ready to go! */
   serialConnection.println("");
@@ -86,23 +83,49 @@ void setup(void)
 void loop(void)
 {
   pressure.read();
+  float calculatedSeaLevelPressure = pressure.seaLevelPressureFromAltitude(altitude);
+  float calculatedAltitude = pressure.altitudeFromSeaLevelPressure(seaLevelPressure);
 
-  serialConnection.print("Sea level pressure at altitude ");
-  serialConnection.print(myAltitude * 3.28084);
-  serialConnection.print("ft: ");
-  serialConnection.print(seaLevelPressureForAltitude(myAltitude, pressure.pressure));
-  serialConnection.println("hPa");
+  serialConnection.print("Sea level pressure, calculated from current pressure (");
+  serialConnection.print(pressure.pressure);
+  serialConnection.print(" hPa) and altitude (");
+  serialConnection.print(convMetersToFeet(altitude));
+  serialConnection.print(" ft)  = ");
+  serialConnection.print(calculatedSeaLevelPressure);
+  serialConnection.println(" hPa");
 
-  serialConnection.println("");
-
-  serialConnection.print("Altitude assuming sea level pressure ");
-  serialConnection.print(currentSeaLevelPressure);
-  serialConnection.print("hPa: ");
-  serialConnection.print(pressureToAltitude(currentSeaLevelPressure, pressure.pressure) * 3.28084);
-  serialConnection.println("ft");
+  serialConnection.print("Altitude, calculated from current pressure (");
+  serialConnection.print(pressure.pressure);
+  serialConnection.print(" hPa) and sea level pressure (");
+  serialConnection.print(seaLevelPressure);
+  serialConnection.print(" hPa) = ");
+  serialConnection.print(convMetersToFeet(calculatedAltitude));
+  serialConnection.println(" ft");
 
   serialConnection.println("");
 
   serialConnection.println(pressure.toJSON());
   delay(1000);
+}
+
+/*
+ * ===  FUNCTION  ======================================================================
+ *         Name:  convFeetToMeters
+ *   Parameters:  feet
+ *  Description:  This function converts the value of the parameter (in feet) to meters
+ * =====================================================================================
+ */
+float convFeetToMeters(float feet) {
+  return feet * 0.3048;
+}
+
+/*
+ * ===  FUNCTION  ======================================================================
+ *         Name:  convMetersToFeet
+ *   Parameters:  meters
+ *  Description:  This function converts the value of the parameter (in meters) to feet
+ * =====================================================================================
+ */
+float convMetersToFeet(float meters) {
+  return meters * 3.28084;
 }

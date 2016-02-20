@@ -1,10 +1,12 @@
 /*
  * =====================================================================================
  *
- *       Filename:  csv.ino
+ *       Filename:  all_sensors.ino
  *
- *    Description:  Outputs the values from two different sensors into text properly
- *                  formatted for a CSV file.
+ *    Description:  Simple driver for all the sensors included in the Ardusat
+ *                  Space Kit. Outputs all sensor values at a configurable
+ *                  interval in JSON format that can be read by the Ardusat
+ *                  Experiment Platform (http://experiments.ardusat.com).
  *
  *                  This example uses many third-party libraries available from
  *                  Adafruit (https://github.com/adafruit). These libraries are
@@ -12,13 +14,15 @@
  *
  *                  http://www.apache.org/licenses/LICENSE-2.0
  *
- *        Version:  1.0
- *        Created:  02/16/2016
+ *        Version:  1.2
+ *        Created:  10/29/2014
  *       Revision:  none
  *       Compiler:  Arduino
  *
- *         Author:  Sam Olds (sam@ardusat.com)
+ *         Author:  Ben Peters (ben@ardusat.com)
  *   Organization:  Ardusat
+ *         Edited:  3/25/2016
+ *      Edited By:  Kevin Cocco (kevin@ardusat.com)
  *
  * =====================================================================================
  */
@@ -40,8 +44,20 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
+const int READ_INTERVAL = 0; // interval, in ms, to wait between readings
+
 Acceleration accel;
-Temperature temp;
+Temperature ambient;
+Gyro gyro;
+Temperature infrared = Temperature(SENSORID_MLX90614); // Infrared Temperature Sensor
+Luminosity lum;
+Magnetic mag;
+Orientation orient;
+RGBLight rgb;
+UVLight uv;
+
+//RGBLight rgb_ISL29125 = RGBLight(SENSORID_ISL29125);
+//UVLight uv_SI1132 = UVLight(SENSORID_SI1132);
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -53,15 +69,20 @@ Temperature temp;
  */
 void setup(void)
 {
-  //ARDUSAT_SPACEBOARD = true;
   serialConnection.begin(9600);
 
   accel.begin();
-  temp.begin();
+  ambient.begin();
+  gyro.begin();
+  infrared.begin();
+  lum.begin();
+  mag.begin();
+  orient.begin(accel, mag);
+  rgb.begin();
+  uv.begin();
 
-  /* We're ready to go! */
-  serialConnection.println("");
-  serialConnection.println("name, timestamp, temperature, x acceleration, y acceleration, z acceleration");
+  //rgb_ISL29125.begin();
+  //uv_SI1132.begin();
 }
 
 /*
@@ -75,10 +96,38 @@ void setup(void)
  */
 void loop(void)
 {
-  accel.read();
-  temp.read();
-  
-  serialConnection.println(valuesToCSV("reading", accel.header.timestamp, 4, temp.t, accel.x, accel.y, accel.z));
+  // Read Accelerometer
+  serialConnection.println(accel.readToJSON("accelerometer"));
 
-  delay(1000);
+  // Read Temp from TMP102 (default in celcius)
+  serialConnection.println(ambient.readToJSON("ambientTemp"));
+
+  // Read Gyro
+  serialConnection.println(gyro.readToJSON("gyro"));
+
+  // Read MLX Infrared temp sensor
+  serialConnection.println(infrared.readToJSON("infraredTemp"));
+
+  // Read TSL2561 Luminosity
+  serialConnection.println(lum.readToJSON("luminosity"));
+
+  // Read Magnetometer
+  serialConnection.println(mag.readToJSON("magnetic"));
+
+  // Calculate Orientation from Accel + Magnet data
+  serialConnection.println(orient.readToJSON(accel, mag, "orientation"));
+
+  // Read TCS34725 RGB (Default)
+  serialConnection.println(rgb.readToJSON("rgb"));
+
+  // Read ML8511 UV (Default)
+  serialConnection.println(uv.readToJSON("uv"));
+
+  // Read ISL29125 RGB
+  //serialConnection.println(rgb_ISL29125.readToJSON("rgb_ISL29125"));
+
+  // Read SI1132 UV
+  //serialConnection.println(uv_SI1132.readToJSON("uv_SI1132"));
+
+  delay(READ_INTERVAL);
 }

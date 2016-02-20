@@ -55,12 +55,9 @@ Temperature temp;
  */
 void setup(void)
 {
-  //ARDUSAT_SPACEBOARD = true;
   serialConnection.begin(9600);
 
-  if (!temp.begin()) {
-    serialConnection.println("Can't initialize temperature sensor! Check your wiring.");
-  }
+  temp.begin();
 
   /* We're ready to go! */
   serialConnection.println("");

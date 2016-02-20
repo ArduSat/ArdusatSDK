@@ -55,12 +55,9 @@ Luminosity lum;
  */
 void setup(void)
 {
-  //ARDUSAT_SPACEBOARD = true;
   serialConnection.begin(9600);
 
-  if (!lum.begin()) {
-    serialConnection.println("Can't initialize luminosity sensor! Check your wiring.");
-  }
+  lum.begin();
 
   /* We're ready to go! */
   serialConnection.println("");

@@ -11,7 +11,7 @@
 #include <ArdusatSDK.h>
 #include "serial.h"
 
-const char no_software_params_err_msg[] PROGMEM = "Uh oh, you specified a software serial mode but didn't specify transmit/recieve pins! Halting program...";
+const char no_software_params_err_msg[] PROGMEM = "You specified a software serial mode but didn't specify transmit/recieve pins!";
 const char xbee_cmd_mode[] PROGMEM = "+++";
 const char xbee_cmd_ack[] PROGMEM = "OK";
 const char xbee_cmd_baud[] PROGMEM = "ATBD ";

@@ -8,11 +8,9 @@
  * generic interface uses to get data from individual sensors.
  */
 
-#include <Arduino.h>
-#include <Wire.h>
-#include "drivers.h"
-#include "pololu_LSM303.h"
 #include "ArdusatSDK.h"
+#include "drivers.h"
+#include <Wire.h>
 
 static config_lsm303_accel_t _lsm303_d_accel_config;
 static config_lsm303_mag_t _lsm303_d_mag_config;
@@ -92,10 +90,34 @@ int _writeToRegAddr(uint8_t devAddr, uint8_t reg, void *val, int length)
   return 0;
 }
 
+// Check to see if both the ISL29125 and TCS34725 RGB Light Sensors
+// exists. They are only included with the spaceboard, not the space
+// kit, so if they do exist, the user has a spaceboard.
+void catchSpaceboard() {
+  // Only need to check once, as `catchSpaceboard` is called by all
+  // sensor `begin` functions
+  if (!ARDUSAT_SPACEBOARD && !MANUAL_CONFIG) {
+    uint8_t islData;
+    uint8_t tcsData;
+    Wire.begin();
+
+    // Here, we are checking to see if the sensor replies with the
+    // correct response at it's expected address on the spaceboard
+    _readFromRegAddr(DRIVER_SPACEBOARD_ISL29125_ADDR, 0x00, &islData, 1);
+    _readFromRegAddr(DRIVER_SPACEBOARD_TCS34725_ADDR, 0x80 | 0x12, &tcsData, 1);
+
+    // Checking the responses from the identify registers of each
+    // sensor to make sure it's what we expect for both
+    if (islData == 0x7D && (tcsData == 0x44 || tcsData == 0x10)) {
+      ARDUSAT_SPACEBOARD = true;
+    }
+  }
+}
+
 /*
  * L3GD20 Gyro Sensor
  */
-boolean l3gd20h_init() {
+boolean l3gd20h_init(uint8_t range) {
   uint8_t buf;
   Wire.begin();
 
@@ -111,10 +133,7 @@ boolean l3gd20h_init() {
     return false;
   }
 
-  //Adjust gyro range
-  //0x00 = 250DPS
-  //0x10 = 500DPS
-  //0x20 = 2000DPS
+  // Adjust gyro range
   // Ctrl register 4 selects scale
   // BDU BLE FS1 FS0 - 0 0 SIM
   //  0   0   0   0  0 0 0  0
@@ -123,11 +142,23 @@ boolean l3gd20h_init() {
   // 0x00 = 250 DPS
   // 0x10 = 500 DPS
   // 0x20 = 2000 DPS
-  // 0x30 = 2000 DPS
-  buf = 0x20;
-  _l3gd20_config.sensitivity = L3GD20_GYRO_SENSITIVITY_2000DPS;
 
-  if (_writeToRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_CTRL_REG4, &buf, 1))
+  switch(range) {
+    case 0x00:
+      _l3gd20_config.sensitivity = L3GD20_GYRO_SENSITIVITY_250DPS;
+      break;
+    case 0x10:
+      _l3gd20_config.sensitivity = L3GD20_GYRO_SENSITIVITY_500DPS;
+      break;
+    case 0x20:
+      _l3gd20_config.sensitivity = L3GD20_GYRO_SENSITIVITY_2000DPS;
+      break;
+    default:
+      range = 0x20;
+      _l3gd20_config.sensitivity = L3GD20_GYRO_SENSITIVITY_2000DPS;
+  }
+
+  if (_writeToRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_CTRL_REG4, &range, 1))
     return false;
 
   return true;
@@ -205,72 +236,184 @@ void l3gd20h_getRawTemperature(int8_t *pRawTemperature)
 
 /*
  * LSM303 Accel + Mag Sensor
+ *
+ * LSM303_D Datasheet:
+ * http://www.st.com/web/en/resource/technical/document/datasheet/DM00057547.pdf
+ *
+ * LSM303_DLHC Datasheet:
+ * https://www.adafruit.com/datasheets/LSM303DLHC.PDF
  */
 LSM303 lsm;
 
-void _lsm303_set_sdk_options() {
-  // update accelerometer gain
+// LSM303 Accelerometer Configurations
+void _lsm303_accel_config(lsm303_accel_gain_e gGain) {
+  uint8_t gain;
+  _lsm303_d_accel_config.gain = gGain;
+
+  // LSM303 D (Spaceboard variant)
   if (lsm.getDeviceType() == LSM303::device_D) {
-    lsm.writeReg(LSM303::CTRL2, LSM303_ACCEL_GAIN8G);
-    _lsm303_d_accel_config.gain = LSM303_ACCEL_GAIN8G;
-  } else {
-    // Ctrl register FS1/FS0 for gain
-    // 00 +/- 2
-    // 01 +/- 4
-    // 10 +/- 8
-    // 11 +/- 16
-    // BDU BLE FS1 FS0 HR 0 0 SIM
-    // 0    0   0   0   1 0 0  0
-    // 0b00011000 = 0x18 (High res, +/- 4g)
-    lsm.writeAccReg(LSM303::CTRL_REG4_A, 0x38);
-    _lsm303_d_accel_config.gain = LSM303_ACCEL_GAIN16G;
+    // Adjustable gain:
+    //   AFS = 0b00000000 (+/-  2 g full scale) = 0x00
+    //   AFS = 0b00001000 (+/-  4 g full scale) = 0x08
+    //   AFS = 0b00010000 (+/-  6 g full scale) = 0x10
+    //   AFS = 0b00011000 (+/-  8 g full scale) = 0x18 (Default)
+    //   AFS = 0b00100000 (+/- 16 g full scale) = 0x20
+    switch (gGain) {
+      case LSM303_ACCEL_GAIN2G:
+        gain = 0x00;
+        break;
+      case LSM303_ACCEL_GAIN4G:
+        gain = 0x08;
+        break;
+      case LSM303_ACCEL_GAIN6G:
+        gain = 0x10;
+        break;
+      case LSM303_ACCEL_GAIN8G:
+        gain = 0x18;
+        break;
+      case LSM303_ACCEL_GAIN16G:
+        gain = 0x20;
+        break;
+    }
+    lsm.writeReg(LSM303::CTRL2, gain);
+
+    // 0x57 = 0b01010111
+    // AODR = 0101 (50 Hz ODR); AZEN = AYEN = AXEN = 1 (all axes enabled)
+    lsm.writeReg(LSM303::CTRL1, 0x57);
   }
+  else // LSM303 DLHC (Breakout Space Kit variant)
+  {
+    // Adustable gain:
+    //   FS = 0b00001000 (+/-  2 g full scale; high resolution enable) = 0x08
+    //   FS = 0b00011000 (+/-  4 g full scale; high resolution enable) = 0x18
+    //   FS = 0b00101000 (+/-  8 g full scale; high resolution enable) = 0x28 (Default)
+    //   FS = 0b00111000 (+/- 16 g full scale; high resolution enable) = 0x38
+    switch (gGain) {
+      case LSM303_ACCEL_GAIN2G:
+        gain = 0x08;
+        break;
+      case LSM303_ACCEL_GAIN4G:
+        gain = 0x18;
+        break;
+      case LSM303_ACCEL_GAIN6G:
+        _lsm303_d_accel_config.gain = LSM303_ACCEL_GAIN8G;
+      case LSM303_ACCEL_GAIN8G:
+        gain = 0x28;
+        break;
+      case LSM303_ACCEL_GAIN16G:
+        gain = 0x38;
+        break;
+    }
+    lsm.writeAccReg(LSM303::CTRL_REG4_A, gain);
 
-  // update mag scaling
-  if (lsm.getDeviceType() == LSM303::device_D) {
-    lsm.writeReg(LSM303::CTRL6, LSM303_MAG_SCALE4GAUSS);
-    _lsm303_d_mag_config.scale = LSM303_MAG_SCALE4GAUSS;
-    // Ctrl register for magnetic resolution, data rate, temp enable
-    // TEMP_EN M_RES1 M_RES0 M_ODR2 M_ODR1 M_ODR0 LIR2 LIR1
-    //    0/1    1      1      1      1      0      0   0
-    // 0xF8 = 0b11111000 - temp enable, mag high res, defaults ODR, LIR
-    // enable onboard temp sensor
-    lsm.writeReg(LSM303::CTRL5, 0xf8);
-  } else {
-    // Ctrl register for mag scaling
-    // 0b001 +-1.3
-    // 0b010 +-1.9
-    // 0b011 +-2.5
-    // 0b100 +-4.0
-    // 0b101 +-4.7
-    // 0b110 +-5.6
-    // ob111 +-8.1
-    // GN2 GN1 GN0  0 -->
-    // 0b10000000 = 0x80 (+/- 4 gauss)
-    lsm.writeMagReg(LSM303::CRB_REG_M, 0x80);
-    _lsm303_d_mag_config.scale = LSM303_MAG_SCALE4GAUSS;
-
-    // Ctrl register for Data Output Rate & Temp sensor
-    // TEMP_EN 0 0 DO2 DO1 DO0 0 0
-    //    1    0 0  1   0   0  0 0
-    // 0x90 = 0b10010000 - temp enable, default data rate
-    lsm.writeMagReg(LSM303::CRA_REG_M, 0x90);
+    // 0x47 = 0b01000111
+    // ODR = 0100 (50 Hz ODR); LPen = 0 (normal mode); Zen = Yen = Xen = 1 (all axes enabled)
+    lsm.writeAccReg(LSM303::CTRL_REG1_A, 0x47);
   }
 }
 
-boolean lsm303_accel_init() {
+// LSM303 Magnetometer Configurations
+void _lsm303_mag_config(lsm303_mag_scale_e gaussScale) {
+  uint8_t scale;
+  _lsm303_d_mag_config.scale = gaussScale;
+
+  // LSM303 D (Spaceboard variant)
+  if (lsm.getDeviceType() == LSM303::device_D) {
+    // 0x64 = 0b01100100
+    // M_RES = 11 (high resolution mode); M_ODR = 001 (6.25 Hz ODR)
+    lsm.writeReg(LSM303::CTRL5, 0x64);
+
+    // Adjustable gauss scale:
+    //   MFS = 0b00000000 (+/-  2 gauss full scale) = 0x00
+    //   MFS = 0b00100000 (+/-  4 gauss full scale) = 0x20 (Default)
+    //   MFS = 0b01000000 (+/-  8 gauss full scale) = 0x40
+    //   MFS = 0b01100000 (+/- 12 gauss full scale) = 0x60
+    switch (gaussScale) {
+      case LSM303_MAG_SCALE1_3GAUSS:
+        _lsm303_d_mag_config.scale = LSM303_MAG_SCALE2GAUSS;
+      case LSM303_MAG_SCALE2GAUSS:
+        scale = 0x00;
+        break;
+      case LSM303_MAG_SCALE2_5GAUSS:
+        _lsm303_d_mag_config.scale = LSM303_MAG_SCALE4GAUSS;
+      case LSM303_MAG_SCALE4GAUSS:
+        scale = 0x20;
+        break;
+      case LSM303_MAG_SCALE4_7GAUSS:
+        _lsm303_d_mag_config.scale = LSM303_MAG_SCALE8GAUSS;
+      case LSM303_MAG_SCALE5_6GAUSS:
+        _lsm303_d_mag_config.scale = LSM303_MAG_SCALE8GAUSS;
+      case LSM303_MAG_SCALE8GAUSS:
+        scale = 0x40;
+        break;
+      case LSM303_MAG_SCALE12GAUSS:
+        scale = 0x60;
+        break;
+    }
+    lsm.writeReg(LSM303::CTRL6, scale);
+
+    // 0x00 = 0b00000000
+    // MLP = 0 (low power mode off); MD = 00 (continuous-conversion mode)
+    lsm.writeReg(LSM303::CTRL7, 0x00);
+  }
+  else // LSM303 DLHC (Breakout Space Kit variant)
+  {
+    // 0x0C = 0b00001100
+    // DO = 011 (7.5 Hz ODR)
+    lsm.writeMagReg(LSM303::CRA_REG_M, 0x0C);
+
+    // Adjustable gauss scale:
+    //   MFS = 0b00100000 (+/- 1.3 gauss full scale) = 0x20
+    //   MFS = 0b01000000 (+/- 1.9 gauss full scale) = 0x40
+    //   MFS = 0b01100000 (+/- 2.5 gauss full scale) = 0x60
+    //   MFS = 0b10000000 (+/- 4.0 gauss full scale) = 0x80 (Default)
+    //   MFS = 0b10100000 (+/- 4.7 gauss full scale) = 0xA0
+    //   MFS = 0b11000000 (+/- 5.6 gauss full scale) = 0xC0
+    //   MFS = 0b11100000 (+/- 8.1 gauss full scale) = 0xE0
+    switch (gaussScale) {
+      case LSM303_MAG_SCALE1_3GAUSS:
+        scale = 0x20;
+        break;
+      case LSM303_MAG_SCALE2GAUSS:
+        scale = 0x40;
+        break;
+      case LSM303_MAG_SCALE2_5GAUSS:
+        scale = 0x60;
+        break;
+      case LSM303_MAG_SCALE4GAUSS:
+        scale = 0x80;
+        break;
+      case LSM303_MAG_SCALE4_7GAUSS:
+        scale = 0xA0;
+        break;
+      case LSM303_MAG_SCALE5_6GAUSS:
+        scale = 0xC0;
+        break;
+      case LSM303_MAG_SCALE12GAUSS:
+        _lsm303_d_mag_config.scale = LSM303_MAG_SCALE8GAUSS;
+      case LSM303_MAG_SCALE8GAUSS:
+        scale = 0xE0;
+        break;
+    }
+    lsm.writeMagReg(LSM303::CRB_REG_M, scale);
+
+    // 0x00 = 0b00000000
+    // MD = 00 (continuous-conversion mode)
+    lsm.writeMagReg(LSM303::MR_REG_M, 0x00);
+  }
+}
+
+boolean lsm303_accel_init(lsm303_accel_gain_e gain) {
   Wire.begin();
   lsm.init();
-  lsm.enableDefault();
-  _lsm303_set_sdk_options();
+  _lsm303_accel_config(gain);
   return true;
 }
 
-boolean lsm303_mag_init() {
+boolean lsm303_mag_init(lsm303_mag_scale_e scale) {
   Wire.begin();
   lsm.init();
-  lsm.enableDefault();
-  _lsm303_set_sdk_options();
+  _lsm303_mag_config(scale);
   return true;
 }
 
@@ -651,45 +794,6 @@ void bmp180_getPressure(float *pressure) {
   *pressure = pressure_i / 100.0F;
 }
 
-/**
- * Calculates the altitude in meters from the specified measured atmospheric pressure (hPa) 
- * and sea-level pressure (hPa)
- *
- * Equation taken from BMP180 datasheet (page 16):
- * http://www.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
-  
- * Note that using the equation from wikipedia can give bad results
- * at high altitude.  See this thread for more information:
- * http://forums.adafruit.com/viewtopic.php?f=22&t=58064
- *
- * @param seaLevelPressure Known pressure at sea-level (hPa)
- * @param atmosphericPressure Pressure at altitude (hPa)
- */
-float pressureToAltitude(float seaLevelPressure, float atmosphericPressure)
-{
-  return 44330.0 * (1.0 - pow(atmosphericPressure / seaLevelPressure, 0.1903));
-}
-
-/**
- * Calculates the pressure at sea level (in hPa) from the specified altitude (meters)
- * and measured atmospheric pressure (hPa)
- * 
- * Equation taken from BMP180 datasheet (page 17):
- * http://www.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
- *
- * Note that using the equation from wikipedia can give bad results
- * at high altitude.  See this thread for more information:
- * http://forums.adafruit.com/viewtopic.php?f=22&t=58064
- *
- * @param altitude Known altitude (meters)
- * @param atmosphericPressure Measured atmospheric pressure (hPa)
- */
-float seaLevelPressureForAltitude(float altitude, float atmosphericPressure)
-{
-  return atmosphericPressure / pow(1.0 - (altitude / 44330.0), 5.255);
-}
-
-
 /*
  * ML8511 UV Light
  */
@@ -834,7 +938,7 @@ float tmp102_getTempCelsius() {
   float tmp;
 
   if (ARDUSAT_SPACEBOARD) {
-    temp_byte = DRIVER_LEMSENS_TMP102_1_ADDR;
+    temp_byte = DRIVER_SPACEBOARD_TMP102_ADDR;
   } else {
     temp_byte = DRIVER_TMP102_ADDR;
   }
@@ -851,14 +955,13 @@ float tmp102_getTempCelsius() {
 /*
  * TSL2561 Luminosity
  */
-//TSL2561 tsl2561 = TSL2561(DRIVER_TSL2561_ADDR);
 TSL2561 *tsl2561;
 
-boolean tsl2561_init() {
+boolean tsl2561_init(tsl2561IntegrationTime_t intTime, tsl2561Gain_t gain) {
   uint8_t addr;
   if (!tsl2561) {
     if (ARDUSAT_SPACEBOARD) {
-      addr = DRIVER_LEMSENS_TSL2561_ADDR;
+      addr = DRIVER_SPACEBOARD_TSL2561_ADDR;
     } else {
       addr = DRIVER_TSL2561_ADDR;
     }
@@ -868,8 +971,8 @@ boolean tsl2561_init() {
 
   if(result)
   {
-    tsl2561->setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);
-    tsl2561->setGain(TSL2561_GAIN_16X);
+    tsl2561->setIntegrationTime(intTime);
+    tsl2561->setGain(gain);
     tsl2561->enableAutoRange(true);
   }
 
@@ -887,10 +990,15 @@ float tsl2561_getLux() {
 /*
  * ISL29125 RGB Light Sensor
  */
-SFE_ISL29125 isl29125;
+SFE_ISL29125 isl29125 = SFE_ISL29125(DRIVER_SPACEBOARD_ISL29125_ADDR);
 
-boolean isl29125_init() {
-  return isl29125.init();
+// intensity == CFG1_375LUX if dark
+//              CFG1_10KLUX if bright (default)
+boolean isl29125_init(uint8_t intensity) {
+  boolean initialized = isl29125.init();
+  if (initialized && (intensity == CFG1_375LUX || intensity == CFG1_10KLUX))
+    initialized = isl29125.config(CFG1_MODE_RGB | intensity, CFG2_IR_ADJUST_HIGH, CFG_DEFAULT);
+  return initialized;
 }
 
 void isl29125_getRGB(float *red, float *green, float *blue) {
