@@ -1,6 +1,11 @@
 # Ardusat SDK Changelog
 This logs all changes to released SDK versions
 
+## [0.0.6] - 2016-03-14
+### Fixed compatibility with newer (e.g. 1.6.8) versions of the Arduino IDE
+- `SoftwareSerial` library shipped with newer IDE has changed, so fixed our local reference copy of
+the library to include the older version for compatibility.
+
 ## [0.0.5] - 2015-08-11
 ### Added Codebender compatibility and bug fixes
 - Fixed reference to `lroundf` not found in Codebender's old stdlib
