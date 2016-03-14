@@ -33,6 +33,7 @@ class ArdusatSerial : public Stream
     ~ArdusatSerial();
 
     void begin(unsigned long speed, bool setXbeeSpeed=false);
+    void beginBluetooth(unsigned long speed);
     void end();
 
     virtual int peek();
