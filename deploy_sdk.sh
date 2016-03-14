@@ -52,7 +52,7 @@ while getopts "hznv:" opt; do
 	    no_update=1
 	    ;;
 	z)
-	    no_upload=0
+	    upload=0
 	    ;;
 	\?)
 	    echo "Invalid option -$OPTARG"
@@ -90,7 +90,7 @@ if [[ $no_update -eq 0 ]]; then
 fi
 
 deploy
-if [[ $no_upload -eq 1 ]]; then
+if [[ $upload -eq 1 ]]; then
   upload
 fi
 clean
