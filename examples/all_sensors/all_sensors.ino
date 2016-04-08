@@ -53,11 +53,11 @@ Temperature infrared = Temperature(SENSORID_MLX90614); // Infrared Temperature S
 Luminosity lum;
 Magnetic mag;
 Orientation orient;
+Pressure pressure;
 RGBLight rgb;
+RGBLight rgb_ISL29125 = RGBLight(SENSORID_ISL29125);
 UVLight uv;
-
-//RGBLight rgb_ISL29125 = RGBLight(SENSORID_ISL29125);
-//UVLight uv_SI1132 = UVLight(SENSORID_SI1132);
+UVLight uv_SI1132 = UVLight(SENSORID_SI1132);
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -78,11 +78,11 @@ void setup(void)
   lum.begin();
   mag.begin();
   orient.begin(accel, mag);
+  pressure.begin();
   rgb.begin();
+  rgb_ISL29125.begin();
   uv.begin();
-
-  //rgb_ISL29125.begin();
-  //uv_SI1132.begin();
+  uv_SI1132.begin();
 }
 
 /*
@@ -117,17 +117,20 @@ void loop(void)
   // Calculate Orientation from Accel + Magnet data
   serialConnection.println(orient.readToJSON(accel, mag, "orientation"));
 
+  // Read Barometric Pressure
+  serialConnection.println(pressure.readToJSON("pressure"));
+
   // Read TCS34725 RGB (Default)
   serialConnection.println(rgb.readToJSON("rgb"));
+
+  // Read ISL29125 RGB
+  serialConnection.println(rgb_ISL29125.readToJSON("rgb_ISL29125"));
 
   // Read ML8511 UV (Default)
   serialConnection.println(uv.readToJSON("uv"));
 
-  // Read ISL29125 RGB
-  //serialConnection.println(rgb_ISL29125.readToJSON("rgb_ISL29125"));
-
   // Read SI1132 UV
-  //serialConnection.println(uv_SI1132.readToJSON("uv_SI1132"));
+  serialConnection.println(uv_SI1132.readToJSON("uv_SI1132"));
 
   delay(READ_INTERVAL);
 }

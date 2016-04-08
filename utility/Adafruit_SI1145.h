@@ -158,9 +158,6 @@ class Adafruit_SI1145  {
   uint16_t readProx();
 
  private:
-  uint16_t read16(uint8_t addr);
-  uint8_t read8(uint8_t addr);
-  void write8(uint8_t reg, uint8_t val);
   uint8_t readParam(uint8_t p);
   uint8_t writeParam(uint8_t p, uint8_t v);
 

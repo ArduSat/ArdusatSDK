@@ -12,8 +12,18 @@ Arduino IDE 1.0.5
 This code is beerware; if you see me (or any other SparkFun employee) at the local, and you've found our code helpful, please buy us a round!
 Distributed as-is; no warranty is given. 
 ******************************************************************************/
+/*
+ * Modified by Sam Olds (Ardusat) to use common i2c read/write utility
+ */
 
 #include "SparkFunISL29125.h"
+#include "common_utils.h"
+
+#define read8(reg, val) readFromRegAddr(_addr, reg, val, 1, BIG_ENDIAN);
+#define read16(reg, val) readFromRegAddr(_addr, reg, val, 2, BIG_ENDIAN);
+#define write8(reg, val) writeToRegAddr(_addr, reg, val, 1, BIG_ENDIAN);
+#define write16(reg, val) writeToRegAddr(_addr, reg, val, 2, BIG_ENDIAN);
+
 
 // Constructor - Creates sensor object and sets I2C address
 SFE_ISL29125::SFE_ISL29125(uint8_t addr) 
@@ -41,7 +51,7 @@ bool SFE_ISL29125::init()
   Wire.begin();
   
   // Check device ID
-  data = read8(DEVICE_ID);
+  read8(DEVICE_ID, &data);
   if (data != 0x7D)
   {
     ret &= false;
@@ -60,13 +70,20 @@ bool SFE_ISL29125::init()
 bool SFE_ISL29125::reset()
 {
   uint8_t data = 0x00;
+  uint8_t buf = 0x46;
   // Reset registers
-  write8(DEVICE_ID, 0x46);
+  write8(DEVICE_ID, &buf);
+  buf = 0; // Reusing buf
+
   // Check reset
-  data = read8(CONFIG_1);
-  data |= read8(CONFIG_2);
-  data |= read8(CONFIG_3);
-  data |= read8(STATUS);
+  read8(CONFIG_1, &buf);
+  data = buf;
+  read8(CONFIG_2, &buf);
+  data |= buf;
+  read8(CONFIG_3, &buf);
+  data |= buf;
+  read8(STATUS, &buf);
+  data |= buf;
   if (data != 0x00)
   {
     return false;
@@ -83,24 +100,24 @@ bool SFE_ISL29125::config(uint8_t config1, uint8_t config2, uint8_t config3)
   uint8_t data = 0x00;
   
   // Set 1st configuration register
-  write8(CONFIG_1, config1);
+  write8(CONFIG_1, &config1);
   // Set 2nd configuration register
-  write8(CONFIG_2, config2);
+  write8(CONFIG_2, &config2);
   // Set 3rd configuration register
-  write8(CONFIG_3, config3);
+  write8(CONFIG_3, &config3);
   
   // Check if configurations were set correctly
-  data = read8(CONFIG_1);
+  read8(CONFIG_1, &data);
   if (data != config1)
   {
     ret &= false;
   }
-  data = read8(CONFIG_2);
+  read8(CONFIG_2, &data);
   if (data != config2)
   {
     ret &= false;
   }
-  data = read8(CONFIG_3);
+  read8(CONFIG_3, &data);
   if (data != config3)
   {
     ret &= false;
@@ -111,100 +128,59 @@ bool SFE_ISL29125::config(uint8_t config1, uint8_t config2, uint8_t config3)
 // Sets upper threshold value for triggering interrupts
 void SFE_ISL29125::setUpperThreshold(uint16_t data)
 {
-  write16(THRESHOLD_HL, data);
+  write16(THRESHOLD_HL, &data);
 }
 
 // Sets lower threshold value for triggering interrupts
 void SFE_ISL29125::setLowerThreshold(uint16_t data)
 {
-  write16(THRESHOLD_LL, data);
+  write16(THRESHOLD_LL, &data);
 }
 
 // Check what the upper threshold is, 0xFFFF by default
 uint16_t SFE_ISL29125::readUpperThreshold()
 {
-  return read16(THRESHOLD_HL);
+  uint16_t buf = 0;
+  read16(THRESHOLD_HL, &buf);
+  return buf;
 }
 
 // Check what the upper threshold is, 0x0000 by default
 uint16_t SFE_ISL29125::readLowerThreshold()
 {
-  return read16(THRESHOLD_LL);
+  uint16_t buf = 0;
+  read16(THRESHOLD_LL, &buf);
+  return buf;
 }
 
 // Read the latest Sensor ADC reading for the color Red
 uint16_t SFE_ISL29125::readRed()
 {
-  return read16(RED_L);
+  uint16_t buf = 0;
+  read16(RED_L, &buf);
+  return buf;
 }
 
 // Read the latest Sensor ADC reading for the color Green
 uint16_t SFE_ISL29125::readGreen()
 {
-  return read16(GREEN_L);
+  uint16_t buf = 0;
+  read16(GREEN_L, &buf);
+  return buf;
 }
 
 // Read the latest Sensor ADC reading for the color Blue
 uint16_t SFE_ISL29125::readBlue()
 {
-  return read16(BLUE_L);
+  uint16_t buf = 0;
+  read16(BLUE_L, &buf);
+  return buf;
 }
 
 // Check status flag register that allows for checking for interrupts, brownouts, and ADC conversion completions
 uint8_t SFE_ISL29125::readStatus()
 {
-  return read8(STATUS);
-}
-
-// Generic I2C read register (single byte)
-uint8_t SFE_ISL29125::read8(uint8_t reg)
-{
-  Wire.beginTransmission(_addr);
-  Wire.write(reg);
-  Wire.endTransmission();
-  Wire.beginTransmission(_addr);
-  Wire.requestFrom(_addr,(uint8_t)1);
-  uint8_t data = Wire.read();
-  Wire.endTransmission();
-  
-  return data;
-}
-
-// Generic I2C write data to register (single byte)
-void SFE_ISL29125::write8(uint8_t reg, uint8_t data)
-{
-  Wire.beginTransmission(_addr);
-  Wire.write(reg);
-  Wire.write(data);
-  Wire.endTransmission();
-  
-  return;
-}
-
-// Generic I2C read registers (two bytes, LSB first)
-uint16_t SFE_ISL29125::read16(uint8_t reg)
-{
-  uint16_t data = 0x0000;
-
-  Wire.beginTransmission(_addr);
-  Wire.write(reg);
-  Wire.endTransmission();
-  
-  Wire.beginTransmission(_addr);
-  Wire.requestFrom(_addr, (uint8_t)2); // request 2 bytes of data
-  data = Wire.read();
-  data |= (Wire.read() << 8);
-  Wire.endTransmission();
-
-  return data;
-}
-
-// Generic I2C write data to registers (two bytes, LSB first)
-void SFE_ISL29125::write16(uint8_t reg, uint16_t data)
-{
-  Wire.beginTransmission(_addr);
-  Wire.write(reg);
-  Wire.write(data);
-  Wire.write(data>>8); 
-  Wire.endTransmission();
+  uint8_t buf = 0;
+  read8(STATUS, &buf);
+  return buf;
 }

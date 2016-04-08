@@ -52,7 +52,5 @@ class ML8511_ADC
 
   private:
     uint8_t _addr;
-    uint16_t read16(uint8_t reg);
-    void write8(uint8_t reg, uint8_t data);
 };
 #endif

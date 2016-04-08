@@ -10,6 +10,10 @@
 
 #include "ML8511_ADC.h"
 #include <Arduino.h>
+#include "common_utils.h"
+
+#define read16(reg, val) readFromRegAddr(_addr, reg, val, 2, LITTLE_ENDIAN);
+#define write8(reg, val) writeToRegAddr(_addr, reg, val, 1, LITTLE_ENDIAN);
 
 // Constructor
 ML8511_ADC::ML8511_ADC(uint8_t sensor_addr)
@@ -30,7 +34,7 @@ bool ML8511_ADC::init()
   Wire.begin();
 
   buf = ADC121_CONFIG_CYCLE_32 & ADC121_CONFIG_CYCLE_MASK;
-  write8(ADC121_CONFIG_REG, buf);
+  write8(ADC121_CONFIG_REG, &buf);
 
   return true;
 }
@@ -38,34 +42,7 @@ bool ML8511_ADC::init()
 // Read value from converter
 float ML8511_ADC::read_uv()
 {
-  uint16_t raw = read16(ADC121_CONV_REG);
+  uint16_t raw = 0;
+  read16(ADC121_CONV_REG, &raw);
   return ((float) raw) / ADC121_MAX_VAL * ADC121_REF_V;
-}
-
-// Generic I2C read registers (two bytes, LSB first)
-uint16_t ML8511_ADC::read16(uint8_t reg)
-{
-  uint16_t data = 0x0000;
-
-  Wire.beginTransmission(_addr);
-  Wire.write(reg);
-  Wire.endTransmission(false);
-  
-  Wire.beginTransmission(_addr);
-  Wire.requestFrom(_addr, (uint8_t)2); // request 2 bytes of data
-  data = Wire.read();
-  data = (data << 8) | Wire.read();
-  Wire.endTransmission();
-
-  return data;
-}
-
-// Generic I2C write data to register (single byte)
-void ML8511_ADC::write8(uint8_t reg, uint8_t data)
-{
-  Wire.beginTransmission(_addr);
-  Wire.write(reg);
-  Wire.write(data);
-  Wire.endTransmission();
-  return;
 }

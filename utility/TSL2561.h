@@ -190,9 +190,6 @@ class TSL2561 {
   void enable(void);
   void disable(void);
   void getData (uint16_t *broadband, uint16_t *ir);
-  void write8(uint8_t reg, uint32_t value);
-  uint8_t read8(uint8_t reg);
-  uint16_t read16(uint8_t reg);
 
 
  private:

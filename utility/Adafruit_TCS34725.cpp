@@ -15,6 +15,10 @@
     v1.0 - First release
 */
 /**************************************************************************/
+/*
+ * Modified by Sam Olds (Ardusat) to use common i2c read/write utility
+ */
+
 #ifdef __AVR
   #include <avr/pgmspace.h>
 #elif defined(ESP8266)
@@ -24,6 +28,11 @@
 #include <math.h>
 
 #include "Adafruit_TCS34725.h"
+#include "common_utils.h"
+
+#define read8(reg, val) readFromRegAddr(TCS34725_ADDRESS, TCS34725_COMMAND_BIT | reg, val, 1, BIG_ENDIAN);
+#define read16(reg, val) readFromRegAddr(TCS34725_ADDRESS, TCS34725_COMMAND_BIT | reg, val, 2, BIG_ENDIAN);
+#define write8(reg, val) writeToRegAddr(TCS34725_ADDRESS, TCS34725_COMMAND_BIT | reg, val, 1, BIG_ENDIAN);
 
 /*========================================================================*/
 /*                          PRIVATE FUNCTIONS                             */
@@ -41,85 +50,17 @@ float powf(const float x, const float y)
 
 /**************************************************************************/
 /*!
-    @brief  Writes a register and an 8 bit value over I2C
-*/
-/**************************************************************************/
-void Adafruit_TCS34725::write8 (uint8_t reg, uint32_t value)
-{
-  Wire.beginTransmission(TCS34725_ADDRESS);
-  #if ARDUINO >= 100
-  Wire.write(TCS34725_COMMAND_BIT | reg);
-  Wire.write(value & 0xFF);
-  #else
-  Wire.send(TCS34725_COMMAND_BIT | reg);
-  Wire.send(value & 0xFF);
-  #endif
-  Wire.endTransmission();
-}
-
-/**************************************************************************/
-/*!
-    @brief  Reads an 8 bit value over I2C
-*/
-/**************************************************************************/
-uint8_t Adafruit_TCS34725::read8(uint8_t reg)
-{
-  Wire.beginTransmission(TCS34725_ADDRESS);
-  #if ARDUINO >= 100
-  Wire.write(TCS34725_COMMAND_BIT | reg);
-  #else
-  Wire.send(TCS34725_COMMAND_BIT | reg);
-  #endif
-  Wire.endTransmission();
-
-  Wire.requestFrom(TCS34725_ADDRESS, 1);
-  #if ARDUINO >= 100
-  return Wire.read();
-  #else
-  return Wire.receive();
-  #endif
-}
-
-/**************************************************************************/
-/*!
-    @brief  Reads a 16 bit values over I2C
-*/
-/**************************************************************************/
-uint16_t Adafruit_TCS34725::read16(uint8_t reg)
-{
-  uint16_t x; uint16_t t;
-
-  Wire.beginTransmission(TCS34725_ADDRESS);
-  #if ARDUINO >= 100
-  Wire.write(TCS34725_COMMAND_BIT | reg);
-  #else
-  Wire.send(TCS34725_COMMAND_BIT | reg);
-  #endif
-  Wire.endTransmission();
-
-  Wire.requestFrom(TCS34725_ADDRESS, 2);
-  #if ARDUINO >= 100
-  t = Wire.read();
-  x = Wire.read();
-  #else
-  t = Wire.receive();
-  x = Wire.receive();
-  #endif
-  x <<= 8;
-  x |= t;
-  return x;
-}
-
-/**************************************************************************/
-/*!
     Enables the device
 */
 /**************************************************************************/
 void Adafruit_TCS34725::enable(void)
 {
-  write8(TCS34725_ENABLE, TCS34725_ENABLE_PON);
+  uint8_t buf = TCS34725_ENABLE_PON;
+  write8(TCS34725_ENABLE, &buf);
   delay(3);
-  write8(TCS34725_ENABLE, TCS34725_ENABLE_PON | TCS34725_ENABLE_AEN);  
+
+  buf = TCS34725_ENABLE_PON | TCS34725_ENABLE_AEN;
+  write8(TCS34725_ENABLE, &buf);
 }
 
 /**************************************************************************/
@@ -131,8 +72,10 @@ void Adafruit_TCS34725::disable(void)
 {
   /* Turn the device off to save power */
   uint8_t reg = 0;
-  reg = read8(TCS34725_ENABLE);
-  write8(TCS34725_ENABLE, reg & ~(TCS34725_ENABLE_PON | TCS34725_ENABLE_AEN));
+  read8(TCS34725_ENABLE, &reg);
+
+  reg = reg & ~(TCS34725_ENABLE_PON | TCS34725_ENABLE_AEN);
+  write8(TCS34725_ENABLE, &reg);
 }
 
 /*========================================================================*/
@@ -166,7 +109,8 @@ boolean Adafruit_TCS34725::begin(void)
   Wire.begin();
   
   /* Make sure we're actually connected */
-  uint8_t x = read8(TCS34725_ID);
+  uint8_t x = 0;
+  read8(TCS34725_ID, &x);
   if ((x != 0x44) && (x != 0x10))
   {
     return false;
@@ -193,7 +137,7 @@ void Adafruit_TCS34725::setIntegrationTime(tcs34725IntegrationTime_t it)
   if (!_tcs34725Initialised) begin();
 
   /* Update the timing register */
-  write8(TCS34725_ATIME, it);
+  write8(TCS34725_ATIME, &it);
 
   /* Update value placeholders */
   _tcs34725IntegrationTime = it;
@@ -209,7 +153,7 @@ void Adafruit_TCS34725::setGain(tcs34725Gain_t gain)
   if (!_tcs34725Initialised) begin();
 
   /* Update the timing register */
-  write8(TCS34725_CONTROL, gain);
+  write8(TCS34725_CONTROL, &gain);
 
   /* Update value placeholders */
   _tcs34725Gain = gain;
@@ -224,10 +168,10 @@ void Adafruit_TCS34725::getRawData (uint16_t *r, uint16_t *g, uint16_t *b, uint1
 {
   if (!_tcs34725Initialised) begin();
 
-  *c = read16(TCS34725_CDATAL);
-  *r = read16(TCS34725_RDATAL);
-  *g = read16(TCS34725_GDATAL);
-  *b = read16(TCS34725_BDATAL);
+  read16(TCS34725_CDATAL, c);
+  read16(TCS34725_RDATAL, r);
+  read16(TCS34725_GDATAL, g);
+  read16(TCS34725_BDATAL, b);
   
   /* Set a delay for the integration time */
   switch (_tcs34725IntegrationTime)
@@ -307,29 +251,30 @@ uint16_t Adafruit_TCS34725::calculateLux(uint16_t r, uint16_t g, uint16_t b)
 
 
 void Adafruit_TCS34725::setInterrupt(boolean i) {
-  uint8_t r = read8(TCS34725_ENABLE);
+  uint8_t r = 0;
+  read8(TCS34725_ENABLE, &r);
   if (i) {
     r |= TCS34725_ENABLE_AIEN;
   } else {
     r &= ~TCS34725_ENABLE_AIEN;
   }
-  write8(TCS34725_ENABLE, r);
+  write8(TCS34725_ENABLE, &r);
 }
 
 void Adafruit_TCS34725::clearInterrupt(void) {
   Wire.beginTransmission(TCS34725_ADDRESS);
-  #if ARDUINO >= 100
   Wire.write(TCS34725_COMMAND_BIT | 0x66);
-  #else
-  Wire.send(TCS34725_COMMAND_BIT | 0x66);
-  #endif
   Wire.endTransmission();
 }
 
 
 void Adafruit_TCS34725::setIntLimits(uint16_t low, uint16_t high) {
-   write8(0x04, low & 0xFF);
-   write8(0x05, low >> 8);
-   write8(0x06, high & 0xFF);
-   write8(0x07, high >> 8);
+   uint8_t buf = low & 0xFF;
+   write8(0x04, &buf);
+   buf = low >> 8;
+   write8(0x05, &buf);
+   buf = high & 0xFF;
+   write8(0x06, &buf);
+   buf = high >> 8;
+   write8(0x07, &buf);
 }

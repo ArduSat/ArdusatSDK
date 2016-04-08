@@ -1,6 +1,7 @@
 /**
  * @file   drivers.h
  * @Author Ben Peters (ben@ardusat.com)
+ * @Author Sam Olds (sam@ardusat.com)
  * @date   December 3, 2014
  * @brief  Implements sensor-specific driver read/initialization functions
  *
@@ -20,6 +21,7 @@
 #include <utility/ML8511_ADC.h>
 #include <utility/SparkFunISL29125.h>
 #include <utility/TSL2561.h>
+#include <utility/common_utils.h>
 #include <utility/pololu_LSM303.h>
 
 

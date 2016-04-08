@@ -1,8 +1,12 @@
 /**
  * @file   ArdusatSDK.cpp
- * @Author Ben Peters (ben@ardusat.com)
+ * @author Ben Peters (ben@ardusat.com)
+ * @author Sam Olds (sam@ardusat.com)
  * @date   December 3, 2014
  * @brief  Implements ArdusatSDK generic sensor reading and configuration for Space Kit Sensors.
+ *
+ * Provides a unifying wrapper of sensor specific functionality to provide a
+ * consistent interface to interact with each type of sensor.
  */
 
 #include <stdio.h>
@@ -24,12 +28,12 @@ const char spaceboard_hardware[] PROGMEM = "SpaceBoard";
 
 const char acceleration_sensor_name[] PROGMEM = "Acceleration";
 const char gyro_sensor_name[] PROGMEM = "Gyro";
-const char ir_temperature_sensor_name[] PROGMEM = "IRTemperature";
 const char luminosity_sensor_name[] PROGMEM = "Luminosity";
 const char magnetic_sensor_name[] PROGMEM = "Magnetic";
 const char pressure_sensor_name[] PROGMEM = "BarometricPressure";
-const char rgblight_sensor_name[] PROGMEM = "RGBLight";
 const char temperature_sensor_name[] PROGMEM = "Temperature";
+const char irtemperature_sensor_name[] PROGMEM = "IRTemperature";
+const char rgblight_sensor_name[] PROGMEM = "RGBLight";
 const char uvlight_sensor_name[] PROGMEM = "UVLight";
 
 static char CSV_SEPARATOR = ',';
@@ -62,8 +66,7 @@ void _resetOutBuf() {
  *
  * @return string representation of unit
  */
-const char * unit_to_str(unsigned char unit)
-{
+const char * unit_to_str(unsigned char unit) {
   switch (unit) {
     case (DATA_UNIT_NONE):
       return "";
@@ -95,8 +98,7 @@ const char * unit_to_str(unsigned char unit)
  *
  * @param sensorName name of sensor that failed.
  */
-void _writeBeginError(const char sensorName[] PROGMEM)
-{
+void _writeBeginError(const char sensorName[] PROGMEM) {
   char err_msg[55];
   char sensor[50];
 
@@ -116,8 +118,7 @@ void _writeBeginError(const char sensorName[] PROGMEM)
  *
  * @param sensorName name of sensor that failed.
  */
-void _writeUnavailableSensorError(const char sensorName[] PROGMEM, const char hardwareBuild[] PROGMEM)
-{
+void _writeUnavailableSensorError(const char sensorName[] PROGMEM, const char hardwareBuild[] PROGMEM) {
   char err_msg[55];
   char sensor[50];
   char hardware[15];
@@ -193,8 +194,7 @@ int calculateCheckSum(const char *sensor_name, int num_vals, ...) {
  *
  * @return pointer to output buffer
  */
-const char * valueToCSV(const char *sensorName, float value, unsigned long timestamp)
-{
+const char * valueToCSV(const char *sensorName, float value, unsigned long timestamp) {
   return valuesToCSV(sensorName, timestamp, 1, value);
 }
 
@@ -209,8 +209,7 @@ const char * valueToCSV(const char *sensorName, float value, unsigned long times
  *
  * @return pointer to output buffer
  */
-const char * valuesToCSV(const char *sensorName, unsigned long timestamp, int numValues, ...)
-{
+const char * valuesToCSV(const char *sensorName, unsigned long timestamp, int numValues, ...) {
   int i, name_len;
   va_list args;
 
@@ -259,10 +258,10 @@ const char * valuesToCSV(const char *sensorName, unsigned long timestamp, int nu
 }
 
 /*
- * toJSON output functions
+ * Internal helper to build the JSON string at the proper point in the output buffer
+ * with the correct values and labels
  */
-int _writeJSONValue(char *buf, const char *sensor_name, const char *unit, float value)
-{
+int _writeJSONValue(char *buf, const char *sensor_name, const char *unit, float value) {
   char num [32];
   char format_str[80];
   // inexact estimate on the number of characters the value will take up...
@@ -277,9 +276,12 @@ int _writeJSONValue(char *buf, const char *sensor_name, const char *unit, float 
   return _output_buf_len;
 }
 
+/*
+ * Internal helper to build 3 JSON strings back to back since there are so many sensors
+ * that report 3 values
+ */
 const char * _tripleValueToJSON(const char *sensorName, int labelLength, unsigned char unit,
-             char *labelA, float valueA, char *labelB, float valueB, char *labelC, float valueC)
-{
+             char *labelA, float valueA, char *labelB, float valueB, char *labelC, float valueC) {
   int nameLength = strlen(sensorName);
   char nameBuf[nameLength + labelLength];
   _resetOutBuf();
@@ -295,37 +297,68 @@ const char * _tripleValueToJSON(const char *sensorName, int labelLength, unsigne
   return _getOutBuf();
 }
 
-const char * valueToJSON(const char *sensorName, unsigned char unit, float value)
-{
+/**
+ * Creates a JSON string with the appropriate values
+ *
+ * @param sensor_name the label to be given to some data
+ * @param unit the unit of measurement used
+ * @param value the sensor value
+ *
+ * @return the output buffer
+ */
+const char * valueToJSON(const char *sensorName, unsigned char unit, float value) {
   _resetOutBuf();
   _writeJSONValue(_getOutBuf(), sensorName, unit_to_str(unit), value);
   return _getOutBuf();
 }
 
 
-/**
- * ========================================================================================
- * Acceleration Sensor Class
- * ========================================================================================
- */
+/**************************************************************************//**
+ * @brief   Constructs Acceleration sensor object
+ * @ingroup acceleration
+ *
+ * Example Usage:
+ * @code
+ *     Acceleration accel = Acceleration(); // Instantiate sensor object
+ *     accel.begin();                       // Initialize sensor
+ *     Serial.println(accel.readToJSON());  // Read and print values in JSON
+ * @endcode
+ *****************************************************************************/
 Acceleration::Acceleration(void) {
   Acceleration::sensorId = SENSORID_ADAFRUIT9DOFIMU;
+  Acceleration::gGain = LSM303_ACCEL_GAIN8G;
   Acceleration::header.unit = DATA_UNIT_METER_PER_SECONDSQUARED;
+  Acceleration::initialized = false;
 }
 
 Acceleration::~Acceleration() {
 }
 
+/**
+ * @brief   Initializes the sensor with basic configurations
+ * @ingroup acceleration
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean Acceleration::begin(void) {
   return Acceleration::begin(Acceleration::gGain);
 }
 
-// gain:
-//    LSM303_ACCEL_GAIN2G
-//    LSM303_ACCEL_GAIN4G
-//    LSM303_ACCEL_GAIN6G
-//    LSM303_ACCEL_GAIN8G (Default)
-//    LSM303_ACCEL_GAIN16G
+/**
+ * @brief   Initializes the sensor with advanced configurations
+ * @ingroup acceleration
+ *
+ * @param gGain Advanced configuration for accelerometer's gain
+ *     - LSM303_ACCEL_GAIN2G
+ *     - LSM303_ACCEL_GAIN4G
+ *     - LSM303_ACCEL_GAIN6G
+ *     - LSM303_ACCEL_GAIN8G (Default)
+ *     - LSM303_ACCEL_GAIN16G
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean Acceleration::begin(lsm303_accel_gain_e gain) {
   catchSpaceboard();
   Acceleration::gGain = gain;
@@ -333,6 +366,10 @@ boolean Acceleration::begin(lsm303_accel_gain_e gain) {
   return Acceleration::initialized;
 }
 
+/**
+ * @brief   Takes a reading from the sensor
+ * @ingroup acceleration
+ */
 void Acceleration::read(void) {
   Acceleration::header.timestamp = millis();
 
@@ -340,16 +377,34 @@ void Acceleration::read(void) {
   lsm303_getAccel(&(Acceleration::x), &(Acceleration::y), &(Acceleration::z));
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in CSV format
+ * @ingroup acceleration
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * Acceleration::readToCSV(const char * sensorName) {
   Acceleration::read();
   return Acceleration::toCSV(sensorName);
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in JSON format
+ * @ingroup acceleration
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * Acceleration::readToJSON(const char * sensorName) {
   Acceleration::read();
   return Acceleration::toJSON(sensorName);
 }
 
+/**
+ * @brief   Returns last read value in CSV format
+ * @ingroup acceleration
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * Acceleration::toCSV(const char * sensorName) {
   if (Acceleration::initialized)
     return valuesToCSV(sensorName, Acceleration::header.timestamp, 3,
@@ -358,6 +413,12 @@ const char * Acceleration::toCSV(const char * sensorName) {
     return "";
 }
 
+/**
+ * @brief   Returns last read value in JSON format
+ * @ingroup acceleration
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * Acceleration::toJSON(const char * sensorName) {
   if (Acceleration::initialized)
     return _tripleValueToJSON(sensorName, 2, Acceleration::header.unit, "%sX", Acceleration::x,
@@ -367,33 +428,62 @@ const char * Acceleration::toJSON(const char * sensorName) {
 }
 
 
-/**
- * ========================================================================================
- * Gyroscope Sensor Class
- * ========================================================================================
- */
+/**************************************************************************//**
+ * @brief   Constructs Gyro sensor object
+ * @ingroup gyro
+ *
+ * Example Usage:
+ * @code
+ *     Gyro gyro = Gyro();                // Instantiate sensor object
+ *     gyro.begin();                      // Initialize sensor
+ *     Serial.println(gyro.readToJSON()); // Read and print values in JSON
+ * @endcode
+ *****************************************************************************/
 Gyro::Gyro(void) {
   Gyro::sensorId = SENSORID_ADAFRUIT9DOFIMU;
+  Gyro::range = 0x20;
   Gyro::header.unit = DATA_UNIT_RADIAN_PER_SECOND;
+  Gyro::initialized = false;
 }
 
 Gyro::~Gyro() {
 }
 
+/**
+ * @brief   Initializes the sensor with basic configurations
+ * @ingroup gyro
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean Gyro::begin(void) {
   return Gyro::begin(Gyro::range);
 }
 
-// range:
-//    0x00  (SENSITIVITY_250DPS)
-//    0x10  (SENSITIVITY_500DPS)
-//    0x20  (SENSITIVITY_2000DPS) (Default)
+/**
+ * @brief   Initializes the sensor with advanced configurations
+ * @ingroup gyro
+ *
+ * @param range Advanced configuration for gyro's range
+ * Possible Advanced Configuration Values:
+ *     - 0x00  (SENSITIVITY_250DPS)
+ *     - 0x10  (SENSITIVITY_500DPS)
+ *     - 0x20  (SENSITIVITY_2000DPS) (Default)
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean Gyro::begin(uint8_t range) {
   catchSpaceboard();
+
   Gyro::initialized = start_sensor_or_err(gyro_sensor_name, l3gd20h_init(range));
   return Gyro::initialized;
 }
 
+/**
+ * @brief   Takes a reading from the sensor
+ * @ingroup gyro
+ */
 void Gyro::read(void) {
   Gyro::header.timestamp = millis();
 
@@ -401,16 +491,34 @@ void Gyro::read(void) {
   l3gd20h_getOrientation(&(Gyro::x), &(Gyro::y), &(Gyro::z));
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in CSV format
+ * @ingroup gyro
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * Gyro::readToCSV(const char * sensorName) {
   Gyro::read();
   return Gyro::toCSV(sensorName);
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in JSON format
+ * @ingroup gyro
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * Gyro::readToJSON(const char * sensorName) {
   Gyro::read();
   return Gyro::toJSON(sensorName);
 }
 
+/**
+ * @brief   Returns last read value in CSV format
+ * @ingroup gyro
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * Gyro::toCSV(const char * sensorName) {
   if (Gyro::initialized)
     return valuesToCSV(sensorName, Gyro::header.timestamp, 3,
@@ -419,6 +527,12 @@ const char * Gyro::toCSV(const char * sensorName) {
     return "";
 }
 
+/**
+ * @brief   Returns last read value in JSON format
+ * @ingroup gyro
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * Gyro::toJSON(const char * sensorName) {
   if (Gyro::initialized)
     return _tripleValueToJSON(sensorName, 2, Gyro::header.unit, "%sX", Gyro::x,
@@ -428,31 +542,55 @@ const char * Gyro::toJSON(const char * sensorName) {
 }
 
 
-/**
- * ========================================================================================
- * Luminosity Sensor Class
- * ========================================================================================
- */
+/**************************************************************************//**
+ * @brief   Constructs Luminosity sensor object
+ * @ingroup luminosity
+ *
+ * Example Usage:
+ * @code
+ *     Luminosity lum = Luminosity();    // Instantiate sensor object
+ *     lum.begin();                      // Initialize sensor
+ *     Serial.println(lum.readToJSON()); // Read and print values in JSON
+ * @endcode
+ *****************************************************************************/
 Luminosity::Luminosity(void) {
   Luminosity::sensorId = SENSORID_TSL2561;
+  Luminosity::intTime = TSL2561_INTEGRATIONTIME_13MS;
+  Luminosity::gain = TSL2561_GAIN_1X;
   Luminosity::header.unit = DATA_UNIT_LUX;
+  Luminosity::initialized = false;
 }
 
 Luminosity::~Luminosity() {
 }
 
+/**
+ * @brief   Initializes the sensor with basic configurations
+ * @ingroup luminosity
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean Luminosity::begin(void) {
   return Luminosity::begin(Luminosity::intTime, Luminosity::gain);
 }
 
-// intTime:
-//    TSL2561_INTEGRATIONTIME_13MS (Default)
-//    TSL2561_INTEGRATIONTIME_101MS
-//    TSL2561_INTEGRATIONTIME_402MS
-//
-// gain:
-//    TSL2561_GAIN_1X
-//    TSL2561_GAIN_16X (Default)
+/**
+ * @brief   Initializes the sensor with advanced configurations
+ * @ingroup luminosity
+ *
+ * @param intTime Advanced configuration for TSL2561 integration time
+ *     - TSL2561_INTEGRATIONTIME_13MS (Default)
+ *     - TSL2561_INTEGRATIONTIME_101MS
+ *     - TSL2561_INTEGRATIONTIME_402MS
+ *     
+ * @param gain Advanced configuration for TSL2561 gain
+ *     - TSL2561_GAIN_1X (Default)
+ *     - TSL2561_GAIN_16X
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean Luminosity::begin(tsl2561IntegrationTime_t intTime, tsl2561Gain_t gain) {
   catchSpaceboard();
   Luminosity::intTime = intTime;
@@ -461,6 +599,10 @@ boolean Luminosity::begin(tsl2561IntegrationTime_t intTime, tsl2561Gain_t gain) 
   return Luminosity::initialized;
 }
 
+/**
+ * @brief   Takes a reading from the sensor
+ * @ingroup luminosity
+ */
 void Luminosity::read(void) {
   Luminosity::header.timestamp = millis();
 
@@ -468,16 +610,34 @@ void Luminosity::read(void) {
   Luminosity::lux = tsl2561_getLux();
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in CSV format
+ * @ingroup luminosity
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * Luminosity::readToCSV(const char * sensorName) {
   Luminosity::read();
   return Luminosity::toCSV(sensorName);
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in JSON format
+ * @ingroup luminosity
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * Luminosity::readToJSON(const char * sensorName) {
   Luminosity::read();
   return Luminosity::toJSON(sensorName);
 }
 
+/**
+ * @brief   Returns last read value in CSV format
+ * @ingroup luminosity
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * Luminosity::toCSV(const char * sensorName) {
   if (Luminosity::initialized)
     return valueToCSV(sensorName, Luminosity::lux, Luminosity::header.timestamp);
@@ -485,6 +645,12 @@ const char * Luminosity::toCSV(const char * sensorName) {
     return "";
 }
 
+/**
+ * @brief   Returns last read value in JSON format
+ * @ingroup luminosity
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * Luminosity::toJSON(const char * sensorName) {
   if (Luminosity::initialized)
     return valueToJSON(sensorName, Luminosity::header.unit, Luminosity::lux);
@@ -493,32 +659,55 @@ const char * Luminosity::toJSON(const char * sensorName) {
 }
 
 
-/**
- * ========================================================================================
- * Magnetic Sensor Class
- * ========================================================================================
- */
+/**************************************************************************//**
+ * @brief   Constructs Magnetic sensor object
+ * @ingroup magnetic
+ *
+ * Example Usage:
+ * @code
+ *     Magnetic mag = Magnetic();        // Instantiate sensor object
+ *     mag.begin();                      // Initialize sensor
+ *     Serial.println(mag.readToJSON()); // Read and print values in JSON
+ * @endcode
+ *****************************************************************************/
 Magnetic::Magnetic(void) {
   Magnetic::sensorId = SENSORID_ADAFRUIT9DOFIMU;
+  Magnetic::gaussScale = LSM303_MAG_SCALE4GAUSS;
   Magnetic::header.unit = DATA_UNIT_MICROTESLA;
+  Magnetic::initialized = false;
 }
 
 Magnetic::~Magnetic() {
 }
 
+/**
+ * @brief   Initializes the sensor with basic configurations
+ * @ingroup magnetic
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean Magnetic::begin(void) {
   return Magnetic::begin(Magnetic::gaussScale);
 }
 
-// gaussScale:
-//    LSM303_MAG_SCALE1_3GAUSS
-//    LSM303_MAG_SCALE2GAUSS
-//    LSM303_MAG_SCALE2_5GAUSS
-//    LSM303_MAG_SCALE4GAUSS (Default)
-//    LSM303_MAG_SCALE4_7GAUSS
-//    LSM303_MAG_SCALE5_6GAUSS
-//    LSM303_MAG_SCALE8GAUSS
-//    LSM303_MAG_SCALE12GAUSS
+/**
+ * @brief   Initializes the sensor with advanced configurations
+ * @ingroup magnetic
+ *
+ * @param gaussScale Advanced configuration for magnetometer's scale
+ *     - LSM303_MAG_SCALE1_3GAUSS
+ *     - LSM303_MAG_SCALE2GAUSS
+ *     - LSM303_MAG_SCALE2_5GAUSS
+ *     - LSM303_MAG_SCALE4GAUSS (Default)
+ *     - LSM303_MAG_SCALE4_7GAUSS
+ *     - LSM303_MAG_SCALE5_6GAUSS
+ *     - LSM303_MAG_SCALE8GAUSS
+ *     - LSM303_MAG_SCALE12GAUSS
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean Magnetic::begin(lsm303_mag_scale_e gaussScale) {
   catchSpaceboard();
   Magnetic::gaussScale = gaussScale;
@@ -526,6 +715,10 @@ boolean Magnetic::begin(lsm303_mag_scale_e gaussScale) {
   return Magnetic::initialized;
 }
 
+/**
+ * @brief   Takes a reading from the sensor
+ * @ingroup magnetic
+ */
 void Magnetic::read(void) {
   Magnetic::header.timestamp = millis();
 
@@ -533,16 +726,34 @@ void Magnetic::read(void) {
   lsm303_getMag(&(Magnetic::x), &(Magnetic::y), &(Magnetic::z));
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in CSV format
+ * @ingroup magnetic
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * Magnetic::readToCSV(const char * sensorName) {
   Magnetic::read();
   return Magnetic::toCSV(sensorName);
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in JSON format
+ * @ingroup magnetic
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * Magnetic::readToJSON(const char * sensorName) {
   Magnetic::read();
   return Magnetic::toJSON(sensorName);
 }
 
+/**
+ * @brief   Returns last read value in CSV format
+ * @ingroup magnetic
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * Magnetic::toCSV(const char * sensorName) {
   if (Magnetic::initialized)
     return valuesToCSV(sensorName, Magnetic::header.timestamp, 3,
@@ -551,6 +762,12 @@ const char * Magnetic::toCSV(const char * sensorName) {
     return "";
 }
 
+/**
+ * @brief   Returns last read value in JSON format
+ * @ingroup magnetic
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * Magnetic::toJSON(const char * sensorName) {
   if (Magnetic::initialized)
     return _tripleValueToJSON(sensorName, 2, Magnetic::header.unit, "%sX", Magnetic::x,
@@ -560,19 +777,33 @@ const char * Magnetic::toJSON(const char * sensorName) {
 }
 
 
-/**
- * ========================================================================================
- * Orientation Class
- * ========================================================================================
- */
+/**************************************************************************//**
+ * @brief   Constructs Orientation calculation object
+ * @ingroup orientation
+ *
+ * Example Usage:
+ * @code
+ *     Orientation orient = Orientation();  // Instantiate sensor object
+ *     orient.begin();                      // Initialize sensor
+ *     Serial.println(orient.readToJSON()); // Read and print values in JSON
+ * @endcode
+ *****************************************************************************/
 Orientation::Orientation(void) {
   Orientation::sensorId = SENSORID_ADAFRUIT9DOFIMU;
   Orientation::header.unit = DATA_UNIT_DEGREES;
+  Orientation::initialized = false;
 }
 
 Orientation::~Orientation() {
 }
 
+/**
+ * @brief   Creates new Acceleration and Magnetic Sensors to derive orientation
+ * @ingroup orientation
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean Orientation::begin(void) {
   Acceleration accel;
   Magnetic mag;
@@ -581,6 +812,16 @@ boolean Orientation::begin(void) {
   return Orientation::begin(accel, mag);
 }
 
+/**
+ * @brief   Uses provided Acceleration and Magnetic Sensors to derive orientation
+ * @ingroup orientation
+ *
+ * @param accel Existing Acceleration Sensor to use
+ * @param mag   Existing Magnetic Sensor to use
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean Orientation::begin(Acceleration & accel, Magnetic & mag) {
   catchSpaceboard();
   Orientation::accel = & accel;
@@ -589,12 +830,23 @@ boolean Orientation::begin(Acceleration & accel, Magnetic & mag) {
   return Orientation::initialized;
 }
 
+/**
+ * @brief   Takes a reading from the sensor
+ * @ingroup orientation
+ */
 void Orientation::read(void) {
   Orientation::accel->read();
   Orientation::mag->read();
   Orientation::read(*(Orientation::accel), *(Orientation::mag));
 }
 
+/**
+ * @brief   Takes a reading from the sensor
+ * @ingroup orientation
+ *
+ * @param accel Existing Acceleration Sensor to use
+ * @param mag   Existing Magnetic Sensor to use
+ */
 void Orientation::read(Acceleration & acc, Magnetic & mag) {
   float roll;
   float pitch;
@@ -627,26 +879,60 @@ void Orientation::read(Acceleration & acc, Magnetic & mag) {
   Orientation::header.timestamp = max(acc.header.timestamp, mag.header.timestamp);
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in CSV format
+ * @ingroup orientation
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * Orientation::readToCSV(const char * sensorName) {
   Orientation::read();
   return Orientation::toCSV(sensorName);
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in JSON format
+ * @ingroup orientation
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * Orientation::readToJSON(const char * sensorName) {
   Orientation::read();
   return Orientation::toJSON(sensorName);
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in CSV format
+ * @ingroup orientation
+ * @param   accel Existing Acceleration Sensor to use
+ * @param   mag Existing Magnetic Sensor to use
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * Orientation::readToCSV(Acceleration & acc, Magnetic & mag, const char * sensorName) {
   Orientation::read(acc, mag);
   return Orientation::toCSV(sensorName);
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in JSON format
+ * @ingroup orientation
+ * @param   accel Existing Acceleration Sensor to use
+ * @param   mag Existing Magnetic Sensor to use
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * Orientation::readToJSON(Acceleration & acc, Magnetic & mag, const char * sensorName) {
   Orientation::read(acc, mag);
   return Orientation::toJSON(sensorName);
 }
 
+/**
+ * @brief   Returns last read value in CSV format
+ * @ingroup orientation
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * Orientation::toCSV(const char * sensorName) {
   if (Orientation::initialized)
     return valuesToCSV(sensorName, Orientation::header.timestamp, 3,
@@ -655,6 +941,12 @@ const char * Orientation::toCSV(const char * sensorName) {
     return "";
 }
 
+/**
+ * @brief   Returns last read value in JSON format
+ * @ingroup orientation
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * Orientation::toJSON(const char * sensorName) {
   if (Orientation::initialized)
     return _tripleValueToJSON(sensorName, 8, Orientation::header.unit, "%sRoll", Orientation::roll,
@@ -664,40 +956,68 @@ const char * Orientation::toJSON(const char * sensorName) {
 }
 
 
-/**
- * ========================================================================================
- * Pressure Sensor Class
- * ========================================================================================
- */
+/**************************************************************************//**
+ * @brief   Constructs Pressure object
+ * @ingroup pressure
+ *
+ * Example Usage:
+ * @code
+ *     Pressure press = Pressure();        // Instantiate sensor object
+ *     press.begin();                      // Initialize sensor
+ *     Serial.println(press.readToJSON()); // Read and print values in JSON
+ * @endcode
+ *****************************************************************************/
 Pressure::Pressure(void) {
   Pressure::sensorId = SENSORID_BMP180;
+  Pressure::bmp085_mode = BMP085_MODE_ULTRAHIGHRES;
   Pressure::header.unit = DATA_UNIT_HECTOPASCAL;
+  Pressure::initialized = false;
 }
 
 Pressure::~Pressure() {
 }
 
+/**
+ * @brief   Initializes the sensor with basic configurations
+ * @ingroup pressure
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean Pressure::begin(void) {
   return Pressure::begin(Pressure::bmp085_mode);
 }
 
-// mode:
-//   BMP085_MODE_ULTRALOWPOWER
-//   BMP085_MODE_STANDARD
-//   BMP085_MODE_HIGHRES
-//   BMP085_MODE_ULTRAHIGHRES (Default)
+/**
+ * @brief   Initializes the sensor with advanced configurations
+ * @ingroup pressure
+ *
+ * @param mode Advanced configuration for BMP180's resolution mode
+ *     - BMP085_MODE_ULTRALOWPOWER
+ *     - BMP085_MODE_STANDARD
+ *     - BMP085_MODE_HIGHRES
+ *     - BMP085_MODE_ULTRAHIGHRES (Default)
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean Pressure::begin(bmp085_mode_t mode) {
+  Pressure::bmp085_mode = mode;
+  Pressure::initialized = start_sensor_or_err(pressure_sensor_name, bmp180_init(mode));
+
   catchSpaceboard();
-  if (ARDUSAT_SPACEBOARD) {
+  if (ARDUSAT_SPACEBOARD && !Pressure::initialized) {
     _writeUnavailableSensorError(pressure_sensor_name, spaceboard_hardware);
     return false;
   }
-  Pressure::bmp085_mode = mode;
 
-  Pressure::initialized = start_sensor_or_err(pressure_sensor_name, bmp180_init(mode));
   return Pressure::initialized;
 }
 
+/**
+ * @brief   Takes a reading from the sensor
+ * @ingroup pressure
+ */
 void Pressure::read(void) {
   Pressure::header.timestamp = millis();
 
@@ -706,51 +1026,69 @@ void Pressure::read(void) {
 }
 
 /**
- * Calculates the altitude in meters from the specified measured atmospheric pressure (hPa)
- * and sea-level pressure (hPa)
+ * @brief Calculates current altitude given pressure reading and provided pressure at sea level
  *
  * Equation taken from BMP180 datasheet (page 16):
  * http://www.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
  *
- * Note that using the equation from wikipedia can give bad results
- * at high altitude.  See this thread for more information:
+ * Note that using the equation from wikipedia can give bad results at high
+ * altitude. See this thread for more information:
  * http://forums.adafruit.com/viewtopic.php?f=22&t=58064
  *
- * @param seaLevelPressure Known pressure at sea-level (hPa)
- * @param atmosphericPressure Pressure at altitude (hPa)
+ * @ingroup pressure
+ * @param   seaLevelPressure Known pressure at sea level in hPa
+ * @return  calculated altitude in meters
  */
 float Pressure::altitudeFromSeaLevelPressure(float seaLevelPressure) {
   return 44330.0 * (1.0 - pow(Pressure::pressure / seaLevelPressure, 0.1903));
 }
 
 /**
- * Calculates the pressure at sea level (in hPa) from the specified altitude (meters)
- * and measured atmospheric pressure (hPa)
+ * @brief Calculate the pressure at sea level given current altitude and pressure reading
  *
  * Equation taken from BMP180 datasheet (page 17):
  * http://www.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
  *
- * Note that using the equation from wikipedia can give bad results
- * at high altitude.  See this thread for more information:
+ * Note that using the equation from wikipedia can give bad results at high
+ * altitude. See this thread for more information:
  * http://forums.adafruit.com/viewtopic.php?f=22&t=58064
  *
- * @param altitude Known altitude (meters)
- * @param atmosphericPressure Measured atmospheric pressure (hPa)
+ * @ingroup pressure
+ * @param   altitude Known altitude in meters
+ * @return  calculated pressure at sea level in hPa
  */
 float Pressure::seaLevelPressureFromAltitude(float altitude) {
   return Pressure::pressure / pow(1.0 - (altitude / 44330.0), 5.255);
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in CSV format
+ * @ingroup pressure
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * Pressure::readToCSV(const char * sensorName) {
   Pressure::read();
   return Pressure::toCSV(sensorName);
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in JSON format
+ * @ingroup pressure
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * Pressure::readToJSON(const char * sensorName) {
   Pressure::read();
   return Pressure::toJSON(sensorName);
 }
 
+/**
+ * @brief   Returns last read value in CSV format
+ * @ingroup pressure
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * Pressure::toCSV(const char * sensorName) {
   if (Pressure::initialized)
     return valueToCSV(sensorName, Pressure::pressure, Pressure::header.timestamp);
@@ -758,6 +1096,12 @@ const char * Pressure::toCSV(const char * sensorName) {
     return "";
 }
 
+/**
+ * @brief   Returns last read value in JSON format
+ * @ingroup pressure
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * Pressure::toJSON(const char * sensorName) {
   if (Pressure::initialized)
     return valueToJSON(sensorName, Pressure::header.unit, Pressure::pressure);
@@ -766,29 +1110,55 @@ const char * Pressure::toJSON(const char * sensorName) {
 }
 
 
-/**
- * ========================================================================================
- * RGB Light Sensor Class
- * ========================================================================================
- */
-// sensor ids:
-//   SENSORID_ISL29125
-//   SENSORID_TCS34725 (Default)
+/**************************************************************************//**
+ * @brief   Constructs RGBLight sensor object, default uses TCS34725 sensor
+ * @ingroup rgblight
+ *
+ * @param   sensor_id Specifies which RGB sensor to use: TCS34725 or ISL29125
+ *     - SENSORID_TCS34725
+ *     - SENSORID_ISL29125
+ *
+ * Example Usage:
+ * @code
+ *     RGBLight rgb = RGBLight(SENSORID_ISL29125); // Instantiate sensor object
+ *     rgb.begin();                                // Initialize sensor
+ *     Serial.println(rgb.readToJSON());           // Read and print values in JSON
+ * @endcode
+ *****************************************************************************/
 RGBLight::RGBLight(sensor_id_t sensor_id) {
   RGBLight::sensorId = sensor_id;
+  RGBLight::islIntensity = CFG1_10KLUX;
+  RGBLight::tcsIt = TCS34725_INTEGRATIONTIME_154MS;
+  RGBLight::tcsGain = TCS34725_GAIN_1X;
   RGBLight::header.unit = DATA_UNIT_LUX;
+  RGBLight::initialized = false;
 }
 
 RGBLight::~RGBLight() {
 }
 
+/**
+ * @brief   Initializes the sensor with basic configurations
+ * @ingroup rgblight
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean RGBLight::begin(void) {
   return RGBLight::begin(RGBLight::islIntensity, RGBLight::tcsIt, RGBLight::tcsGain);
 }
 
-// islIntensity:
-//   CFG1_375LUX
-//   CFG1_10KLUX (Default)
+/**
+ * @brief   Initializes the sensor with advanced configurations
+ * @ingroup rgblight
+ *
+ * @param islIntensity Advanced configuration for ISL29125 intensity
+ *     - CFG1_375LUX
+ *     - CFG1_10KLUX (Default)
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean RGBLight::begin(uint8_t islIntensity) {
   if (RGBLight::sensorId == SENSORID_ISL29125)
     return RGBLight::begin(islIntensity, RGBLight::tcsIt, RGBLight::tcsGain);
@@ -796,19 +1166,27 @@ boolean RGBLight::begin(uint8_t islIntensity) {
     return RGBLight::begin();
 }
 
-// tcsIt:
-//   TCS34725_INTEGRATIONTIME_2_4MS
-//   TCS34725_INTEGRATIONTIME_24MS
-//   TCS34725_INTEGRATIONTIME_50MS
-//   TCS34725_INTEGRATIONTIME_101MS
-//   TCS34725_INTEGRATIONTIME_154MS (Default)
-//   TCS34725_INTEGRATIONTIME_700MS
-//
-// tcsGain:
-//   TCS34725_GAIN_1X (Default)
-//   TCS34725_GAIN_4X
-//   TCS34725_GAIN_16X
-//   TCS34725_GAIN_60X
+/**
+ * @brief   Initializes the sensor with advanced configurations
+ * @ingroup rgblight
+ *
+ * @param tcsIt Advanced configuration for TCS34725 integration time
+ *     - TCS34725_INTEGRATIONTIME_2_4MS
+ *     - TCS34725_INTEGRATIONTIME_24MS
+ *     - TCS34725_INTEGRATIONTIME_50MS
+ *     - TCS34725_INTEGRATIONTIME_101MS
+ *     - TCS34725_INTEGRATIONTIME_154MS (Default)
+ *     - TCS34725_INTEGRATIONTIME_700MS
+ *
+ * @param tcsGain Advanced configuration for TCS34725 gain
+ *     - TCS34725_GAIN_1X (Default)
+ *     - TCS34725_GAIN_4X
+ *     - TCS34725_GAIN_16X
+ *     - TCS34725_GAIN_60X
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean RGBLight::begin(tcs34725IntegrationTime_t tcsIt, tcs34725Gain_t tcsGain) {
   if (RGBLight::sensorId == SENSORID_TCS34725)
     return RGBLight::begin(RGBLight::islIntensity, tcsIt, tcsGain);
@@ -816,12 +1194,10 @@ boolean RGBLight::begin(tcs34725IntegrationTime_t tcsIt, tcs34725Gain_t tcsGain)
     return RGBLight::begin();
 }
 
+/**
+ * Private function to initialize RGBLight sensor
+ */
 boolean RGBLight::begin(uint8_t islIntensity, tcs34725IntegrationTime_t tcsIt, tcs34725Gain_t tcsGain) {
-  catchSpaceboard();
-  if (!ARDUSAT_SPACEBOARD) {
-    _writeUnavailableSensorError(rgblight_sensor_name, spacekit_hardware);
-    return false;
-  }
   RGBLight::islIntensity = islIntensity;
   RGBLight::tcsIt = tcsIt;
   RGBLight::tcsGain = tcsGain;
@@ -832,9 +1208,20 @@ boolean RGBLight::begin(uint8_t islIntensity, tcs34725IntegrationTime_t tcsIt, t
   else if (RGBLight::sensorId == SENSORID_TCS34725)
     RGBLight::initialized = start_sensor_or_err(rgblight_sensor_name,
                                                 tcs34725_init(tcsIt, tcsGain));
+
+  catchSpaceboard();
+  if (!ARDUSAT_SPACEBOARD && !RGBLight::initialized) {
+    _writeUnavailableSensorError(rgblight_sensor_name, spacekit_hardware);
+    return false;
+  }
+
   return RGBLight::initialized;
 }
 
+/**
+ * @brief   Takes a reading from the sensor
+ * @ingroup rgblight
+ */
 void RGBLight::read(void) {
   RGBLight::header.timestamp = millis();
   RGBLight::header.sensor_id = RGBLight::sensorId;
@@ -845,16 +1232,34 @@ void RGBLight::read(void) {
     tcs34725_getRGB(&(RGBLight::red), &(RGBLight::green), &(RGBLight::blue));
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in CSV format
+ * @ingroup rgblight
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * RGBLight::readToCSV(const char * sensorName) {
   RGBLight::read();
   return RGBLight::toCSV(sensorName);
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in JSON format
+ * @ingroup rgblight
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * RGBLight::readToJSON(const char * sensorName) {
   RGBLight::read();
   return RGBLight::toJSON(sensorName);
 }
 
+/**
+ * @brief   Returns last read value in CSV format
+ * @ingroup rgblight
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * RGBLight::toCSV(const char * sensorName) {
   if (RGBLight::initialized)
     return valuesToCSV(sensorName, RGBLight::header.timestamp, 3,
@@ -863,6 +1268,12 @@ const char * RGBLight::toCSV(const char * sensorName) {
     return "";
 }
 
+/**
+ * @brief   Returns last read value in JSON format
+ * @ingroup rgblight
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * RGBLight::toJSON(const char * sensorName) {
   if (RGBLight::initialized)
     return _tripleValueToJSON(sensorName, 6, RGBLight::header.unit, "%sRed", RGBLight::red,
@@ -872,31 +1283,51 @@ const char * RGBLight::toJSON(const char * sensorName) {
 }
 
 
-/**
- * ========================================================================================
- * Temperature Sensor Class
- * ========================================================================================
- */
-// sensor ids:
-//   SENSORID_TMP102 (Default)
-//   SENSORID_MLX90614
+/**************************************************************************//**
+ * @brief   Constructs Temperature sensor object, default uses TMP102 sensor
+ * @ingroup temperature
+ *
+ * @param   sensor_id Specifies which Temperature sensor to use: TMP102 or MLX90614
+ *     - SENSORID_TMP102
+ *     - SENSORID_MLX90614
+ *
+ * Example Usage:
+ * @code
+ *     Temperature temp = Temperature(SENSORID_MLX90614); // Instantiate sensor object
+ *     temp.begin();                                      // Initialize sensor
+ *     Serial.println(temp.readToJSON());                 // Read and print values in JSON
+ * @endcode
+ *****************************************************************************/
 Temperature::Temperature(sensor_id_t sensor_id) {
   Temperature::sensorId = sensor_id;
   Temperature::header.unit = DATA_UNIT_DEGREES_CELSIUS;
+  Temperature::initialized = false;
 }
 
 Temperature::~Temperature() {
 }
 
+/**
+ * @brief   Initializes the sensor with basic configurations
+ * @ingroup temperature
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean Temperature::begin(void) {
   catchSpaceboard();
-  if (Temperature::sensorId == SENSORID_TMP102)
+  if (Temperature::sensorId == SENSORID_TMP102) {
     Temperature::initialized = start_sensor_or_err(temperature_sensor_name, tmp102_init());
-  else if (Temperature::sensorId == SENSORID_MLX90614)
-    Temperature::initialized = start_sensor_or_err(ir_temperature_sensor_name, mlx90614_init());
+  } else if (Temperature::sensorId == SENSORID_MLX90614) {
+    Temperature::initialized = start_sensor_or_err(irtemperature_sensor_name, mlx90614_init());
+  }
   return Temperature::initialized;
 }
 
+/**
+ * @brief   Takes a reading from the sensor
+ * @ingroup temperature
+ */
 void Temperature::read(void) {
   Temperature::header.timestamp = millis();
   Temperature::header.sensor_id = Temperature::sensorId;
@@ -907,16 +1338,34 @@ void Temperature::read(void) {
     Temperature::t = mlx90614_getTempCelsius();
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in CSV format
+ * @ingroup temperature
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * Temperature::readToCSV(const char * sensorName) {
   Temperature::read();
   return Temperature::toCSV(sensorName);
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in JSON format
+ * @ingroup temperature
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * Temperature::readToJSON(const char * sensorName) {
   Temperature::read();
   return Temperature::toJSON(sensorName);
 }
 
+/**
+ * @brief   Returns last read value in CSV format
+ * @ingroup temperature
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * Temperature::toCSV(const char * sensorName) {
   if (Temperature::initialized)
     return valueToCSV(sensorName, Temperature::t, Temperature::header.timestamp);
@@ -924,7 +1373,12 @@ const char * Temperature::toCSV(const char * sensorName) {
     return "";
 }
 
-
+/**
+ * @brief   Returns last read value in JSON format
+ * @ingroup temperature
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * Temperature::toJSON(const char * sensorName) {
   if (Temperature::initialized)
     return valueToJSON(sensorName, Temperature::header.unit, Temperature::t);
@@ -933,28 +1387,52 @@ const char * Temperature::toJSON(const char * sensorName) {
 }
 
 
-/**
- * ========================================================================================
- * UV Light Sensor Class
- * ========================================================================================
- */
-// sensor ids:
-//   SENSORID_SI1132
-//   SENSORID_ML8511 (Default)
+/**************************************************************************//**
+ * @brief   Constructs UVLight sensor object, default uses ML8511 sensor
+ * @ingroup uvlight
+ *
+ * @param   sensor_id Specifies which UVLight sensor to use: ML8511 or SI1132
+ *     - SENSORID_ML8511
+ *     - SENSORID_SI1132
+ *
+ * Example Usage:
+ * @code
+ *     UVLight uv = UVLight(SENSORID_SI1132); // Instantiate sensor object
+ *     uv.begin();                            // Initialize sensor
+ *     Serial.println(uv.readToJSON());       // Read and print values in JSON
+ * @endcode
+ *****************************************************************************/
 UVLight::UVLight(sensor_id_t sensor_id) {
   UVLight::sensorId = sensor_id;
+  UVLight::ML8511_pin = DRIVER_ML8511_UV_PIN;
   UVLight::header.unit = DATA_UNIT_MILLIWATT_PER_CMSQUARED;
+  UVLight::initialized = false;
 }
 
 UVLight::~UVLight() {
 }
 
+/**
+ * @brief   Initializes the sensor with basic configurations
+ * @ingroup uvlight
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean UVLight::begin(void) {
   return UVLight::begin(UVLight::ML8511_pin);
 }
 
-// pin:
-//    DRIVER_ML8511_UV_PIN (A0) (Default)
+/**
+ * @brief   Initializes the sensor with advanced configurations
+ * @ingroup uvlight
+ *
+ * @param pin The analog pin the ML8511 board uses on the Arduino
+ *     - DRIVER_ML8511_UV_PIN (A0) (Default)
+ *
+ * @retval true  Successfully initialized
+ * @retval false Failed to initialize
+ */
 boolean UVLight::begin(int pin) {
   catchSpaceboard();
   UVLight::ML8511_pin = pin;
@@ -965,6 +1443,10 @@ boolean UVLight::begin(int pin) {
   return UVLight::initialized;
 }
 
+/**
+ * @brief   Takes a reading from the sensor
+ * @ingroup uvlight
+ */
 void UVLight::read(void) {
   UVLight::header.timestamp = millis();
 
@@ -977,16 +1459,34 @@ void UVLight::read(void) {
   }
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in CSV format
+ * @ingroup uvlight
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * UVLight::readToCSV(const char * sensorName) {
   UVLight::read();
   return UVLight::toCSV(sensorName);
 }
 
+/**
+ * @brief   Takes a reading from the sensor and returns value in JSON format
+ * @ingroup uvlight
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * UVLight::readToJSON(const char * sensorName) {
   UVLight::read();
   return UVLight::toJSON(sensorName);
 }
 
+/**
+ * @brief   Returns last read value in CSV format
+ * @ingroup uvlight
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in CSV format or empty string if uninitialized
+ */
 const char * UVLight::toCSV(const char * sensorName) {
   if (UVLight::initialized)
     return valueToCSV(sensorName, UVLight::uvindex, UVLight::header.timestamp);
@@ -994,6 +1494,12 @@ const char * UVLight::toCSV(const char * sensorName) {
     return "";
 }
 
+/**
+ * @brief   Returns last read value in JSON format
+ * @ingroup uvlight
+ * @param   sensorName The text to display next to the value
+ * @return  sensor readings in JSON format or empty string if uninitialized
+ */
 const char * UVLight::toJSON(const char * sensorName) {
   if (UVLight::initialized)
     return valueToJSON(sensorName, UVLight::header.unit, UVLight::uvindex);

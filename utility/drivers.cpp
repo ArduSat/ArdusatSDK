@@ -1,6 +1,7 @@
 /**
  * @file   drivers.cpp
  * @Author Ben Peters (ben@ardusat.com)
+ * @Author Sam Olds (sam@ardusat.com)
  * @date   December 3, 2014
  * @brief  Implements sensor-specific driver read/initialization functions
  *
@@ -17,82 +18,10 @@ static config_lsm303_mag_t _lsm303_d_mag_config;
 static config_l3gd20_t _l3gd20_config;
 
 /**
- * Generic I2C Read function
- *
- * @param devAddr I2C Device address
- * @param reg Register address
- * @param val pointer to byte array to read into
- * @param length number of bytes to read
- *
- * @return 0 on success, other on failure
+ * Check to see if both the ISL29125 and TCS34725 RGB Light Sensors
+ * exists. They are only included with the spaceboard, not the space
+ * kit, so if they do exist, the user has a spaceboard.
  */
-int _readFromRegAddr(uint8_t devAddr, uint8_t reg, void *val, int length)
-{
-  uint8_t *byteArray = (uint8_t *) val;
-  int ret;
-  int readData = 0;
-
-  Wire.beginTransmission(devAddr);
-
-  if (Wire.write(reg) < 1)
-    return -1;
-
-  if ((ret = Wire.endTransmission(false)) != 0) {
-    return ret;
-  }
-
-  if (byteArray == NULL || length == 0)
-    return 0;
-
-  Wire.beginTransmission(devAddr);
-  Wire.requestFrom((byte) devAddr, (byte) length);
-
-  while (Wire.available() > 0) {
-    byteArray[readData++] = Wire.read();
-  }
-
-  if ((ret = Wire.endTransmission(true)) != 0) {
-    return ret;
-  }
-
-  return 0;
-}
-
-/**
- * Generic I2C Write function
- *
- * @param devAddr I2C Device address
- * @param reg Register address
- * @param val pointer to byte array to write from
- * @param length number of bytes to write
- *
- * @return 0 on success, other on failure
- */
-int _writeToRegAddr(uint8_t devAddr, uint8_t reg, void *val, int length)
-{
-  uint8_t *byteArray = (uint8_t *) val;
-  int ret;
-
-  Wire.beginTransmission(devAddr);
-
-  if (Wire.write(reg) < 1)
-    return -1;
-
-  for (int i=0; i < length; ++i) {
-    if (Wire.write(byteArray[i]) < 1)
-      return -1;
-  }
-
-  if ((ret = Wire.endTransmission()) != 0) {
-    return ret;
-  }
-
-  return 0;
-}
-
-// Check to see if both the ISL29125 and TCS34725 RGB Light Sensors
-// exists. They are only included with the spaceboard, not the space
-// kit, so if they do exist, the user has a spaceboard.
 void catchSpaceboard() {
   // Only need to check once, as `catchSpaceboard` is called by all
   // sensor `begin` functions
@@ -103,8 +32,8 @@ void catchSpaceboard() {
 
     // Here, we are checking to see if the sensor replies with the
     // correct response at it's expected address on the spaceboard
-    _readFromRegAddr(DRIVER_SPACEBOARD_ISL29125_ADDR, 0x00, &islData, 1);
-    _readFromRegAddr(DRIVER_SPACEBOARD_TCS34725_ADDR, 0x80 | 0x12, &tcsData, 1);
+    readFromRegAddr(DRIVER_SPACEBOARD_ISL29125_ADDR, 0x00, &islData, 1, BIG_ENDIAN);
+    readFromRegAddr(DRIVER_SPACEBOARD_TCS34725_ADDR, 0x80 | 0x12, &tcsData, 1, BIG_ENDIAN);
 
     // Checking the responses from the identify registers of each
     // sensor to make sure it's what we expect for both
@@ -122,14 +51,14 @@ boolean l3gd20h_init(uint8_t range) {
   Wire.begin();
 
   // Check WHO_AM_I register
-  if (_readFromRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_WHO_AM_I, &buf, 1) ||
+  if (readFromRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_WHO_AM_I, &buf, 1) ||
       ((buf != L3GD20_ID) && buf != L3GD20H_ID)) {
     return false;
   }
 
   // Sets switch to normal mode & enables 3 channels
   buf = 0x0F;
-  if (_writeToRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_CTRL_REG1, &buf, 1)) {
+  if (writeToRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_CTRL_REG1, &buf, 1)) {
     return false;
   }
 
@@ -158,7 +87,7 @@ boolean l3gd20h_init(uint8_t range) {
       _l3gd20_config.sensitivity = L3GD20_GYRO_SENSITIVITY_2000DPS;
   }
 
-  if (_writeToRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_CTRL_REG4, &range, 1))
+  if (writeToRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_CTRL_REG4, &range, 1))
     return false;
 
   return true;
@@ -171,7 +100,7 @@ int _2bit_xyz_read(uint8_t addr, uint8_t reg, int16_t *x, int16_t *y, int16_t *z
   uint8_t *low;
   int ret;
 
-  if (!(ret = _readFromRegAddr(addr, reg, buf, 6))) {
+  if (!(ret = readFromRegAddr(addr, reg, buf, 6))) {
     if (reverse_bits) {
       low = buf + 1;
       hi = buf;
@@ -230,7 +159,7 @@ void l3gd20h_getRawTemperature(int8_t *pRawTemperature)
 {
   if(NULL != pRawTemperature)
   {
-    _readFromRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_OUT_TEMP, pRawTemperature, sizeof(*pRawTemperature));
+    readFromRegAddr(L3GD20_ADDRESS, L3GD20_GYRO_REGISTER_OUT_TEMP, pRawTemperature, sizeof(*pRawTemperature));
   }
 }
 
@@ -595,14 +524,14 @@ static uint8_t _bmp180_mode;
  * Reads the factory configuration from the BMP180
  */
 #define _bmp180_read_unsigned_config_val(reg, config_location) \
-  if (_readFromRegAddr(DRIVER_BMP180_ADDR, reg, buf, 2)) { \
+  if (readFromRegAddr(DRIVER_BMP180_ADDR, reg, buf, 2)) { \
     return -1; \
   } else { \
     config_location = (buf[0] << 8) + buf[1]; \
   }
 
 #define _bmp180_read_signed_config_val(reg, config_location) \
-  if (_readFromRegAddr(DRIVER_BMP180_ADDR, reg, buf, 2)) { \
+  if (readFromRegAddr(DRIVER_BMP180_ADDR, reg, buf, 2)) { \
     return -1; \
   } else { \
     config_location = (int16_t) ((buf[0] << 8) + buf[1]); \
@@ -647,7 +576,7 @@ boolean bmp180_init(bmp085_mode_t mode)
 
   Wire.begin();
 
-  if (_readFromRegAddr(DRIVER_BMP180_ADDR, BMP085_REGISTER_CHIPID, &res, 1) ||
+  if (readFromRegAddr(DRIVER_BMP180_ADDR, BMP085_REGISTER_CHIPID, &res, 1) ||
       res != 0x55) {
     return false;
   }
@@ -670,13 +599,13 @@ void bmp180_getRawTemperature(uint16_t *temp)
 {
   uint8_t reg[2];
   reg[0] = BMP085_REGISTER_READTEMPCMD;
-  if (_writeToRegAddr(DRIVER_BMP180_ADDR, BMP085_REGISTER_CONTROL, reg, 1)) {
+  if (writeToRegAddr(DRIVER_BMP180_ADDR, BMP085_REGISTER_CONTROL, reg, 1)) {
     return;
   }
 
   delay(5);
 
-  if (_readFromRegAddr(DRIVER_BMP180_ADDR, BMP085_REGISTER_TEMPDATA, reg, 2)) {
+  if (readFromRegAddr(DRIVER_BMP180_ADDR, BMP085_REGISTER_TEMPDATA, reg, 2)) {
     return;
   }
 
@@ -714,7 +643,7 @@ void bmp180_getRawPressure(uint32_t *pressure)
   uint32_t temp32;
   reg[0] = BMP085_REGISTER_READPRESSURECMD + (_bmp180_mode << 6);
 
-  if (_writeToRegAddr(DRIVER_BMP180_ADDR, BMP085_REGISTER_CONTROL, &reg, 1)) {
+  if (writeToRegAddr(DRIVER_BMP180_ADDR, BMP085_REGISTER_CONTROL, &reg, 1)) {
     return;
   }
 
@@ -735,7 +664,7 @@ void bmp180_getRawPressure(uint32_t *pressure)
       break;
   }
 
-  if (_readFromRegAddr(DRIVER_BMP180_ADDR, BMP085_REGISTER_PRESSUREDATA, reg, 3)) {
+  if (readFromRegAddr(DRIVER_BMP180_ADDR, BMP085_REGISTER_PRESSUREDATA, reg, 3)) {
     return;
   }
 
@@ -870,27 +799,12 @@ float ml8511_getUV(int pin)
 /*
  * MLX90614 IR Temperature
  */
-uint16_t _mlx90614_read16(uint8_t a) {
-  uint16_t ret;
-
-  Wire.beginTransmission(DRIVER_MLX90614_ADDR); // start transmission to device
-  Wire.write(a); // sends register address to read from
-  Wire.endTransmission(false); // end transmission
-
-  Wire.requestFrom((uint8_t) DRIVER_MLX90614_ADDR, (uint8_t)3);// send data n-bytes read
-  ret = Wire.read(); // receive DATA
-  ret |= Wire.read() << 8; // receive DATA
-
-  uint8_t pec = Wire.read();
-
-  return ret;
-}
-
 float _mlx90614_readTemp(uint8_t reg) {
-  float temp;
+  uint32_t data;
 
-  //TODO: re-write to leverage _read function
-  temp = _mlx90614_read16(reg);
+  readFromRegAddr(DRIVER_MLX90614_ADDR, reg, &data, 3, LITTLE_ENDIAN);
+  float temp = (data & 0xFFFF);
+
   temp *= .02;
   temp -= 273.15;
   return temp;
@@ -924,8 +838,6 @@ float mlx90614_getTempCelsius() {
 /*
  * TMP102 Temperature
  */
-byte _tmp102_buff[2];
-
 boolean tmp102_init() {
   Wire.begin();
   return true;
@@ -943,7 +855,7 @@ float tmp102_getTempCelsius() {
     temp_byte = DRIVER_TMP102_ADDR;
   }
 
-  _readFromRegAddr(temp_byte, 0x00, bytes, 2);
+  readFromRegAddr(temp_byte, 0x00, bytes, 2);
   temp_byte = bytes[0];
   bytes[0] = bytes[1];
   bytes[1] = temp_byte;
