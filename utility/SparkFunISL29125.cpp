@@ -19,10 +19,10 @@ Distributed as-is; no warranty is given.
 #include "SparkFunISL29125.h"
 #include "common_utils.h"
 
-#define read8(reg, val) readFromRegAddr(_addr, reg, val, 1, BIG_ENDIAN);
-#define read16(reg, val) readFromRegAddr(_addr, reg, val, 2, BIG_ENDIAN);
-#define write8(reg, val) writeToRegAddr(_addr, reg, val, 1, BIG_ENDIAN);
-#define write16(reg, val) writeToRegAddr(_addr, reg, val, 2, BIG_ENDIAN);
+#define read8(reg, val) readFromRegAddr(_addr, reg, val, 1, BIG_ENDIAN)
+#define read16(reg, val) readFromRegAddr(_addr, reg, val, 2, BIG_ENDIAN)
+#define write8(reg, val) writeToRegAddr(_addr, reg, val, 1, BIG_ENDIAN)
+#define write16(reg, val) writeToRegAddr(_addr, reg, val, 2, BIG_ENDIAN)
 
 
 // Constructor - Creates sensor object and sets I2C address

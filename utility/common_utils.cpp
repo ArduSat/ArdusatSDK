@@ -17,7 +17,7 @@
  *
  * @return 0 on success, other on failure
  */
-int readFromRegAddr(uint8_t devAddr, uint8_t reg, void *val, int length, endian_e endianness)
+int readFromRegAddr(uint8_t devAddr, uint8_t reg, void *val, size_t length, endian_e endianness)
 {
   uint8_t *byteArray = (uint8_t *) val;
   int ret;
@@ -25,25 +25,24 @@ int readFromRegAddr(uint8_t devAddr, uint8_t reg, void *val, int length, endian_
 
   Wire.beginTransmission(devAddr);
 
-  if (Wire.write(reg) < 1)
+  if (Wire.write(reg) < 1) {
     return -1;
+  }
 
   if ((ret = Wire.endTransmission(false)) != 0) {
     return ret;
   }
 
-  if (byteArray == NULL || length == 0)
+  if (byteArray == NULL || length == 0) {
     return 0;
+  }
 
   Wire.beginTransmission(devAddr);
-  Wire.requestFrom((uint8_t) devAddr, (uint8_t) length);
+  Wire.requestFrom(devAddr, (uint8_t) length);
 
-  if (endianness == BIG_ENDIAN) {
-    while (Wire.available() > 0)
-      byteArray[readData++] = Wire.read();
-  } else { // littleEndian
-    while (Wire.available() > 0 && length >= 0)
-      byteArray[--length] = Wire.read();
+  while (Wire.available() > 0 && readData < length) {
+    byteArray[endianness == BIG_ENDIAN ? readData : length - 1 - readData] = Wire.read();
+    readData++;
   }
 
   if ((ret = Wire.endTransmission(true)) != 0) {
@@ -63,25 +62,20 @@ int readFromRegAddr(uint8_t devAddr, uint8_t reg, void *val, int length, endian_
  *
  * @return 0 on success, other on failure
  */
-int writeToRegAddr(uint8_t devAddr, uint8_t reg, void *val, int length, endian_e endianness)
+int writeToRegAddr(uint8_t devAddr, uint8_t reg, void *val, size_t length, endian_e endianness)
 {
   uint8_t *byteArray = (uint8_t *) val;
   int ret;
 
   Wire.beginTransmission(devAddr);
 
-  if (Wire.write(reg) < 1)
+  if (Wire.write(reg) < 1) {
     return -1;
+  }
 
-  if (endianness == BIG_ENDIAN) {
-    for (int i=0; i < length; i++) {
-      if (Wire.write(byteArray[i]) < 1)
-        return -1;
-    }
-  } else {
-    for (int i=length - 1; i >= 0; i--) {
-      if (Wire.write(byteArray[i]) < 1)
-        return -1;
+  for (int i = 0; i < length; i++) {
+    if (Wire.write(byteArray[endianness == BIG_ENDIAN ? i : length - 1 - i]) < 1) {
+      return -1;
     }
   }
 

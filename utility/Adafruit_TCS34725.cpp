@@ -30,9 +30,9 @@
 #include "Adafruit_TCS34725.h"
 #include "common_utils.h"
 
-#define read8(reg, val) readFromRegAddr(TCS34725_ADDRESS, TCS34725_COMMAND_BIT | reg, val, 1, BIG_ENDIAN);
-#define read16(reg, val) readFromRegAddr(TCS34725_ADDRESS, TCS34725_COMMAND_BIT | reg, val, 2, BIG_ENDIAN);
-#define write8(reg, val) writeToRegAddr(TCS34725_ADDRESS, TCS34725_COMMAND_BIT | reg, val, 1, BIG_ENDIAN);
+#define read8(reg, val) readFromRegAddr(TCS34725_ADDRESS, TCS34725_COMMAND_BIT | reg, val, 1, BIG_ENDIAN)
+#define read16(reg, val) readFromRegAddr(TCS34725_ADDRESS, TCS34725_COMMAND_BIT | reg, val, 2, BIG_ENDIAN)
+#define write8(reg, val) writeToRegAddr(TCS34725_ADDRESS, TCS34725_COMMAND_BIT | reg, val, 1, BIG_ENDIAN)
 
 /*========================================================================*/
 /*                          PRIVATE FUNCTIONS                             */

@@ -1,7 +1,7 @@
 /**
  * @file   drivers.cpp
- * @Author Ben Peters (ben@ardusat.com)
- * @Author Sam Olds (sam@ardusat.com)
+ * @author Ben Peters (ben@ardusat.com)
+ * @author Sam Olds (sam@ardusat.com)
  * @date   December 3, 2014
  * @brief  Implements sensor-specific driver read/initialization functions
  *
@@ -31,7 +31,7 @@ void catchSpaceboard() {
     Wire.begin();
 
     // Here, we are checking to see if the sensor replies with the
-    // correct response at it's expected address on the spaceboard
+    // correct response at its expected address on the spaceboard
     readFromRegAddr(DRIVER_SPACEBOARD_ISL29125_ADDR, 0x00, &islData, 1, BIG_ENDIAN);
     readFromRegAddr(DRIVER_SPACEBOARD_TCS34725_ADDR, 0x80 | 0x12, &tcsData, 1, BIG_ENDIAN);
 
@@ -204,11 +204,11 @@ void _lsm303_accel_config(lsm303_accel_gain_e gGain) {
         gain = 0x20;
         break;
     }
-    lsm.writeReg(LSM303::CTRL2, gain);
+    lsm.writeReg(CTRL2, gain);
 
     // 0x57 = 0b01010111
     // AODR = 0101 (50 Hz ODR); AZEN = AYEN = AXEN = 1 (all axes enabled)
-    lsm.writeReg(LSM303::CTRL1, 0x57);
+    lsm.writeReg(CTRL1, 0x57);
   }
   else // LSM303 DLHC (Breakout Space Kit variant)
   {
@@ -226,6 +226,7 @@ void _lsm303_accel_config(lsm303_accel_gain_e gGain) {
         break;
       case LSM303_ACCEL_GAIN6G:
         _lsm303_d_accel_config.gain = LSM303_ACCEL_GAIN8G;
+        // Rollthrough because DLHC doesn't have 6G Gain
       case LSM303_ACCEL_GAIN8G:
         gain = 0x28;
         break;
@@ -233,11 +234,11 @@ void _lsm303_accel_config(lsm303_accel_gain_e gGain) {
         gain = 0x38;
         break;
     }
-    lsm.writeAccReg(LSM303::CTRL_REG4_A, gain);
+    lsm.writeAccReg(CTRL_REG4_A, gain);
 
     // 0x47 = 0b01000111
     // ODR = 0100 (50 Hz ODR); LPen = 0 (normal mode); Zen = Yen = Xen = 1 (all axes enabled)
-    lsm.writeAccReg(LSM303::CTRL_REG1_A, 0x47);
+    lsm.writeAccReg(CTRL_REG1_A, 0x47);
   }
 }
 
@@ -250,7 +251,7 @@ void _lsm303_mag_config(lsm303_mag_scale_e gaussScale) {
   if (lsm.getDeviceType() == LSM303::device_D) {
     // 0x64 = 0b01100100
     // M_RES = 11 (high resolution mode); M_ODR = 001 (6.25 Hz ODR)
-    lsm.writeReg(LSM303::CTRL5, 0x64);
+    lsm.writeReg(CTRL5, 0x64);
 
     // Adjustable gauss scale:
     //   MFS = 0b00000000 (+/-  2 gauss full scale) = 0x00
@@ -258,38 +259,38 @@ void _lsm303_mag_config(lsm303_mag_scale_e gaussScale) {
     //   MFS = 0b01000000 (+/-  8 gauss full scale) = 0x40
     //   MFS = 0b01100000 (+/- 12 gauss full scale) = 0x60
     switch (gaussScale) {
-      case LSM303_MAG_SCALE1_3GAUSS:
-        _lsm303_d_mag_config.scale = LSM303_MAG_SCALE2GAUSS;
+      case LSM303_MAG_SCALE1_3GAUSS: // Rollthrough because D doesn't have 1.3 Gauss
       case LSM303_MAG_SCALE2GAUSS:
+        _lsm303_d_mag_config.scale = LSM303_MAG_SCALE2GAUSS;
         scale = 0x00;
         break;
-      case LSM303_MAG_SCALE2_5GAUSS:
-        _lsm303_d_mag_config.scale = LSM303_MAG_SCALE4GAUSS;
+      case LSM303_MAG_SCALE2_5GAUSS: // Rollthrough because D doesn't have 2.5 Gauss
       case LSM303_MAG_SCALE4GAUSS:
+        _lsm303_d_mag_config.scale = LSM303_MAG_SCALE4GAUSS;
         scale = 0x20;
         break;
-      case LSM303_MAG_SCALE4_7GAUSS:
-        _lsm303_d_mag_config.scale = LSM303_MAG_SCALE8GAUSS;
-      case LSM303_MAG_SCALE5_6GAUSS:
-        _lsm303_d_mag_config.scale = LSM303_MAG_SCALE8GAUSS;
+      case LSM303_MAG_SCALE4_7GAUSS: // Rollthrough because D doesn't have 4.7 Gauss
+      case LSM303_MAG_SCALE5_6GAUSS: // Rollthrough because D doesn't have 5.6 Gauss
       case LSM303_MAG_SCALE8GAUSS:
+        _lsm303_d_mag_config.scale = LSM303_MAG_SCALE8GAUSS;
         scale = 0x40;
         break;
       case LSM303_MAG_SCALE12GAUSS:
+        _lsm303_d_mag_config.scale = LSM303_MAG_SCALE12GAUSS;
         scale = 0x60;
         break;
     }
-    lsm.writeReg(LSM303::CTRL6, scale);
+    lsm.writeReg(CTRL6, scale);
 
     // 0x00 = 0b00000000
     // MLP = 0 (low power mode off); MD = 00 (continuous-conversion mode)
-    lsm.writeReg(LSM303::CTRL7, 0x00);
+    lsm.writeReg(CTRL7, 0x00);
   }
   else // LSM303 DLHC (Breakout Space Kit variant)
   {
     // 0x0C = 0b00001100
     // DO = 011 (7.5 Hz ODR)
-    lsm.writeMagReg(LSM303::CRA_REG_M, 0x0C);
+    lsm.writeMagReg(CRA_REG_M, 0x0C);
 
     // Adjustable gauss scale:
     //   MFS = 0b00100000 (+/- 1.3 gauss full scale) = 0x20
@@ -318,17 +319,17 @@ void _lsm303_mag_config(lsm303_mag_scale_e gaussScale) {
       case LSM303_MAG_SCALE5_6GAUSS:
         scale = 0xC0;
         break;
-      case LSM303_MAG_SCALE12GAUSS:
-        _lsm303_d_mag_config.scale = LSM303_MAG_SCALE8GAUSS;
+      case LSM303_MAG_SCALE12GAUSS: // Rollthrough because DLHC doesn't have 12 Gauss
       case LSM303_MAG_SCALE8GAUSS:
+        _lsm303_d_mag_config.scale = LSM303_MAG_SCALE8GAUSS;
         scale = 0xE0;
         break;
     }
-    lsm.writeMagReg(LSM303::CRB_REG_M, scale);
+    lsm.writeMagReg(CRB_REG_M, scale);
 
     // 0x00 = 0b00000000
     // MD = 00 (continuous-conversion mode)
-    lsm.writeMagReg(LSM303::MR_REG_M, 0x00);
+    lsm.writeMagReg(MR_REG_M, 0x00);
   }
 }
 
@@ -424,12 +425,12 @@ void lsm303_getRawTemperature(int16_t *pRawTemperature)
 
   if(NULL != pRawTemperature) {
     if (lsm.getDeviceType() == LSM303::device_D) {
-      raw_temp[0] = lsm.readReg(LSM303::TEMP_OUT_L);
-      raw_temp[1] = lsm.readReg(LSM303::TEMP_OUT_H);
+      raw_temp[0] = lsm.readReg(TEMP_OUT_L);
+      raw_temp[1] = lsm.readReg(TEMP_OUT_H);
       *pRawTemperature = raw_temp[0] | (raw_temp[1] << 8);
     } else {
-      raw_temp[0] = lsm.readMagReg(LSM303::TEMP_OUT_L_M);
-      raw_temp[1] = lsm.readMagReg(LSM303::TEMP_OUT_H_M);
+      raw_temp[0] = lsm.readMagReg(TEMP_OUT_L_M);
+      raw_temp[1] = lsm.readMagReg(TEMP_OUT_H_M);
       *pRawTemperature = (raw_temp[0] | (raw_temp[1] << 8)) >> 4;
     }
   }
@@ -802,8 +803,10 @@ float ml8511_getUV(int pin)
 float _mlx90614_readTemp(uint8_t reg) {
   uint32_t data;
 
+  // Reads 3 bytes, but the third byte is a Packet Error Code (PEC)
+  // and is unused.
   readFromRegAddr(DRIVER_MLX90614_ADDR, reg, &data, 3, LITTLE_ENDIAN);
-  float temp = (data & 0xFFFF);
+  float temp = (data & 0xFFFF); // Get rid of PEC byte from read
 
   temp *= .02;
   temp -= 273.15;
@@ -908,8 +911,9 @@ SFE_ISL29125 isl29125 = SFE_ISL29125(DRIVER_SPACEBOARD_ISL29125_ADDR);
 //              CFG1_10KLUX if bright (default)
 boolean isl29125_init(uint8_t intensity) {
   boolean initialized = isl29125.init();
-  if (initialized && (intensity == CFG1_375LUX || intensity == CFG1_10KLUX))
+  if (initialized && (intensity == CFG1_375LUX || intensity == CFG1_10KLUX)) {
     initialized = isl29125.config(CFG1_MODE_RGB | intensity, CFG2_IR_ADJUST_HIGH, CFG_DEFAULT);
+  }
   return initialized;
 }
 

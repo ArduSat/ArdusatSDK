@@ -46,7 +46,6 @@ class ML8511_ADC
 {
   public:
     ML8511_ADC(uint8_t sensor_addr);
-    ~ML8511_ADC();
     bool init();
     float read_uv();
 

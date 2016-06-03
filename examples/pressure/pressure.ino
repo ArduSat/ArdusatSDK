@@ -38,8 +38,8 @@
 
 /*-----------------------------------------------------------------------------
  *  Setup Software Serial to allow for both RF communication and USB communication
- *    RX is digital pin 10 (connect to TX/DOUT of RF Device)
- *    TX is digital pin 11 (connect to RX/DIN of RF Device)
+ *    RX is digital pin 8 (connect to TX/DOUT of RF Device)
+ *    TX is digital pin 9 (connect to RX/DIN of RF Device)
  *-----------------------------------------------------------------------------*/
 ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 
@@ -104,7 +104,7 @@ void loop(void)
 
   serialConnection.println("");
 
-  serialConnection.println(pressure.toJSON());
+  serialConnection.println(pressure.toJSON("pressure"));
   delay(1000);
 }
 

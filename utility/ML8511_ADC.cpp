@@ -12,17 +12,12 @@
 #include <Arduino.h>
 #include "common_utils.h"
 
-#define read16(reg, val) readFromRegAddr(_addr, reg, val, 2, LITTLE_ENDIAN);
-#define write8(reg, val) writeToRegAddr(_addr, reg, val, 1, LITTLE_ENDIAN);
+#define read16(reg, val) readFromRegAddr(_addr, reg, val, 2, LITTLE_ENDIAN)
+#define write8(reg, val) writeToRegAddr(_addr, reg, val, 1, LITTLE_ENDIAN)
 
 // Constructor
-ML8511_ADC::ML8511_ADC(uint8_t sensor_addr)
-{
-  _addr = sensor_addr;
-}
-
-// Deconstructor
-ML8511_ADC::~ML8511_ADC()
+ML8511_ADC::ML8511_ADC(uint8_t sensor_addr) :
+  _addr(sensor_addr)
 {
 }
 

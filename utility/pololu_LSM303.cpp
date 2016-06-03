@@ -415,7 +415,7 @@ void LSM303::read(void)
 
 // Private Methods //////////////////////////////////////////////////////////////
 
-int LSM303::testReg(byte address, regAddr reg)
+int LSM303::testReg(byte address, uint8_t reg)
 {
   Wire.beginTransmission(address);
   Wire.write((byte)reg);

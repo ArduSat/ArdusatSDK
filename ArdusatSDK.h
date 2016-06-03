@@ -22,14 +22,14 @@
  * dynamically check if the SpaceBoard is being used or not.
  * Defaults to false
  */
-extern bool MANUAL_CONFIG;
+extern boolean MANUAL_CONFIG;
 
 /**
  * Used when dynamically checking if the SpaceBoard is being used or not. If
  * the SpaceBoard is being used, different addresses might be used for each
  * sensor.
  */
-extern bool ARDUSAT_SPACEBOARD;
+extern boolean ARDUSAT_SPACEBOARD;
 
 /**
  * Unique numeric id for each physical sensor
@@ -66,6 +66,14 @@ typedef enum {
 } data_unit_t;
 
 /**
+ * Where all of the sensor data is kept before being printed
+ */
+extern int OUTPUT_BUF_SIZE;
+extern char * _output_buffer;
+char * _getOutBuf();
+void _resetOutBuf();
+
+/**
  * The data header contains generic information about the data record.
  */
 struct _data_header_v1 {
@@ -78,10 +86,11 @@ typedef struct _data_header_v1 _data_header_t;
 /**
  * Get a string representation of a unit constant
  */
-const char * unit_to_str(unsigned char);
+const char * unit_to_str(unsigned char unit);
 
 /**
- * toCSV output functions create a string representation of the data in CSV format.
+ * creates a string representation of the data in a CSV format that can be used with
+ * http://experiments.ardusat.com to visualize and log data.
  */
 const char * valuesToCSV(const char *sensorName, unsigned long timestamp, int numValues, ...);
 const char * valueToCSV(const char *sensorName, float value, unsigned long timestamp=0);
@@ -93,11 +102,36 @@ const char * valueToCSV(const char *sensorName, float value, unsigned long times
  * Format is:
  * ~{"sensorName": "name", "unit": "C", "value": 35.3}|
  */
+const char * valuesToJSON(const char *sensorName, unsigned char unit, int numValues, ...);
 const char * valueToJSON(const char *sensorName, unsigned char unit, float value);
 
-/**
- * @defgroup sensors
- */
+
+/**************************************************************************//**
+ * @class Sensor
+ * @defgroup sensor
+ * @brief Base Sensor class that all Sensors inherit from
+ *****************************************************************************/
+class Sensor {
+  protected:
+    void initializeHeader(sensor_id_t sensor_id, data_unit_t unit, const char name[] PROGMEM);
+
+    virtual boolean initialize(void) = 0;
+    virtual boolean readSensor(void) = 0;
+
+  public:
+    const char * name;
+    _data_header_t header;
+    boolean initialized;
+
+    boolean begin(void);
+    boolean read(void);
+    const char * readToCSV(const char * sensorName);
+    const char * readToJSON(const char * sensorName);
+
+    virtual const char * toCSV(const char * sensorName) = 0;
+    virtual const char * toJSON(const char * sensorName) = 0;
+};
+
 
 /**************************************************************************//**
  * @class Acceleration
@@ -112,34 +146,27 @@ const char * valueToJSON(const char *sensorName, unsigned char unit, float value
  *
  * Example Usage:
  * @code
- *     Acceleration accel = Acceleration(); // Instantiate sensor object
- *     accel.begin();                       // Initialize sensor
- *     Serial.println(accel.readToJSON());  // Read and print values in JSON
+ *     Acceleration accel;                        // Instantiate sensor object
+ *     accel.begin();                             // Initialize sensor
+ *     Serial.println(accel.readToJSON("accel")); // Read and print values in JSON
  * @endcode
  *****************************************************************************/
-class Acceleration {
-  private:
-    sensor_id_t sensorId;
+class Acceleration: public Sensor {
+  protected:
     lsm303_accel_gain_e gGain;
 
+    boolean initialize(void);
+    boolean readSensor(void);
+
   public:
-    _data_header_t header;
-    boolean initialized;
     float x;
     float y;
     float z;
-
     Acceleration(void);
-    ~Acceleration(void);
+    Acceleration(lsm303_accel_gain_e gain);
 
-    boolean begin(void);
-    boolean begin(lsm303_accel_gain_e gGain);
-
-    void read(void);
-    const char * readToCSV(const char * sensorName = "Acceleration");
-    const char * readToJSON(const char * sensorName = "Acceleration");
-    const char * toCSV(const char * sensorName = "Acceleration");
-    const char * toJSON(const char * sensorName = "Acceleration");
+    const char * toCSV(const char * sensorName);
+    const char * toJSON(const char * sensorName);
 };
 
 
@@ -156,34 +183,27 @@ class Acceleration {
  *
  * Example Usage:
  * @code
- *     Gyro gyro = Gyro();                // Instantiate sensor object
- *     gyro.begin();                      // Initialize sensor
- *     Serial.println(gyro.readToJSON()); // Read and print values in JSON
+ *     Gyro gyro;                               // Instantiate sensor object
+ *     gyro.begin();                            // Initialize sensor
+ *     Serial.println(gyro.readToJSON("gyro")); // Read and print values in JSON
  * @endcode
  *****************************************************************************/
-class Gyro {
-  private:
-    sensor_id_t sensorId;
+class Gyro: public Sensor {
+  protected:
     uint8_t range;
 
+    boolean initialize(void);
+    boolean readSensor(void);
+
   public:
-    _data_header_t header;
-    boolean initialized;
     float x;
     float y;
     float z;
-
     Gyro(void);
-    ~Gyro(void);
+    Gyro(uint8_t range);
 
-    boolean begin(void);
-    boolean begin(uint8_t range);
-
-    void read(void);
-    const char * readToCSV(const char * sensorName = "Gyro");
-    const char * readToJSON(const char * sensorName = "Gyro");
-    const char * toCSV(const char * sensorName = "Gyro");
-    const char * toJSON(const char * sensorName = "Gyro");
+    const char * toCSV(const char * sensorName);
+    const char * toJSON(const char * sensorName);
 };
 
 
@@ -199,33 +219,29 @@ class Gyro {
  *
  * Example Usage:
  * @code
- *     Luminosity lum = Luminosity();    // Instantiate sensor object
- *     lum.begin();                      // Initialize sensor
- *     Serial.println(lum.readToJSON()); // Read and print values in JSON
+ *     Luminosity lum;                        // Instantiate sensor object
+ *     lum.begin();                           // Initialize sensor
+ *     Serial.println(lum.readToJSON("lum")); // Read and print values in JSON
  * @endcode
  *****************************************************************************/
-class Luminosity {
-  private:
-    sensor_id_t sensorId;
-    tsl2561IntegrationTime_t intTime;
+class Luminosity: public Sensor {
+  protected:
     tsl2561Gain_t gain;
+    tsl2561IntegrationTime_t intTime;
+
+    boolean initialize(void);
+    boolean readSensor(void);
 
   public:
-    _data_header_t header;
-    boolean initialized;
     float lux;
-
     Luminosity(void);
-    ~Luminosity(void);
+    Luminosity(tsl2561IntegrationTime_t intTime, tsl2561Gain_t gain);
+    Luminosity(tsl2561Gain_t gain, tsl2561IntegrationTime_t intTime);
+    Luminosity(tsl2561IntegrationTime_t intTime);
+    Luminosity(tsl2561Gain_t gain);
 
-    boolean begin(void);
-    boolean begin(tsl2561IntegrationTime_t intTime, tsl2561Gain_t gain);
-
-    void read(void);
-    const char * readToCSV(const char * sensorName = "Luminosity");
-    const char * readToJSON(const char * sensorName = "Luminosity");
-    const char * toCSV(const char * sensorName = "Luminosity");
-    const char * toJSON(const char * sensorName = "Luminosity");
+    const char * toCSV(const char * sensorName);
+    const char * toJSON(const char * sensorName);
 };
 
 
@@ -242,34 +258,27 @@ class Luminosity {
  *
  * Example Usage:
  * @code
- *     Magnetic mag = Magnetic();        // Instantiate sensor object
- *     mag.begin();                      // Initialize sensor
- *     Serial.println(mag.readToJSON()); // Read and print values in JSON
+ *     Magnetic mag;                          // Instantiate sensor object
+ *     mag.begin();                           // Initialize sensor
+ *     Serial.println(mag.readToJSON("mag")); // Read and print values in JSON
  * @endcode
  *****************************************************************************/
-class Magnetic {
-  private:
-    sensor_id_t sensorId;
+class Magnetic: public Sensor {
+  protected:
     lsm303_mag_scale_e gaussScale;
 
+    boolean initialize(void);
+    boolean readSensor(void);
+
   public:
-    _data_header_t header;
-    boolean initialized;
     float x;
     float y;
     float z;
-
     Magnetic(void);
-    ~Magnetic(void);
+    Magnetic(lsm303_mag_scale_e gaussScale);
 
-    boolean begin(void);
-    boolean begin(lsm303_mag_scale_e gaussScale);
-
-    void read(void);
-    const char * readToCSV(const char * sensorName = "Magnetic");
-    const char * readToJSON(const char * sensorName = "Magnetic");
-    const char * toCSV(const char * sensorName = "Magnetic");
-    const char * toJSON(const char * sensorName = "Magnetic");
+    const char * toCSV(const char * sensorName);
+    const char * toJSON(const char * sensorName);
 };
 
 
@@ -285,39 +294,27 @@ class Magnetic {
  *
  * Example Usage:
  * @code
- *     Orientation orient = Orientation();  // Instantiate sensor object
- *     orient.begin();                      // Initialize sensor
- *     Serial.println(orient.readToJSON()); // Read and print values in JSON
+ *     Orientation orient;                               // Instantiate sensor object
+ *     orient.begin();                                   // Initialize sensor
+ *     Serial.println(orient.readToJSON("orientation")); // Read and print values in JSON
  * @endcode
  *****************************************************************************/
-class Orientation {
-  private:
-    sensor_id_t sensorId;
+class Orientation: public Sensor {
+  protected:
     Acceleration * accel;
     Magnetic * mag;
 
+    boolean initialize(void);
+    boolean readSensor(void);
+
   public:
-    _data_header_t header;
-    boolean initialized;
     float roll;
     float pitch;
     float heading;
+    Orientation(Acceleration & accel, Magnetic & mag);
 
-    Orientation(void);
-    ~Orientation(void);
-
-    boolean begin(void);
-    boolean begin(Acceleration & accel, Magnetic & mag);
-
-    void read(void);
-    void read(Acceleration & accel, Magnetic & mag);
-
-    const char * readToCSV(const char * sensorName = "Orientation");
-    const char * readToJSON(const char * sensorName = "Orientation");
-    const char * readToCSV(Acceleration & accel, Magnetic & mag, const char * sensorName = "Orientation");
-    const char * readToJSON(Acceleration & accel, Magnetic & mag, const char * sensorName = "Orientation");
-    const char * toCSV(const char * sensorName = "Orientation");
-    const char * toJSON(const char * sensorName = "Orientation");
+    const char * toCSV(const char * sensorName);
+    const char * toJSON(const char * sensorName);
 };
 
 
@@ -336,35 +333,28 @@ class Orientation {
  *
  * Example Usage:
  * @code
- *     Pressure press = Pressure();        // Instantiate sensor object
- *     press.begin();                      // Initialize sensor
- *     Serial.println(press.readToJSON()); // Read and print values in JSON
+ *     Pressure press;                               // Instantiate sensor object
+ *     press.begin();                                // Initialize sensor
+ *     Serial.println(press.readToJSON("pressure")); // Read and print values in JSON
  * @endcode
  *****************************************************************************/
-class Pressure {
-  private:
-    sensor_id_t sensorId;
+class Pressure: public Sensor {
+  protected:
     bmp085_mode_t bmp085_mode;
 
+    boolean initialize(void);
+    boolean readSensor(void);
+
   public:
-    _data_header_t header;
-    boolean initialized;
     float pressure;
-
     Pressure(void);
-    ~Pressure(void);
+    Pressure(bmp085_mode_t mode);
 
-    boolean begin(void);
-    boolean begin(bmp085_mode_t mode);
-
-    void read(void);
     float altitudeFromSeaLevelPressure(float seaLevelPressure);
     float seaLevelPressureFromAltitude(float altitude);
 
-    const char * readToCSV(const char * sensorName = "Pressure");
-    const char * readToJSON(const char * sensorName = "Pressure");
-    const char * toCSV(const char * sensorName = "Pressure");
-    const char * toJSON(const char * sensorName = "Pressure");
+    const char * toCSV(const char * sensorName);
+    const char * toJSON(const char * sensorName);
 };
 
 
@@ -383,38 +373,72 @@ class Pressure {
  *
  * Example Usage:
  * @code
- *     RGBLight rgb = RGBLight();        // Instantiate sensor object
- *     rgb.begin();                      // Initialize sensor
- *     Serial.println(rgb.readToJSON()); // Read and print values in JSON
+ *     RGBLight rgb;                          // Instantiate sensor object
+ *     rgb.begin();                           // Initialize sensor
+ *     Serial.println(rgb.readToJSON("rgb")); // Read and print values in JSON
+ * @endcode
+ * Or
+ * @code
+ *     RGBLightTCS rgb;                       // Instantiate sensor object
+ *     rgb.begin();                           // Initialize sensor
+ *     Serial.println(rgb.readToJSON("rgb")); // Read and print values in JSON
+ * @endcode
+ * Or
+ * @code
+ *     RGBLightISL rgb;                       // Instantiate sensor object
+ *     rgb.begin();                           // Initialize sensor
+ *     Serial.println(rgb.readToJSON("rgb")); // Read and print values in JSON
  * @endcode
  *****************************************************************************/
-class RGBLight {
-  private:
-    sensor_id_t sensorId;
-    uint8_t islIntensity;
+class RGBLight: public Sensor {
+  protected:
     tcs34725IntegrationTime_t tcsIt;
     tcs34725Gain_t tcsGain;
-    boolean begin(uint8_t islIntensity, tcs34725IntegrationTime_t tcsIt, tcs34725Gain_t tcsGain);
+
+    boolean initialize(void);
+    boolean readSensor(void);
+    RGBLight(tcs34725IntegrationTime_t tcsIt, tcs34725Gain_t tcsGain);
 
   public:
-    _data_header_t header;
-    boolean initialized;
     float red;
     float green;
     float blue;
+    RGBLight(void);
 
-    RGBLight(sensor_id_t sensor_id=SENSORID_TCS34725);
-    ~RGBLight(void);
+    const char * toCSV(const char * sensorName);
+    const char * toJSON(const char * sensorName);
+};
 
-    boolean begin(void);
-    boolean begin(uint8_t islIntensity);
-    boolean begin(tcs34725IntegrationTime_t it, tcs34725Gain_t gain);
+/**
+ * @class RGBLightTCS
+ * @ingroup rgblight
+ *
+ * @brief Encapsulates all functionality related to the TCS34725 RGBLight Sensor
+ */
+class RGBLightTCS: public RGBLight {
+  public:
+    RGBLightTCS(void);
+    RGBLightTCS(tcs34725IntegrationTime_t tcsIt, tcs34725Gain_t tcsGain);
+    RGBLightTCS(tcs34725Gain_t tcsGain, tcs34725IntegrationTime_t tcsIt);
+    RGBLightTCS(tcs34725IntegrationTime_t tcsIt);
+    RGBLightTCS(tcs34725Gain_t tcsGain);
+};
 
-    void read(void);
-    const char * readToCSV(const char * sensorName = "RGBLight");
-    const char * readToJSON(const char * sensorName = "RGBLight");
-    const char * toCSV(const char * sensorName = "RGBLight");
-    const char * toJSON(const char * sensorName = "RGBLight");
+/**
+ * @class RGBLightISL
+ * @ingroup rgblight
+ *
+ * @brief Encapsulates all functionality related to the ISL29125 RGBLight Sensor
+ */
+class RGBLightISL: public RGBLight {
+  protected:
+    uint8_t islIntensity;
+    boolean initialize(void);
+    boolean readSensor(void);
+
+  public:
+    RGBLightISL(void);
+    RGBLightISL(uint8_t islIntensity);
 };
 
 
@@ -433,30 +457,58 @@ class RGBLight {
  *
  * Example Usage:
  * @code
- *     Temperature temp = Temperature();  // Instantiate sensor object
- *     temp.begin();                      // Initialize sensor
- *     Serial.println(temp.readToJSON()); // Read and print values in JSON
+ *     Temperature temp;                                // Instantiate sensor object
+ *     temp.begin();                                    // Initialize sensor
+ *     Serial.println(temp.readToJSON("ambient_temp")); // Read and print values in JSON
+ * @endcode
+ * Or
+ * @code
+ *     TemperatureTMP temp;                             // Instantiate sensor object
+ *     temp.begin();                                    // Initialize sensor
+ *     Serial.println(temp.readToJSON("ambient_temp")); // Read and print values in JSON
+ * @endcode
+ * Or
+ * @code
+ *     TemperatureMLX temp;                              // Instantiate sensor object
+ *     temp.begin();                                     // Initialize sensor
+ *     Serial.println(temp.readToJSON("infrared_temp")); // Read and print values in JSON
  * @endcode
  *****************************************************************************/
-class Temperature {
-  private:
-    sensor_id_t sensorId;
+class Temperature: public Sensor {
+  protected:
+    boolean initialize(void);
+    boolean readSensor(void);
 
   public:
-    _data_header_t header;
-    boolean initialized;
     float t;
+    Temperature(void);
 
-    Temperature(sensor_id_t sensor_id=SENSORID_TMP102);
-    ~Temperature(void);
+    const char * toCSV(const char * sensorName);
+    const char * toJSON(const char * sensorName);
+};
 
-    boolean begin(void);
+/**
+ * @class TemperatureTMP
+ * @ingroup temperature
+ *
+ * @brief Encapsulates all functionality related to the TMP102 Ambient Temperature Sensor
+ */
+class TemperatureTMP: public Temperature {
+};
 
-    void read(void);
-    const char * readToCSV(const char * sensorName = "Temperature");
-    const char * readToJSON(const char * sensorName = "Temperature");
-    const char * toCSV(const char * sensorName = "Temperature");
-    const char * toJSON(const char * sensorName = "Temperature");
+/**
+ * @class TemperatureMLX
+ * @ingroup temperature
+ *
+ * @brief Encapsulates all functionality related to the MLX90614 Infrared Temperature Sensor
+ */
+class TemperatureMLX: public Temperature {
+  protected:
+    boolean initialize(void);
+    boolean readSensor(void);
+
+  public:
+    TemperatureMLX(void);
 };
 
 
@@ -472,32 +524,64 @@ class Temperature {
  *
  * Example Usage:
  * @code
- *     UVLight uv = UVLight();          // Instantiate sensor object
- *     uv.begin();                      // Initialize sensor
- *     Serial.println(uv.readToJSON()); // Read and print values in JSON
+ *     UVLight uv;                          // Instantiate sensor object
+ *     uv.begin();                          // Initialize sensor
+ *     Serial.println(uv.readToJSON("uv")); // Read and print values in JSON
+ * @endcode
+ * Or
+ * @code
+ *     UVLightML uv;                        // Instantiate sensor object
+ *     uv.begin();                          // Initialize sensor
+ *     Serial.println(uv.readToJSON("uv")); // Read and print values in JSON
+ * @endcode
+ * Or
+ * @code
+ *     UVLightSI uv;                        // Instantiate sensor object
+ *     uv.begin();                          // Initialize senor
+ *     Serial.println(uv.readToJSON("uv")); // Read and print values in JSON
  * @endcode
  *****************************************************************************/
-class UVLight {
-  private:
-    sensor_id_t sensorId;
+class UVLight: public Sensor {
+  protected:
     int ML8511_pin;
 
+    boolean initialize(void);
+    boolean readSensor(void);
+    UVLight(int pin);
+
   public:
-    _data_header_t header;
-    boolean initialized;
     float uvindex;
+    UVLight(void);
 
-    UVLight(sensor_id_t sensor_id=SENSORID_ML8511);
-    ~UVLight(void);
+    const char * toCSV(const char * sensorName);
+    const char * toJSON(const char * sensorName);
+};
 
-    boolean begin(void);
-    boolean begin(int pin);
+/**
+ * @class UVLightML
+ * @ingroup uvlight
+ *
+ * @brief Encapsulates all functionality related to the ML8511 UVLight Sensor
+ */
+class UVLightML: public UVLight {
+  public:
+    UVLightML(void);
+    UVLightML(int pin);
+};
 
-    void read(void);
-    const char * readToCSV(const char * sensorName = "UVLight");
-    const char * readToJSON(const char * sensorName = "UVLight");
-    const char * toCSV(const char * sensorName = "UVLight");
-    const char * toJSON(const char * sensorName = "UVLight");
+/**
+ * @class UVLightSI
+ * @ingroup uvlight
+ *
+ * @brief Encapsulates all functionality related to the SI1132 UVLight Sensor
+ */
+class UVLightSI: public UVLight {
+  protected:
+    boolean initialize(void);
+    boolean readSensor(void);
+
+  public:
+    UVLightSI(void);
 };
 
 #endif /* ARDUSATSDK_H_ */

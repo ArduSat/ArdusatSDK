@@ -1,7 +1,7 @@
 /**
  * @file   drivers.h
- * @Author Ben Peters (ben@ardusat.com)
- * @Author Sam Olds (sam@ardusat.com)
+ * @author Ben Peters (ben@ardusat.com)
+ * @author Sam Olds (sam@ardusat.com)
  * @date   December 3, 2014
  * @brief  Implements sensor-specific driver read/initialization functions
  *

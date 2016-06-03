@@ -36,8 +36,8 @@
 
 /*-----------------------------------------------------------------------------
  *  Setup Software Serial to allow for both RF communication and USB communication
- *    RX is digital pin 10 (connect to TX/DOUT of RF Device)
- *    TX is digital pin 11 (connect to RX/DIN of RF Device)
+ *    RX is digital pin 8 (connect to TX/DOUT of RF Device)
+ *    TX is digital pin 9 (connect to RX/DIN of RF Device)
  *-----------------------------------------------------------------------------*/
 ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 
@@ -47,17 +47,16 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 const int READ_INTERVAL = 0; // interval, in ms, to wait between readings
 
 Acceleration accel;
-Temperature ambient;
+TemperatureTMP ambient;
 Gyro gyro;
-Temperature infrared = Temperature(SENSORID_MLX90614); // Infrared Temperature Sensor
+TemperatureMLX infrared;
 Luminosity lum;
 Magnetic mag;
-Orientation orient;
 Pressure pressure;
-RGBLight rgb;
-RGBLight rgb_ISL29125 = RGBLight(SENSORID_ISL29125);
-UVLight uv;
-UVLight uv_SI1132 = UVLight(SENSORID_SI1132);
+RGBLightTCS rgb;
+RGBLightISL rgb_ISL29125;
+UVLightML uv;
+UVLightSI uv_SI1132;
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -71,13 +70,15 @@ void setup(void)
 {
   serialConnection.begin(9600);
 
+  /* We're ready to go! */
+  serialConnection.println("");
+
   accel.begin();
   ambient.begin();
   gyro.begin();
   infrared.begin();
   lum.begin();
   mag.begin();
-  orient.begin(accel, mag);
   pressure.begin();
   rgb.begin();
   rgb_ISL29125.begin();
@@ -113,9 +114,6 @@ void loop(void)
 
   // Read Magnetometer
   serialConnection.println(mag.readToJSON("magnetic"));
-
-  // Calculate Orientation from Accel + Magnet data
-  serialConnection.println(orient.readToJSON(accel, mag, "orientation"));
 
   // Read Barometric Pressure
   serialConnection.println(pressure.readToJSON("pressure"));

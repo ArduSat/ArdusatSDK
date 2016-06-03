@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  luminosity.ino
+ *       Filename:  indoor_luminosity.ino
  *
  *    Description:  Outputs the luminosity sensor readings in a JSON format that
  *                  can be read by the Ardusat Experiment Platform
@@ -35,15 +35,26 @@
 
 /*-----------------------------------------------------------------------------
  *  Setup Software Serial to allow for both RF communication and USB communication
- *    RX is digital pin 10 (connect to TX/DOUT of RF Device)
- *    TX is digital pin 11 (connect to RX/DIN of RF Device)
+ *    RX is digital pin 8 (connect to TX/DOUT of RF Device)
+ *    TX is digital pin 9 (connect to RX/DIN of RF Device)
  *-----------------------------------------------------------------------------*/
 ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
-Luminosity lum;
+/* Default Sensor Configurations - To use different configuration, place a
+                                   "//" at the beginning of the next line and
+                                   remove the "//" at the beginning of the
+                                   configuration you want to use */
+Luminosity lum; // => TSL2561_INTEGRATIONTIME_13MS, TSL2561_GAIN_1X
+
+/* Useful outside or in very bright room */
+//Luminosity lum(TSL2561_INTEGRATIONTIME_13MS, TSL2561_GAIN_1X);
+
+/* Useful at night or in dark room */
+//Luminosity lum(TSL2561_INTEGRATIONTIME_402MS, TSL2561_GAIN_16X);
+
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -74,7 +85,7 @@ void setup(void)
  */
 void loop(void)
 {
-  serialConnection.println(lum.readToJSON());
+  serialConnection.println(lum.readToJSON("lum"));
 
   delay(1000);
 }

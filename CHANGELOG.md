@@ -1,6 +1,14 @@
 # Ardusat SDK Changelog
 This logs all changes to released SDK versions
 
+## [0.1.0] - 2016-06-24
+### Rewrote interface to be object oriented
+- Created sensor classes for each type of sensor
+- Added support for ISL29125, TCS34725, and the ML8511 on the spaceboard
+- Exposed reasonable advanced configuration parameters for all sensors
+- Added autodetection logic to check if SpaceBoard or Space Kit is being used
+- Added doxygen comments
+
 ## [0.0.6] - 2016-03-14
 ### Fixed compatibility with newer (e.g. 1.6.8) versions of the Arduino IDE
 - `SoftwareSerial` library shipped with newer IDE has changed, so fixed our local reference copy of

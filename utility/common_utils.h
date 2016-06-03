@@ -15,6 +15,6 @@ typedef enum {
   LITTLE_ENDIAN,
 } endian_e;
 
-int readFromRegAddr(uint8_t devAddr, uint8_t reg, void *val, int length, endian_e endianness=BIG_ENDIAN);
-int writeToRegAddr(uint8_t devAddr, uint8_t reg, void *val, int length, endian_e endianness=BIG_ENDIAN);
+int readFromRegAddr(uint8_t devAddr, uint8_t reg, void *val, size_t length, endian_e endianness=BIG_ENDIAN);
+int writeToRegAddr(uint8_t devAddr, uint8_t reg, void *val, size_t length, endian_e endianness=BIG_ENDIAN);
 #endif

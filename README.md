@@ -22,12 +22,18 @@ If you're interested in using the SDK for logging data to an SD card, you'll nee
 thing with our other [Ardusat Logging SDK Library](http://github.com/ardusat/ardusatsdk-logging)
 
 
+## Downloaded and Used the SDK before June 20, 2016?
+If you want to use the latest SDK and you have existing Arduino sketches (from *before June 20,
+2016*) that you would like to keep using, take a look at the
+[Transition Documentation](https://github.com/ArduSat/ArdusatSDK/wiki/SDK-Transition-Information)
+for how to update your sketches to work with the latest SDK.
+
 
 ## Using the SDK
 The first step to using the SDK is to include it into your sketch. This can be done with a simple
 include statement:
 
-```
+```cpp
 #include <ArdusatSDK.h>
 ```
 
@@ -40,80 +46,105 @@ Every Sensor in the SDK is accessible with a Sensor class that helps wrap up int
 Each Sensor Class supports reading data from one or more physical sensors.
 
 #### Overview
-Sensor Class | Sensors | `SENSORIDS`
+Sensor Class | Sensors | Required Constructor Arguments
 --- | --- | ---
-Acceleration | LSM303 (9DOF breakout)             | `SENSORID_ADAFRUIT9DOFIMU`
-Gyro         | L3GD20 (9DOF breakout)             | `SENSORID_ADAFRUIT9DOFIMU`
-Luminosity   | TSL2561                            | `SENSORID_TSL2561`
-Magnetic     | LSM303 (9DOF breakout)             | `SENSORID_ADAFRUIT9DOFIMU`
-Orientation  | Derived from Acc and Mag           | `SENSORID_ADAFRUIT9DOFIMU`
-Pressure     | BMP180                             | `SENSORID_BMP180`
-RGBLight     | TCS34725 (Default) and ISL29125    | `SENSORID_TCS34725` or `SENSORID_ISL29125`
-Temperature  | TMP102 (Default) and MLX90614 (IR) | `SENSORID_TMP102` or `SENSORID_MLX90614`
-UVLight      | ML8511 (Default) and SI1132        | `SENSORID_ML8511` or `SENSORID_SI1132`
+Acceleration   | LSM303 (9DOF breakout)   | `None`
+Gyro           | L3GD20 (9DOF breakout)   | `None`
+Luminosity     | TSL2561                  | `None`
+Magnetic       | LSM303 (9DOF breakout)   | `None`
+Orientation    | Derived from Acceleration and Magnetic | `Acceleration & accel, Magnetic & mag` (Existing Accel and Mag objects)
+Pressure       | BMP180                   | `None`
+RGBLight       | TCS34725 (Default)       | `None`
+RGBLightTCS    | TCS34725                 | `None`
+RGBLightISL    | ISL29125                 | `None`
+Temperature    | TMP102 (Default)         | `None`
+TemperatureTMP | TMP102                   | `None`
+TemperatureMLX | MLX90614 (IR)            | `None`
+UVLight        | ML8511 (Default)         | `None`
+UVLightML      | ML8511                   | `None`
+UVLightSI      | SI1132                   | `None`
 
-To use a non-default sensor, simply provide the `SENSORID_` of the desired sensor to the
-corresponding class when instantiating a sensor object. For example:
-
+```cpp
+UVLight uv;   // --> uv is now a sensor object that reads from the ML8511 Sensor
+UVLightML uv; // --> uv is now a sensor object that reads from the ML8511 Sensor
+UVLightSI uv; // --> uv is now a sensor object that reads from the SI1132 Sensor
 ```
-UVLight uv;                            // --> uv is now a sensor object that reads from the ML8511 Sensor
-UVLight uv = UVLight(SENSORID_ML8511); // --> uv is now a sensor object that reads from the ML8511 Sensor
-UVLight uv = UVLight(SENSORID_SI1132); // --> uv is now a sensor object that reads from the SI1132 Sensor
+
+Note that the Orientation object is not technically a sensor, but rather a value
+derived from readings from the Acceleration and Magnetic Sensors. Therefore, you must
+provide existing Acceleration and Magnetic objects when constructing the Orientation
+object. It is used in the following way:
+
+```cpp
+Acceleration accel;
+Magnetic mag;
+Orientation orient(accel, mag); // --> orient uses existing Acceleration and Magnetic objects
+orient.read();                  // --> orient calls accel's and mag's read and then derives a value
 ```
 
 #### Common Functions
-Every Sensor in the SDK has the following functions that can be used to initialize, configure, read,
+Every Sensor in the SDK has the following functions that can be used to initialize, read,
 and print data:
 
-Available Functions | Required Parameters | Optional Parameters | Description
+Available Functions | Required Parameters | Description
 --- | --- | --- | ---
-`begin()`      | None | (Sensor Class Dependent)  | Initializes sensors with any optional advanced configurations
-`read()`       | None | None                      | Takes a reading from the sensor
-`readToCSV()`  | None | `const char * sensorName` | Takes a reading and prints it in a CSV format
-`readToJSON()` | None | `const char * sensorName` | Takes a reading and prints it in a JSON format
-`toCSV()`      | None | `const char * sensorName` | Prints the last reading taken in a CSV format
-`toJSON()`     | None | `const char * sensorName` | Prints the last reading taken in a JSON format
+`begin()`      | None                      | Initializes sensors with any optional advanced configurations
+`read()`       | None                      | Takes a reading from the sensor
+`readToCSV()`  | `const char * sensorName` | Takes a reading and prints it in a CSV format
+`readToJSON()` | `const char * sensorName` | Takes a reading and prints it in a JSON format
+`toCSV()`      | `const char * sensorName` | Prints the last reading taken in a CSV format
+`toJSON()`     | `const char * sensorName` | Prints the last reading taken in a JSON format
 
-* CSV  format: `timestamp,sensorName,values...,checksum`
+* CSV  format: `timestamp,sensorName,values,...,checksum`
 * JSON format: `~{"sensorName": "NAME", "unit": "UNIT", "value": 123.4, "cs": 123}|`
 
 NOTE: The `toCSV` functions will not guarantee that you are outputting data in a format that is acceptable for
-      importing CSV logs into the [Ardusat Experiment Platform](http://experiments.ardusat.com). These functions
-      are for live STREAMING data into the Experiment Platform.
-
-      If you are calling the `toCSV` functions on exactly one type of Sensor Class per sketch, this is fine for
-      STREAMING data and LOGGING data to be imported.
-
-      If you are calling the `toCSV` functions on more than one type of Sensor Class per sketch, this is fine for
-      only STREAMING data, LOGGING data to be important will not be formatted correctly. If you want to LOG more
-      than one type of Sensor Class, see the CSV Logging Example with `valuesToCSV`.
+importing CSV logs into the [Ardusat Experiment Platform](http://experiments.ardusat.com). These functions
+are for live STREAMING data into the Experiment Platform.  
+If you are calling the `toCSV` functions on exactly one type of Sensor Class per sketch, this is fine for
+STREAMING data and LOGGING data to be imported.  
+If you are calling the `toCSV` functions on more than one type of Sensor Class per sketch, this is fine for
+only STREAMING data, LOGGING data to be important will not be formatted correctly. If you want to LOG more
+than one type of Sensor Class, see the CSV Logging Example with `valuesToCSV`.
 
 There is a full example in the CSV Examples of how to use `valuesToCSV`, but this function is available to make
 it easier to format data properly:
-```
+```cpp
 const char * valuesToCSV(const char *sensorName, unsigned long timestamp, int numValues, float values...);
 const char * valueToCSV(const char *sensorName, float value, unsigned long timestamp); // if timestamp == 0, it will just calculate a timestamp using millis()
+```
+
+There is a similar function for formatting arbitrary values in the JSON format called `valuesToJSON`:
+```cpp
+const char * valuesToJSON(const char *sensorName, unsigned char unit, int numValues, float values...);
+const char * valueToJSON(const char *sensorName, unsigned char unit, float value);
 ```
 
 #### Sensor Specifics
 This is an overview of the sensor specific fields and advanced configuration parameters
 
-Sensor Class | Data Fields | Optional `begin` Parameters (for advanced configuration)
+Sensor Class | Data Fields | Optional Constructor Parameters (for advanced configuration)
 --- | --- | ---
-Acceleration | `float x`, `float y`, `float z`              | `lsm303_accel_gain_e gGain`
-Gyro         | `float x`, `float y`, `float z`              | `uint8_t range`
-Luminosity   | `float lux`                                  | `tsl2561IntegrationTime_t intTime, tsl2561Gain_t gain`
-Magnetic     | `float x`, `float y`, `float z`              | `lsm303_mag_scale_e gaussScale`
-Orientation  | `float roll`, `float pitch`, `float heading` | `Acceleration & accel, Magnetic & mag` (Existing Accel and Mag objects)
-Pressure     | `float pressure`                             | `bmp085_mode_t mode`
-RGBLight     | `float red`, `float green`, `float blue`     | TCS34725: `tcs34725IntegrationTime_t it, tcs34725Gain_t gain` ISL29125: `uint8_t islIntensity`
-Temperature  | `float t`                                    | TMP102: `None` MLX90614: `None`
-UVLight      | `float uvindex`                              | ML8511: `int pin` SI1132: `None`
+Acceleration   | `float x`, `float y`, `float z`              | `lsm303_accel_gain_e gGain`
+Gyro           | `float x`, `float y`, `float z`              | `uint8_t range`
+Luminosity     | `float lux`                                  | `tsl2561IntegrationTime_t intTime`, `tsl2561Gain_t gain`
+Magnetic       | `float x`, `float y`, `float z`              | `lsm303_mag_scale_e gaussScale`
+Orientation    | `float roll`, `float pitch`, `float heading` | `None`
+Pressure       | `float pressure`                             | `bmp085_mode_t mode`
+RGBLight       | `float red`, `float green`, `float blue`     | `None`
+RGBLightTCS    | `float red`, `float green`, `float blue`     | `tcs34725IntegrationTime_t it`, `tcs34725Gain_t gain`
+RGBLightISL    | `float red`, `float green`, `float blue`     | `uint8_t islIntensity`
+Temperature    | `float t`                                    | `None`
+TemperatureTMP | `float t`                                    | `None`
+TemperatureMLX | `float t`                                    | `None`
+UVLight        | `float uvindex`                              | `None`
+UVLightML      | `float uvindex`                              | `int pin`
+UVLightSI      | `float uvindex`                              | `None`
 
 
 These are the specific values avaliable for each of the advanced configurations
 
-`begin` Parameter Type | Acceptable Values | Sensor Class
+Constructor Configuration Parameter Type | Acceptable Values | Sensor Class
 --- | --- | ---
 `lsm303_accel_gain_e gGain` | `LSM303_ACCEL_GAIN2G`, `LSM303_ACCEL_GAIN4G`, `LSM303_ACCEL_GAIN6G`, `LSM303_ACCEL_GAIN8G` (Default), `LSM303_ACCEL_GAIN16G` | Acceleration
 `uint8_t range` | `0x00` (SENSITIVITY_250DPS), `0x10` (SENSITIVITY_500DPS), `0x20` (SENSITIVITY_2000DPS) (Default) | Gyro
@@ -121,34 +152,34 @@ These are the specific values avaliable for each of the advanced configurations
 `tsl2561Gain_t gain` | `TSL2561_GAIN_1X` (Default), `TSL2561_GAIN_16X` | Luminosity
 `lsm303_mag_scale_e gaussScale` | `LSM303_MAG_SCALE1_3GAUSS`, `LSM303_MAG_SCALE2GAUSS`, `LSM303_MAG_SCALE2_5GAUSS`, `LSM303_MAG_SCALE4GAUSS` (Default), `LSM303_MAG_SCALE4_7GAUSS`, `LSM303_MAG_SCALE5_6GAUSS`, `LSM303_MAG_SCALE8GAUSS`, `LSM303_MAG_SCALE12GAUSS` | Magnetic
 `bmp085_mode_t mode` | `BMP085_MODE_ULTRALOWPOWER`, `BMP085_MODE_STANDARD`, `BMP085_MODE_HIGHRES`, `BMP085_MODE_ULTRAHIGHRES` (Default) | Pressure
-`tcs34725IntegrationTime_t it` | `TCS34725_INTEGRATIONTIME_2_4MS`, `TCS34725_INTEGRATIONTIME_24MS`, `TCS34725_INTEGRATIONTIME_50MS`, `TCS34725_INTEGRATIONTIME_101MS`, `TCS34725_INTEGRATIONTIME_154MS` (Default), `TCS34725_INTEGRATIONTIME_700MS` | RGBLight - TCS34725
-`tcs34725Gain_t gain` | `TCS34725_GAIN_1X` (Default), `TCS34725_GAIN_4X`, `TCS34725_GAIN_16X`, `TCS34725_GAIN_60X` | RGBLight - TCS34725
-`uint8_t islIntensity` | `CFG1_375LUX`, `CFG1_10KLUX` (Default) | RGBLight - ISL29125
-`int pin` | `DRIVER_ML8511_UV_PIN` (A0) (Default), or any other Arduino Pin | UVLight - ML8511
+`tcs34725IntegrationTime_t it` | `TCS34725_INTEGRATIONTIME_2_4MS`, `TCS34725_INTEGRATIONTIME_24MS`, `TCS34725_INTEGRATIONTIME_50MS`, `TCS34725_INTEGRATIONTIME_101MS`, `TCS34725_INTEGRATIONTIME_154MS` (Default), `TCS34725_INTEGRATIONTIME_700MS` | RGBLightTCS
+`tcs34725Gain_t gain` | `TCS34725_GAIN_1X` (Default), `TCS34725_GAIN_4X`, `TCS34725_GAIN_16X`, `TCS34725_GAIN_60X` | RGBLightTCS
+`uint8_t islIntensity` | `CFG1_375LUX`, `CFG1_10KLUX` (Default) | RGBLightISL
+`int pin` | `DRIVER_ML8511_UV_PIN` (A0) (Default), or any other Arduino Pin | UVLightML
+
+
+#### Units
+Sensor Class | Unit Type | Unit String
+--- | --- | ---
+Acceleration | DATA_UNIT_METER_PER_SECONDSQUARED | "m/s^2"
+Gyro         | DATA_UNIT_RADIAN_PER_SECOND       | "rad/s"
+Luminosity   | DATA_UNIT_LUX                     | "lux"
+Magnetic     | DATA_UNIT_MICROTESLA              | "uT"
+Orientation  | DATA_UNIT_DEGREES                 | "deg"
+Pressure     | DATA_UNIT_HECTOPASCAL             | "hPa"
+RGBLight     | DATA_UNIT_LUX                     | "lux"
+Temperature  | DATA_UNIT_DEGREES_CELSIUS         | "C"
+UVLight      | DATA_UNIT_MILLIWATT_PER_CMSQUARED | "mW/cm^2"
 
 
 #### Sensor Notes
-Because the Orientation "Sensor" is really just a derived value from the sensor readings from the
-Accelerometer and Magnetometer, the Orientation sensor can use existing Accelerometer and Magnetic
-sensor objects. Accelerometer and Magnetic Sensor objects can be provided to the Orientations `begin`
-function so that it just uses those sensors, otherwise it will create its own. There are also extra
-read and print functions so that the Orientation will be calculated without necessarily calling read
-on the Accelerometer or Magnetic Sensors:
-
-```
-void Orientation::read(Acceleration & accel, Magnetic & mag);
-const char * Orientation::readToCSV(Acceleration & accel, Magnetic & mag, const char * sensorName);
-const char * Orientation::readToJSON(Acceleration & accel, Magnetic & mag, const char * sensorName);
-```
-
-
 The Barometric Pressure sensor has two additional convenience functions to calculate altitude (which
 requires knowing the current sea level barometric pressure, a value that's easily available from
 weather observation data), or current sea level barometric pressure (which requires knowing the
 current altitude). For these convenience functions, altitude should be provided in meters, and
 pressure values should be provided in hPa.
 
-```
+```cpp
 float Pressure::altitudeFromSeaLevelPressure(float seaLevelPressure);
 float Pressure::seaLevelPressureFromAltitude(float altitude);
 ```
@@ -157,9 +188,39 @@ To translate meters to feet, multiply the meter value by `3.28084`. To translate
 multiply the feet value by `0.3084`.
 
 
+#### Global Variables
+Allows the user to manually decide in an Arduino sketch if the SDK should
+dynamically check if the SpaceBoard is being used or not.
+Defaults to false
+```cpp
+boolean MANUAL_CONFIG;
+```
+
+Used when dynamically checking if the SpaceBoard is being used or not. If
+the SpaceBoard is being used, different addresses might be used for each
+sensor.
+```cpp
+boolean ARDUSAT_SPACEBOARD;
+```
+
+Example Usage
+```cpp
+...
+
+void setup(void) {
+  MANUAL_CONFIG = true;
+  ARDUSAT_SPACEBOARD = false;
+  ...
+}
+
+...
+```
+
+You will likely never need to use these, unless you are interested in building
+your own hardware setup with new sensors, or are curious to see what will happen.
 
 ## Sensor Usage Examples
-```
+```cpp
 #include <ArdusatSDK.h>
 
 Luminosity lum;
@@ -170,29 +231,29 @@ void setup(void) {
 }
 
 void loop(void) {
-  Serial.println(lum.readToJSON());       // >> ~{"sensorName": "Luminosity", "unit": "lux", "value": 123.5, "cs": 43}|
-  Serial.println(lum.readToJSON("lum2")); // >> ~{"sensorName": "lum2", "unit": "lux", "value": 121.9, "cs": 30}|
-  Serial.println(lum.readToCSV());        // >> 243,Luminosity,128.2,49
-  Serial.println(lum.readToCSV("lum4"));  // >> 311,lum4,124.6,29
-  Serial.println(lum.lux);                // >> 124.6
-  Serial.println(lum.lux);                // >> 124.6
+  Serial.println(lum.readToJSON("Luminosity")); // >> ~{"sensorName": "Luminosity", "unit": "lux", "value": 123.5, "cs": 43}|
+  Serial.println(lum.readToJSON("lum2"));       // >> ~{"sensorName": "lum2", "unit": "lux", "value": 121.9, "cs": 30}|
+  Serial.println(lum.readToCSV("Luminosity"));  // >> 243,Luminosity,128.2,49
+  Serial.println(lum.readToCSV("lum4"));        // >> 311,lum4,124.6,29
+  Serial.println(lum.lux);                      // >> 124.6
+  Serial.println(lum.lux);                      // >> 124.6
   lum.read();
-  Serial.println(lum.lux);                // >> 127.5
+  Serial.println(lum.lux);                      // >> 127.5
 }
 ```
 
-```
+```cpp
 #include <ArdusatSDK.h>
 
-RGBLight rgb = RGBLight(SENSORID_TSL2561);
+RGBLightISL rgb(CFG1_375LUX);
 
 void setup(void) {
   Serial.begin(9600);
-  rgb.begin(CFG1_375LUX);
+  rgb.begin();
 }
 
 void loop(void) {
-  Serial.println(rgb.readToJSON()); // >> ~{"sensorName": "RGBLight", "unit": "lux", "red": 89.2, "green": 177.9, "blue": 183.2, "cs": 83}|
+  Serial.println(rgb.readToJSON("RGBLight")); // >> ~{"sensorName": "RGBLight", "unit": "lux", "red": 89.2, "green": 177.9, "blue": 183.2, "cs": 83}|
 }
 ```
 
@@ -203,7 +264,7 @@ formats. The `toCSV` family of functions work fine on multiple types of Sensor C
 but if you want to LOG data to be imported, you need to have properly formatted data.
 
 ####CSV STREAMING example:
-```
+```cpp
 #include <ArdusatSDK.h>
 
 Magnetic mag;
@@ -216,13 +277,13 @@ void setup(void) {
 }
 
 void loop(void) {
-  Serial.println(mag.readToCSV());
-  Serial.println(lum.readToCSV());
+  Serial.println(mag.readToCSV("Magnetic"));
+  Serial.println(lum.readToCSV("Luminosity"));
 }
 ```
 Output: (not proper CSV format) Will fail to be imported to Experiment Platform
         However, this is fine if you're streaming CSV data to the Experiment PLatform.
-```
+```cpp
 89,Magnetic,0.78,9.11,0.02,123
 123,Luminosity,128.2,234
 145,Magnetic,0.74,9.01,0.03,234
@@ -232,7 +293,7 @@ Output: (not proper CSV format) Will fail to be imported to Experiment Platform
 
 
 ####CSV LOGGING example:
-```
+```cpp
 #include <ArdusatSDK.h>
 
 Acceleration accel;
@@ -259,7 +320,7 @@ void loop(void) {
 ```
 Output: Proper CSV format. This will be successfully imported into the Experiment Platform
         However, this will not work if you're streaming CSV data to the Experiment PLatform.
-```
+```cpp
 timestamp (millis), name, temperature (C), x acceleration (m/s^2), y acceleration (m/s^2), z acceleration (m/s^2), checksum
 89,reading,27.3,9.11,0.02,0.78,123
 123,reading,27.2,9.10,0.08,0.73,120
@@ -288,7 +349,7 @@ as integers, then rounds the value (s) and adds this to the sum of the name char
 
 Example checksum calculation:
 
-```
+```cpp
 int calculate_checksum(const char *sensorName, float value) {
   int checksum = 0;
   int i, len;
@@ -314,12 +375,12 @@ serial, or both.
 If a software serial mode is selected, the `ArdusatSerial` constructor must be supplied with
 arguments for `softwareReceivePin` and `softwareTransmitPin`:
 
-```
+```cpp
 ArdusatSerial(serialMode mode, unsigned char softwareReceivePin, unsigned char softwareTransmitPin);
 ```
 
 Usage:
-```
+```cpp
 ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 10, 11);
 Temperature temp;
 
@@ -359,3 +420,11 @@ to accidentally plug something in wrong!
 
 If you get really stuck, feel free to reach out at <support@ardusat.com>, or the "Issues" section of
 this repository.
+
+
+
+# Attributions
+This SDK leverages some really excellent code already written by
+[Adafruit](https://www.adafruit.com), [SparkFun](https://www.sparkfun.com),
+and [Pololu](https://www.pololu.com). They have all provided really great sensor
+drivers and Arduino Libraries, so please support them in thanks for their efforts!
