@@ -1,10 +1,10 @@
 /*
  * =====================================================================================
  *
- *       Filename:  csv.ino
+ *       Filename:  csv_sd_logger.ino
  *
  *    Description:  Outputs the values from two different sensors into text properly
- *                  formatted for a CSV file.
+ *                  formatted for a CSV file using the CSVWriter class.
  *
  *                  This example uses many third-party libraries available from
  *                  Adafruit (https://github.com/adafruit). These libraries are
@@ -41,7 +41,15 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
 Acceleration accel;
-Temperature temp;
+TemperatureTMP ambient;
+Gyro gyro;
+TemperatureMLX infrared;
+Luminosity lum;
+Magnetic mag;
+RGBLightTCS rgb;
+UVLightML uv;
+
+CSVWriter csv(serialConnection);
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -56,13 +64,25 @@ void setup(void)
   serialConnection.begin(9600);
 
   accel.begin();
-  temp.begin();
+  ambient.begin();
+  gyro.begin();
+  infrared.begin();
+  lum.begin();
+  mag.begin();
+  rgb.begin();
+  uv.begin();
+
+  csv.registerSensor(accel);
+  csv.registerSensor(ambient);
+  csv.registerSensor(gyro);
+  csv.registerSensor(infrared);
+  csv.registerSensor(lum);
+  csv.registerSensor(mag);
+  csv.registerSensor(rgb);
+  csv.registerSensor(uv);
 
   /* We're ready to go! */
-  serialConnection.println("");
-  serialConnection.print("timestamp (millis), name, ");
-  serialConnection.print("temperature (C), x acceleration (m/s^2), y acceleration (m/s^2), z acceleration (m/s^2), ");
-  serialConnection.println("checksum");
+  csv.serialPrintHeader();
 }
 
 /*
@@ -76,10 +96,7 @@ void setup(void)
  */
 void loop(void)
 {
-  accel.read();
-  temp.read();
-  
-  serialConnection.println(valuesToCSV("reading", accel.header.timestamp, 4, temp.t, accel.x, accel.y, accel.z));
+  csv.serialPrintRow();
 
   delay(1000);
 }

@@ -35,16 +35,16 @@ extern boolean ARDUSAT_SPACEBOARD;
  * Unique numeric id for each physical sensor
  */
 typedef enum {
-	SENSORID_NULL = 0x00,	// no sensor, or unreliable
-	SENSORID_TMP102	= 0x01,
-	SENSORID_TSL2561 = 0x02,
-	SENSORID_MLX90614 = 0x03,
-	SENSORID_ADAFRUIT9DOFIMU = 0x04,
-	SENSORID_SI1132	= 0x05,
-	SENSORID_ML8511	= 0x06,
-	SENSORID_BMP180 = 0x07,
-	SENSORID_ISL29125 = 0x08,
-	SENSORID_TCS34725 = 0x09,
+  SENSORID_NULL = 0x00, // no sensor, or unreliable
+  SENSORID_TMP102 = 0x01,
+  SENSORID_TSL2561 = 0x02,
+  SENSORID_MLX90614 = 0x03,
+  SENSORID_ADAFRUIT9DOFIMU = 0x04,
+  SENSORID_SI1132 = 0x05,
+  SENSORID_ML8511 = 0x06,
+  SENSORID_BMP180 = 0x07,
+  SENSORID_ISL29125 = 0x08,
+  SENSORID_TCS34725 = 0x09,
 } sensor_id_t;
 
 /**
@@ -58,11 +58,11 @@ typedef enum {
   DATA_UNIT_DEGREES_CELSIUS = 4,
   DATA_UNIT_DEGREES_FAHRENHEIT = 5,
   DATA_UNIT_METER_PER_SECOND = 6,
-  DATA_UNIT_LUX	= 7,
+  DATA_UNIT_LUX = 7,
   DATA_UNIT_RADIAN = 8,
   DATA_UNIT_MILLIWATT_PER_CMSQUARED = 9,
   DATA_UNIT_DEGREES = 10,
-  DATA_UNIT_HECTOPASCAL	= 11
+  DATA_UNIT_HECTOPASCAL = 11
 } data_unit_t;
 
 /**
@@ -77,11 +77,16 @@ void _resetOutBuf();
  * The data header contains generic information about the data record.
  */
 struct _data_header_v1 {
-	unsigned char unit;       // unit (standard) of the values (e.g. meter, m/s^2, etc.)
-	unsigned char sensor_id;  // id of the sensor that generated this data
-	unsigned long timestamp;  // millis for timestamping the data
+  unsigned char unit;       // unit (standard) of the values (e.g. meter, m/s^2, etc.)
+  unsigned char sensor_id;  // id of the sensor that generated this data
+  unsigned long timestamp;  // millis for timestamping the data
 };
 typedef struct _data_header_v1 _data_header_t;
+
+/**
+ * The most number of sensors that can be running at a time.
+ */
+const int MAX_SENSORS = 15;
 
 /**
  * Get a string representation of a unit constant
@@ -109,6 +114,7 @@ const char * valueToJSON(const char *sensorName, unsigned char unit, float value
 /**************************************************************************//**
  * @class Sensor
  * @defgroup sensor
+ * @ingroup  sensor
  * @brief Base Sensor class that all Sensors inherit from
  *****************************************************************************/
 class Sensor {
@@ -128,6 +134,9 @@ class Sensor {
     const char * readToCSV(const char * sensorName);
     const char * readToJSON(const char * sensorName);
 
+    virtual int _bufCSVValues(void) = 0;
+    virtual void _bufCSVHeaders(void) = 0;
+
     virtual const char * toCSV(const char * sensorName) = 0;
     virtual const char * toJSON(const char * sensorName) = 0;
 };
@@ -138,6 +147,7 @@ class Sensor {
  * @ingroup sensor
  *
  * @defgroup acceleration
+ * @ingroup  acceleration
  * @brief Encapsulates all functionality related to the Acceleration Sensor
  *
  * This class can be used to initialize, further configure, read, and print
@@ -165,6 +175,9 @@ class Acceleration: public Sensor {
     Acceleration(void);
     Acceleration(lsm303_accel_gain_e gain);
 
+    int _bufCSVValues(void);
+    void _bufCSVHeaders(void);
+
     const char * toCSV(const char * sensorName);
     const char * toJSON(const char * sensorName);
 };
@@ -175,6 +188,7 @@ class Acceleration: public Sensor {
  * @ingroup sensor
  *
  * @defgroup gyro
+ * @ingroup  gyro
  * @brief Encapsulates all functionality related to the Gyro Sensor
  *
  * This class can be used to initialize, further configure, read, and print
@@ -202,6 +216,9 @@ class Gyro: public Sensor {
     Gyro(void);
     Gyro(uint8_t range);
 
+    int _bufCSVValues(void);
+    void _bufCSVHeaders(void);
+
     const char * toCSV(const char * sensorName);
     const char * toJSON(const char * sensorName);
 };
@@ -212,6 +229,7 @@ class Gyro: public Sensor {
  * @ingroup sensor
  *
  * @defgroup luminosity
+ * @ingroup  luminosity
  * @brief Encapsulates all functionality related to the Luminosity Sensor
  *
  * This class can be used to initialize, further configure, read, and print
@@ -240,6 +258,9 @@ class Luminosity: public Sensor {
     Luminosity(tsl2561IntegrationTime_t intTime);
     Luminosity(tsl2561Gain_t gain);
 
+    int _bufCSVValues(void);
+    void _bufCSVHeaders(void);
+
     const char * toCSV(const char * sensorName);
     const char * toJSON(const char * sensorName);
 };
@@ -250,6 +271,7 @@ class Luminosity: public Sensor {
  * @ingroup sensor
  *
  * @defgroup magnetic
+ * @ingroup  magnetic
  * @brief Encapsulates all functionality related to the Magnetic Sensor
  *
  * This class can be used to initialize, further configure, read, and print
@@ -277,6 +299,9 @@ class Magnetic: public Sensor {
     Magnetic(void);
     Magnetic(lsm303_mag_scale_e gaussScale);
 
+    int _bufCSVValues(void);
+    void _bufCSVHeaders(void);
+
     const char * toCSV(const char * sensorName);
     const char * toJSON(const char * sensorName);
 };
@@ -287,6 +312,7 @@ class Magnetic: public Sensor {
  * @ingroup sensor
  *
  * @defgroup orientation
+ * @ingroup  orientation
  * @brief Encapsulates all functionality related to the Orientation Calculation
  *
  * This class can be used to initialize, read, and print data derived from the
@@ -313,6 +339,9 @@ class Orientation: public Sensor {
     float heading;
     Orientation(Acceleration & accel, Magnetic & mag);
 
+    int _bufCSVValues(void);
+    void _bufCSVHeaders(void);
+
     const char * toCSV(const char * sensorName);
     const char * toJSON(const char * sensorName);
 };
@@ -323,6 +352,7 @@ class Orientation: public Sensor {
  * @ingroup sensor
  *
  * @defgroup pressure
+ * @ingroup  pressure
  * @brief Encapsulates all functionality related to the Pressure Sensor
  *
  * This class can be used to initialize, further configure, read, and print
@@ -353,6 +383,9 @@ class Pressure: public Sensor {
     float altitudeFromSeaLevelPressure(float seaLevelPressure);
     float seaLevelPressureFromAltitude(float altitude);
 
+    int _bufCSVValues(void);
+    void _bufCSVHeaders(void);
+
     const char * toCSV(const char * sensorName);
     const char * toJSON(const char * sensorName);
 };
@@ -363,6 +396,7 @@ class Pressure: public Sensor {
  * @ingroup sensor
  *
  * @defgroup rgblight
+ * @ingroup  rgblight
  * @brief Encapsulates all functionality related to the RGBLight Sensor
  *
  * This class can be used to initialize, further configure, read, and print
@@ -404,6 +438,9 @@ class RGBLight: public Sensor {
     float green;
     float blue;
     RGBLight(void);
+
+    int _bufCSVValues(void);
+    void _bufCSVHeaders(void);
 
     const char * toCSV(const char * sensorName);
     const char * toJSON(const char * sensorName);
@@ -447,6 +484,7 @@ class RGBLightISL: public RGBLight {
  * @ingroup sensor
  *
  * @defgroup temperature
+ * @ingroup  temperature
  * @brief Encapsulates all functionality related to the Temperature Sensor
  *
  * This class can be used to initialize, further configure, read, and print
@@ -483,6 +521,9 @@ class Temperature: public Sensor {
     float t;
     Temperature(void);
 
+    int _bufCSVValues(void);
+    void _bufCSVHeaders(void);
+
     const char * toCSV(const char * sensorName);
     const char * toJSON(const char * sensorName);
 };
@@ -517,6 +558,7 @@ class TemperatureMLX: public Temperature {
  * @ingroup sensor
  *
  * @defgroup uvlight
+ * @ingroup  uvlight
  * @brief Encapsulates all functionality related to the UVLight Sensor
  *
  * This class can be used to initialize, further configure, read, and print
@@ -553,6 +595,9 @@ class UVLight: public Sensor {
     float uvindex;
     UVLight(void);
 
+    int _bufCSVValues(void);
+    void _bufCSVHeaders(void);
+
     const char * toCSV(const char * sensorName);
     const char * toJSON(const char * sensorName);
 };
@@ -582,6 +627,42 @@ class UVLightSI: public UVLight {
 
   public:
     UVLightSI(void);
+};
+
+
+/**************************************************************************//**
+ * @class CSVWriter
+ * @defgroup csvwriter
+ * @ingroup  csvwriter
+ * @brief Builds properly formatted CSV rows for a collection of sensors
+ *
+ * This class is used to build a CSV header and rows to log sensor readings
+ * to a CSV file.
+ *
+ * Example Usage:
+ * @code
+ *     CSVWriter csv = CSVWriter();       // Instantiate csv object
+ *     csv.registerSensor(accel);         // Register acceleration
+ *     csv.registerSensor(mag);           // Register magnetic
+ *     csv.registerSensor(rgb);           // Register rgb
+ *     Serial.println(csv.buildHeader()); // Print CSV header
+ *     Serial.println(csv.buildRow());    // Print CSV row
+ * @endcode
+ *****************************************************************************/
+class CSVWriter {
+  private:
+    ArdusatSerial * serialConnection;
+    Sensor * sensors[MAX_SENSORS];
+    boolean includeChecksum;
+    int numSensors;
+
+  public:
+    CSVWriter(ArdusatSerial & serialConnection);
+    CSVWriter(ArdusatSerial & serialConnection, boolean includeChecksum);
+
+    boolean registerSensor(Sensor & sensor);
+    void serialPrintHeader(void);
+    void serialPrintRow(void);
 };
 
 #endif /* ARDUSATSDK_H_ */

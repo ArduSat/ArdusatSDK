@@ -6,7 +6,6 @@ satellite systems. It builds on top of popular open source libraries provided by
 [Adafruit](https://github.com/adafruit) and others.
 
 
-
 ## Installing the SDK
 The first step to getting going is to install the Arduino Integrated Development Environment (IDE).
 Downloads for all major OS versions can be found at
@@ -40,10 +39,10 @@ include statement:
 After the SDK is included, the basic I/O functions and sensor drivers should be available.
 
 
-
 ## Sensor Overview and Reference
 Every Sensor in the SDK is accessible with a Sensor class that helps wrap up internal functionality.
 Each Sensor Class supports reading data from one or more physical sensors.
+
 
 #### Overview
 Sensor Class | Sensors | Required Constructor Arguments
@@ -102,10 +101,10 @@ NOTE: The `toCSV` functions will not guarantee that you are outputting data in a
 importing CSV logs into the [Ardusat Experiment Platform](http://experiments.ardusat.com). These functions
 are for live STREAMING data into the Experiment Platform.  
 If you are calling the `toCSV` functions on exactly one type of Sensor Class per sketch, this is fine for
-STREAMING data and LOGGING data to be imported.  
+STREAMING data and LOGGING data to be imported.
 If you are calling the `toCSV` functions on more than one type of Sensor Class per sketch, this is fine for
-only STREAMING data, LOGGING data to be important will not be formatted correctly. If you want to LOG more
-than one type of Sensor Class, see the CSV Logging Example with `valuesToCSV`.
+only STREAMING data, LOGGING data to be imported will not be formatted correctly. If you want to LOG more
+than one type of Sensor Class, use the `CSVWriter` class. There is more information about this class below.
 
 There is a full example in the CSV Examples of how to use `valuesToCSV`, but this function is available to make
 it easier to format data properly:
@@ -295,41 +294,64 @@ Output: (not proper CSV format) Will fail to be imported to Experiment Platform
 ####CSV LOGGING example:
 ```cpp
 #include <ArdusatSDK.h>
+ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 
 Acceleration accel;
 Temperature temp;
+
+CSVWriter csv(serialConnection);
 
 void setup(void) {
   Serial.begin(9600);
   accel.begin();
   temp.begin();
 
+  // Register the sensors with the csv writer
+  csv.registerSensor(accel);
+  csv.registerSensor(temp);
+
   // CSV Headers to print once at the top of the data
-  Serial.print("timestamp (millis), name, ");
-  Serial.print("temperature (C), x acceleration (m/s^2), y acceleration (m/s^2), z acceleration (m/s^2), ");
-  Serial.println("checksum");
+  csv.serialPrintHeaders();
 }
 
 void loop(void) {
-  accel.read();
-  temp.read();
-
-                            //Log Name, Time Stamp, Number of Values, Temp, Accel X, Accel Y, Accel Z
-  Serial.println(valuesToCSV("reading", accel.header.timestamp, 4, temp.t, accel.x, accel.y, accel.z));
+  csv.serialPrintRow();
 }
 ```
 Output: Proper CSV format. This will be successfully imported into the Experiment Platform
         However, this will not work if you're streaming CSV data to the Experiment PLatform.
 ```cpp
-timestamp (millis), name, temperature (C), x acceleration (m/s^2), y acceleration (m/s^2), z acceleration (m/s^2), checksum
-89,reading,27.3,9.11,0.02,0.78,123
-123,reading,27.2,9.10,0.08,0.73,120
-145,reading,27.3,9.02,0.11,0.88,121
-198,reading,27.2,9.08,0.03,0.80,128
-211,reading,27.3,9.13,0.08,0.75,119
-229,reading,27.5,9.19,0.01,0.78,127
+timestamp(milliseconds),Acceleration-x(m/s^2),Acceleration-y(m/s^2),Acceleration-z(m/s^2),Temperature(C)
+89,9.11,0.02,0.78,27.3
+123,9.10,0.08,0.73,27.2
+145,9.02,0.11,0.88,27.3
+198,9.08,0.03,0.80,27.2
+211,9.13,0.08,0.75,27.3
+229,9.19,0.01,0.78,27.5
 ...
 ```
+
+## `CSVWriter` class
+The `CSVWriter` class is available to easily help you log data into a proper CSV format that you can easily
+post process with software like Excel or upload into the Experiment Platform.
+
+Available Functions | Required Parameters | Description
+--- | --- | --- | ---
+`registerSensor()`     | `Sensor & sensor` | Makes the CSV Writer aware of the sensor
+`serialPrintHeaders()` | None              | Used in the `setup` function to print out the header row
+`serialPrintRow()`     | None              | Used in the `loop` function to print out a row of values
+
+The CSV Writer constructor also has an option boolean parameter to include a checksum of all of the values
+at the end of each row. The default is to not print out the checksum.
+
+```cpp
+...
+CSVWriter csv(serialConnection, true);
+...
+```
+
+This would print out `checksum` in the header row as well as the calculated checksum values in each
+value row.
 
 
 ## Different Output Formats
@@ -381,7 +403,7 @@ ArdusatSerial(serialMode mode, unsigned char softwareReceivePin, unsigned char s
 
 Usage:
 ```cpp
-ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 10, 11);
+ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 Temperature temp;
 
 void setup(void) {

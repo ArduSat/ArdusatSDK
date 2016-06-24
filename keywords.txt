@@ -1,3 +1,8 @@
+## NOTE: MAKE SURE TO USE A TAB CHARACTER (\t) BETWEEN THE CONSTANT ON THE LEFT
+##       AND THE TYPE OF KEYWORD OR LITERAL ON THE RIGHT
+
+
+
 ###############################################################################
 ##  KEYWORD1 Classes, datatypes, and C++ keywords                            ##
 ###############################################################################
@@ -18,6 +23,8 @@ UVLight	KEYWORD1
 UVLightML	KEYWORD1
 UVLightSI	KEYWORD1
 
+CSVWriter	KEYWORD1
+
 
 ###############################################################################
 ##  KEYWORD2 Methods and functions                                           ##
@@ -29,6 +36,10 @@ readToCSV	KEYWORD2
 readToJSON	KEYWORD2
 toCSV	KEYWORD2
 toJSON	KEYWORD2
+
+registerSensor	KEYWORD2
+serialPrintHeader	KEYWORD2
+serialPrintRow	KEYWORD2
 
 
 ###############################################################################
@@ -90,6 +101,7 @@ CFG1_10KLUX	LITERAL1
 
 DRIVER_ML8511_UV_PIN	LITERAL1
 
+DATA_UNIT_NONE	LITERAL1
 DATA_UNIT_METER_PER_SECONDSQUARED	LITERAL1
 DATA_UNIT_RADIAN_PER_SECOND	LITERAL1
 DATA_UNIT_LUX	LITERAL1

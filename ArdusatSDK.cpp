@@ -19,8 +19,8 @@ int OUTPUT_BUF_SIZE = 256;
 char * _output_buffer;
 static int _output_buf_len = 0;
 
-// TODO: Change these error messages to be JSON that can easily be caught by the Experiment Platform
 const char concat_string[] PROGMEM = "%s%s";
+// TODO: Change these error messages to be JSON that can easily be caught by the Experiment Platform
 const char begin_error_msg[] PROGMEM = "begin %s failed. Check wiring!";
 const char unavailable_on_hardware_error_msg[] PROGMEM = "%s is not available with %s";
 
@@ -38,7 +38,7 @@ const char irtemperature_sensor_name[] PROGMEM = "IRTemperature";
 const char rgblight_sensor_name[] PROGMEM = "RGBLight";
 const char uvlight_sensor_name[] PROGMEM = "UVLight";
 
-const char CSV_TIMESTAMP[] PROGMEM = "timestamp(seconds)";
+const char CSV_TIMESTAMP[] PROGMEM = "timestamp(milliseconds)";
 const char CSV_CHECKSUM[] PROGMEM = "checksum";
 
 static char CSV_SEPARATOR = ',';
@@ -70,7 +70,7 @@ void _resetOutBuf() {
 /**
  * Convert an enumerated unit code to a string representation.
  *
- * @param unit code (see units.h defines)
+ * @param unit code
  *
  * @return string representation of unit
  */
@@ -320,6 +320,16 @@ const char * valueToJSON(const char *sensorName, unsigned char unit, float value
   return _getOutBuf();
 }
 
+/*
+ * Adds the sensor unit in parantheses to the outputbuffer
+ */
+void _bufSensorHeaderUnit(const char * unit) {
+  _getOutBuf()[_output_buf_len++] = '(';
+  memcpy(&(_getOutBuf()[_output_buf_len]), unit, strlen(unit));
+  _output_buf_len += strlen(unit);
+  _getOutBuf()[_output_buf_len++] = ')';
+}
+
 
 /**************************************************************************//**
  * @brief   Initializes the sensor with any set configurations
@@ -462,6 +472,55 @@ boolean Acceleration::readSensor(void) {
   return true;
 }
 
+/*
+ * Adds the sensor values into the output buffer
+ */
+int Acceleration::_bufCSVValues(void) {
+  dtostrf(this->x, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  dtostrf(this->y, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  dtostrf(this->z, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  return calculateCheckSum(0, 3, this->x, this->y, this->z);
+}
+
+/*
+ * Adds information necessary for a proper CSV Header into the output buffer
+ */
+void Acceleration::_bufCSVHeaders(void) {
+  char sensorName[25];
+  const char * unit = unit_to_str(this->header.unit);
+  strcpy_P(sensorName, acceleration_sensor_name);
+  int name_len = strlen(sensorName);
+
+  // Write out the default sensor name
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _getOutBuf()[_output_buf_len++] = '-';
+  _getOutBuf()[_output_buf_len++] = 'x';
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _getOutBuf()[_output_buf_len++] = '-';
+  _getOutBuf()[_output_buf_len++] = 'y';
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _getOutBuf()[_output_buf_len++] = '-';
+  _getOutBuf()[_output_buf_len++] = 'z';
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
+}
+
 /**
  * @brief   Returns last read value in CSV format
  * @ingroup acceleration
@@ -553,6 +612,55 @@ boolean Gyro::initialize(void) {
 boolean Gyro::readSensor(void) {
   l3gd20h_getOrientation(&(this->x), &(this->y), &(this->z));
   return true;
+}
+
+/*
+ * Adds the sensor values into the output buffer
+ */
+int Gyro::_bufCSVValues(void) {
+  dtostrf(this->x, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  dtostrf(this->y, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  dtostrf(this->z, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  return calculateCheckSum(0, 3, this->x, this->y, this->z);
+}
+
+/*
+ * Adds information necessary for a proper CSV Header into the output buffer
+ */
+void Gyro::_bufCSVHeaders(void) {
+  char sensorName[25];
+  const char * unit = unit_to_str(this->header.unit);
+  strcpy_P(sensorName, gyro_sensor_name);
+  int name_len = strlen(sensorName);
+
+  // Write out the default sensor name
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _getOutBuf()[_output_buf_len++] = '-';
+  _getOutBuf()[_output_buf_len++] = 'x';
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _getOutBuf()[_output_buf_len++] = '-';
+  _getOutBuf()[_output_buf_len++] = 'y';
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _getOutBuf()[_output_buf_len++] = '-';
+  _getOutBuf()[_output_buf_len++] = 'z';
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 }
 
 /**
@@ -724,6 +832,31 @@ boolean Luminosity::readSensor(void) {
   return true;
 }
 
+/*
+ * Adds the sensor values into the output buffer
+ */
+int Luminosity::_bufCSVValues(void) {
+  dtostrf(this->lux, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  return calculateCheckSum(0, 1, this->lux);
+}
+
+/*
+ * Adds information necessary for a proper CSV Header into the output buffer
+ */
+void Luminosity::_bufCSVHeaders(void) {
+  char sensorName[25];
+  const char * unit = unit_to_str(this->header.unit);
+  strcpy_P(sensorName, luminosity_sensor_name);
+  int name_len = strlen(sensorName);
+
+  // Write out the default sensor name
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
+}
+
 /**
  * @brief   Returns last read value in CSV format
  * @ingroup luminosity
@@ -818,6 +951,55 @@ boolean Magnetic::initialize(void) {
 boolean Magnetic::readSensor(void) {
   lsm303_getMag(&(this->x), &(this->y), &(this->z));
   return true;
+}
+
+/*
+ * Adds the sensor values into the output buffer
+ */
+int Magnetic::_bufCSVValues(void) {
+  dtostrf(this->x, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  dtostrf(this->y, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  dtostrf(this->z, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  return calculateCheckSum(0, 3, this->x, this->y, this->z);
+}
+
+/*
+ * Adds information necessary for a proper CSV Header into the output buffer
+ */
+void Magnetic::_bufCSVHeaders(void) {
+  char sensorName[25];
+  const char * unit = unit_to_str(this->header.unit);
+  strcpy_P(sensorName, magnetic_sensor_name);
+  int name_len = strlen(sensorName);
+
+  // Write out the default sensor name
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _getOutBuf()[_output_buf_len++] = '-';
+  _getOutBuf()[_output_buf_len++] = 'x';
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _getOutBuf()[_output_buf_len++] = '-';
+  _getOutBuf()[_output_buf_len++] = 'y';
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _getOutBuf()[_output_buf_len++] = '-';
+  _getOutBuf()[_output_buf_len++] = 'z';
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 }
 
 /**
@@ -923,6 +1105,55 @@ boolean Orientation::readSensor(void) {
 
   this->header.timestamp = max(this->accel->header.timestamp, this->mag->header.timestamp);
   return true;
+}
+
+/*
+ * Adds the sensor values into the output buffer
+ */
+int Orientation::_bufCSVValues(void) {
+  dtostrf(this->roll, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  dtostrf(this->pitch, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  dtostrf(this->heading, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  return calculateCheckSum(0, 3, this->roll, this->pitch, this->heading);
+}
+
+/*
+ * Adds information necessary for a proper CSV Header into the output buffer
+ */
+void Orientation::_bufCSVHeaders(void) {
+  char sensorName[25];
+  const char * unit = unit_to_str(this->header.unit);
+  strcpy_P(sensorName, orientation_sensor_name);
+  int name_len = strlen(sensorName);
+
+  // Write out the default sensor name
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _getOutBuf()[_output_buf_len++] = '-';
+  _getOutBuf()[_output_buf_len++] = 'r';
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _getOutBuf()[_output_buf_len++] = '-';
+  _getOutBuf()[_output_buf_len++] = 'p';
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _getOutBuf()[_output_buf_len++] = '-';
+  _getOutBuf()[_output_buf_len++] = 'h';
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 }
 
 /**
@@ -1059,6 +1290,31 @@ float Pressure::seaLevelPressureFromAltitude(float altitude) {
   return this->pressure / pow(1.0 - (altitude / 44330.0), 5.255);
 }
 
+/*
+ * Adds the sensor values into the output buffer
+ */
+int Pressure::_bufCSVValues(void) {
+  dtostrf(this->pressure, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  return calculateCheckSum(0, 1, this->pressure);
+}
+
+/*
+ * Adds information necessary for a proper CSV Header into the output buffer
+ */
+void Pressure::_bufCSVHeaders(void) {
+  char sensorName[25];
+  const char * unit = unit_to_str(this->header.unit);
+  strcpy_P(sensorName, pressure_sensor_name);
+  int name_len = strlen(sensorName);
+
+  // Write out the default sensor name
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
+}
+
 /**
  * @brief   Returns last read value in CSV format
  * @ingroup pressure
@@ -1142,6 +1398,55 @@ boolean RGBLight::initialize(void) {
 boolean RGBLight::readSensor(void) {
   tcs34725_getRGB(&(this->red), &(this->green), &(this->blue));
   return true;
+}
+
+/*
+ * Adds the sensor values into the output buffer
+ */
+int RGBLight::_bufCSVValues(void) {
+  dtostrf(this->red, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  dtostrf(this->green, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  dtostrf(this->blue, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  return calculateCheckSum(0, 3, this->red, this->green, this->blue);
+}
+
+/*
+ * Adds information necessary for a proper CSV Header into the output buffer
+ */
+void RGBLight::_bufCSVHeaders(void) {
+  char sensorName[25];
+  const char * unit = unit_to_str(this->header.unit);
+  strcpy_P(sensorName, rgblight_sensor_name);
+  int name_len = strlen(sensorName);
+
+  // Write out the default sensor name
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _getOutBuf()[_output_buf_len++] = '-';
+  _getOutBuf()[_output_buf_len++] = 'r';
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _getOutBuf()[_output_buf_len++] = '-';
+  _getOutBuf()[_output_buf_len++] = 'g';
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
+
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _getOutBuf()[_output_buf_len++] = '-';
+  _getOutBuf()[_output_buf_len++] = 'b';
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 }
 
 /**
@@ -1401,6 +1706,35 @@ boolean Temperature::readSensor(void) {
   return true;
 }
 
+/*
+ * Adds the sensor values into the output buffer
+ */
+int Temperature::_bufCSVValues(void) {
+  dtostrf(this->t, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  return calculateCheckSum(0, 1, this->t);
+}
+
+/*
+ * Adds information necessary for a proper CSV Header into the output buffer
+ */
+void Temperature::_bufCSVHeaders(void) {
+  char sensorName[25];
+  const char * unit = unit_to_str(this->header.unit);
+  if (this->header.sensor_id == SENSORID_TMP102) {
+    strcpy_P(sensorName, temperature_sensor_name);
+  } else {
+    strcpy_P(sensorName, irtemperature_sensor_name);
+  }
+  int name_len = strlen(sensorName);
+
+  // Write out the default sensor name
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
+}
+
 /**
  * @brief   Returns last read value in CSV format
  * @ingroup temperature
@@ -1518,6 +1852,31 @@ boolean UVLight::readSensor(void) {
   return true;
 }
 
+/*
+ * Adds the sensor values into the output buffer
+ */
+int UVLight::_bufCSVValues(void) {
+  dtostrf(this->uvindex, 2, 3, _getOutBuf() + _output_buf_len);
+  _output_buf_len = strlen(_getOutBuf());
+
+  return calculateCheckSum(0, 1, this->uvindex);
+}
+
+/*
+ * Adds information necessary for a proper CSV Header into the output buffer
+ */
+void UVLight::_bufCSVHeaders(void) {
+  char sensorName[25];
+  const char * unit = unit_to_str(this->header.unit);
+  strcpy_P(sensorName, uvlight_sensor_name);
+  int name_len = strlen(sensorName);
+
+  // Write out the default sensor name
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
+  _output_buf_len += name_len;
+  _bufSensorHeaderUnit(unit_to_str(this->header.unit));
+}
+
 /**
  * @brief   Returns last read value in CSV format
  * @ingroup uvlight
@@ -1617,4 +1976,145 @@ boolean UVLightSI::initialize(void) {
 boolean UVLightSI::readSensor(void) {
   this->uvindex = si1132_getUVIndex();
   return true;
+}
+
+
+/**************************************************************************//**
+ * @brief   Constructs CSVWriter object
+ * @ingroup csvwriter
+ * @param   serialConnection Ardusat Serial connection writing object
+ *****************************************************************************/
+CSVWriter::CSVWriter(ArdusatSerial & serialConnection) :
+  serialConnection(&serialConnection),
+  includeChecksum(false),
+  numSensors(0)
+{
+}
+
+/**
+ * @brief   Constructs CSVWriter object
+ * @ingroup csvwriter
+ * @param   serialConnection Ardusat Serial connection writing object
+ * @param   includeChecksum Whether or not a checksum should be included with values
+ */
+CSVWriter::CSVWriter(ArdusatSerial & serialConnection, boolean includeChecksum) :
+  serialConnection(&serialConnection),
+  includeChecksum(includeChecksum),
+  numSensors(0)
+{
+}
+
+/**
+ * @brief   Registers the CSVWriter object to use the provided sensor when logging values
+ * @ingroup csvwriter
+ * @param   sensor Sensor to be tracked by CSVWriter object
+ * @retval  true The sensor is succesfully tracked by the CSVWriter
+ * @retval  false There are too many sensors trying to be tracked by the CSVWriter
+ */
+boolean CSVWriter::registerSensor(Sensor & sensor) {
+  if (this->numSensors >= MAX_SENSORS) {
+    return false;
+  }
+
+  this->sensors[this->numSensors++] = &sensor;
+  return true;
+}
+
+/**
+ * @brief   Builds a header to print at the top of a CSV file
+ * @ingroup csvwriter
+ * @return  string in the format of "timestamp(unit),sensor_name(unit),...,checksum"
+ */
+void CSVWriter::serialPrintHeader(void) {
+  int i = 0;
+  char tempBuf[20];
+  Sensor * sensor;
+
+  _resetOutBuf(); // Flush the buffer
+
+  // Add 'timestamp(millis),' to beginning of row
+  strcpy_P(tempBuf, CSV_TIMESTAMP);
+  memcpy(&(_getOutBuf()[_output_buf_len]), tempBuf, strlen(tempBuf));
+  _output_buf_len += strlen(tempBuf);
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+
+  // Add 'values(unit),...' for each sensor value to the row
+  for (i = 0; i < this->numSensors; i++) {
+    sensor = this->sensors[i];
+    if (sensor->initialized) {
+      sensor->_bufCSVHeaders();
+      _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+
+      if (_output_buf_len >= OUTPUT_BUF_SIZE - 50) {
+        this->serialConnection->print(_getOutBuf());
+        _resetOutBuf();
+      }
+    }
+  }
+
+  if (this->includeChecksum) {
+    // Add 'checksum' to the end of row
+    strcpy_P(tempBuf, CSV_CHECKSUM);
+    memcpy(&(_getOutBuf()[_output_buf_len]), tempBuf, strlen(tempBuf));
+    _output_buf_len += strlen(tempBuf);
+  } else {
+    // remove the last comma added in the loop above since there is no checksum
+    _output_buf_len--;
+    _getOutBuf()[_output_buf_len] = 0;
+  }
+
+  this->serialConnection->println(_getOutBuf());
+  _resetOutBuf();
+}
+
+/**
+ * @brief   Builds a row of values to log in a CSV file
+ * @ingroup csvwriter
+ * @return  string in the format of "unsigned_long,float,...,integer"
+ */
+void CSVWriter::serialPrintRow(void) {
+  int i = 0;
+  int checksum = 0;
+  Sensor * sensor;
+
+  // Flush the buffer
+  _resetOutBuf();
+
+  // Add timestamp to beginning of row
+  unsigned long timestamp = millis();
+  ultoa(timestamp, _getOutBuf(), 10);
+  _output_buf_len = strlen(_getOutBuf());
+  _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+
+  // Add values(unit),... for each sensor value to the row
+  for (i = 0; i < this->numSensors; i++) {
+    sensor = this->sensors[i];
+    if (sensor->initialized) {
+      sensor->read();
+      // Because the checksum is calculated by simply summing together all of the values,
+      // we can calculate the checksum of each value set independently and then adds those
+      // individual checksums together, while `_bufCSVValues()` puts all of the (possibly
+      // comma separated) values into the output buffer
+      checksum += sensor->_bufCSVValues();
+      _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
+
+      if (_output_buf_len >= OUTPUT_BUF_SIZE - 50) {
+        this->serialConnection->print(_getOutBuf());
+        _resetOutBuf();
+      }
+    }
+  }
+
+  if (this->includeChecksum) {
+    // Add checksum to the end of row
+    itoa(checksum, _getOutBuf() + _output_buf_len, 10);
+    _output_buf_len = strlen(_getOutBuf());
+  } else {
+    // remove the last comma added in the loop above since there is no checksum
+    _output_buf_len--;
+    _getOutBuf()[_output_buf_len] = 0;
+  }
+
+  this->serialConnection->println(_getOutBuf());
+  _resetOutBuf();
 }
