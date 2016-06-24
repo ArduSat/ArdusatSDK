@@ -33,16 +33,24 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /**************************************************************************/
+/*
+ * Modified by Sam Olds (Ardusat) to use common i2c read/write utility
+ */
 
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 #include <stdlib.h>
 
 #include "TSL2561.h"
+#include "common_utils.h"
 
 #define TSL2561_DELAY_INTTIME_13MS    (15)
 #define TSL2561_DELAY_INTTIME_101MS   (120)
 #define TSL2561_DELAY_INTTIME_402MS   (450)
+
+#define read8(reg, val) readFromRegAddr(_addr, reg, val, 1, BIG_ENDIAN)
+#define read16(reg, val) readFromRegAddr(_addr, reg, val, 2, BIG_ENDIAN)
+#define write8(reg, val) writeToRegAddr(_addr, reg, val, 1, BIG_ENDIAN)
 
 /**************************************************************************/
 /*!
@@ -71,7 +79,8 @@ boolean TSL2561::begin(void)
   Wire.begin();
 
   /* Make sure we're actually connected */
-  uint8_t x = read8(TSL2561_REGISTER_ID);
+  uint8_t x = 0;
+  read8(TSL2561_REGISTER_ID, &x);
   if (!(x & 0x0A))
   {
     return false;
@@ -96,7 +105,8 @@ boolean TSL2561::begin(void)
 void TSL2561::enable(void)
 {
   /* Enable the device by setting the control bit to 0x03 */
-  write8(TSL2561_COMMAND_BIT | TSL2561_REGISTER_CONTROL, TSL2561_CONTROL_POWERON);
+  uint8_t buf = TSL2561_CONTROL_POWERON;
+  write8(TSL2561_COMMAND_BIT | TSL2561_REGISTER_CONTROL, &buf);
 }
 
 /**************************************************************************/
@@ -107,7 +117,8 @@ void TSL2561::enable(void)
 void TSL2561::disable(void)
 {
   /* Turn the device off to save power */
-  write8(TSL2561_COMMAND_BIT | TSL2561_REGISTER_CONTROL, TSL2561_CONTROL_POWEROFF);
+  uint8_t buf = TSL2561_CONTROL_POWEROFF;
+  write8(TSL2561_COMMAND_BIT | TSL2561_REGISTER_CONTROL, &buf);
 }
 
 /**************************************************************************/
@@ -135,10 +146,10 @@ void TSL2561::getData (uint16_t *broadband, uint16_t *ir)
   }
 
   /* Reads a two byte value from channel 0 (visible + infrared) */
-  *broadband = read16(TSL2561_COMMAND_BIT | TSL2561_WORD_BIT | TSL2561_REGISTER_CHAN0_LOW);
+  read16(TSL2561_COMMAND_BIT | TSL2561_WORD_BIT | TSL2561_REGISTER_CHAN0_LOW, broadband);
 
   /* Reads a two byte value from channel 1 (infrared) */
-  *ir = read16(TSL2561_COMMAND_BIT | TSL2561_WORD_BIT | TSL2561_REGISTER_CHAN1_LOW);
+  read16(TSL2561_COMMAND_BIT | TSL2561_WORD_BIT | TSL2561_REGISTER_CHAN1_LOW, ir);
 
   /* Turn the device off to save power */
   disable();
@@ -169,7 +180,8 @@ void TSL2561::setGain(tsl2561Gain_t gain)
   enable();
 
   /* Update the timing register */
-  write8(TSL2561_COMMAND_BIT | TSL2561_REGISTER_TIMING, _tsl2561IntegrationTime | gain);
+  uint8_t buf = _tsl2561IntegrationTime | gain;
+  write8(TSL2561_COMMAND_BIT | TSL2561_REGISTER_TIMING, &buf);
 
   /* Update value placeholders */
   _tsl2561Gain = gain;
@@ -192,7 +204,8 @@ void TSL2561::setIntegrationTime(tsl2561IntegrationTime_t time)
   enable();
 
   /* Update the timing register */
-  write8(TSL2561_COMMAND_BIT | TSL2561_REGISTER_TIMING, time | _tsl2561Gain);
+  uint8_t buf = time | _tsl2561Gain;
+  write8(TSL2561_COMMAND_BIT | TSL2561_REGISTER_TIMING, &buf);
 
   /* Update value placeholders */
   _tsl2561IntegrationTime = time;
@@ -388,77 +401,6 @@ uint32_t TSL2561::calculateLux(uint16_t broadband, uint16_t ir)
 
   /* Signal I2C had no errors */
   return lux;
-}
-
-/**************************************************************************/
-/*!
-    @brief  Writes a register and an 8 bit value over I2C
-*/
-/**************************************************************************/
-void TSL2561::write8 (uint8_t reg, uint32_t value)
-{
-  Wire.beginTransmission(_addr);
-  #if ARDUINO >= 100
-  Wire.write(reg);
-  Wire.write(value & 0xFF);
-  #else
-  Wire.send(reg);
-  Wire.send(value & 0xFF);
-  #endif
-  Wire.endTransmission();
-}
-
-/**************************************************************************/
-/*!
-    @brief  Reads an 8 bit value over I2C
-*/
-/**************************************************************************/
-uint8_t TSL2561::read8(uint8_t reg)
-{
-  Wire.beginTransmission(_addr);
-  #if ARDUINO >= 100
-  Wire.write(reg);
-  #else
-  Wire.send(reg);
-  #endif
-  Wire.endTransmission();
-
-  Wire.requestFrom(_addr, 1);
-  #if ARDUINO >= 100
-  return Wire.read();
-  #else
-  return Wire.receive();
-  #endif
-}
-
-/**************************************************************************/
-/*!
-    @brief  Reads a 16 bit values over I2C
-*/
-/**************************************************************************/
-uint16_t TSL2561::read16(uint8_t reg)
-{
-  uint16_t x; uint16_t t;
-
-  Wire.beginTransmission(_addr);
-  #if ARDUINO >= 100
-  Wire.write(reg);
-  #else
-  Wire.send(reg);
-  #endif
-  Wire.endTransmission();
-
-  Wire.requestFrom(_addr, 2);
-  #if ARDUINO >= 100
-  t = Wire.read();
-  x = Wire.read();
-  #else
-  t = Wire.receive();
-  x = Wire.receive();
-  #endif
-  x <<= 8;
-  x |= t;
-  return x;
 }
 
 /**************************************************************************/

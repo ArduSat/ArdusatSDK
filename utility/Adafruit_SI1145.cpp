@@ -17,9 +17,19 @@
 
 /*
  * Modified by Ben Peters (Ardusat) to avoid namespace collisions 
+ *
+ * Modified by Sam Olds (Ardusat) to also support SI1132 sensor
+ * https://hackaday.io/project/5684/logs
+ * 
+ * Modified by Sam Olds (Ardusat) to use common i2c read/write utility
  */
 
 #include "Adafruit_SI1145.h"
+#include "common_utils.h"
+
+#define read8(reg, val) readFromRegAddr(_addr, reg, val, 1, BIG_ENDIAN)
+#define read16(reg, val) readFromRegAddr(_addr, reg, val, 2, BIG_ENDIAN)
+#define write8(reg, val) writeToRegAddr(_addr, reg, val, 1, BIG_ENDIAN)
 
 Adafruit_SI1145::Adafruit_SI1145() {
   _addr = SI1145_ADDR;
@@ -29,31 +39,40 @@ Adafruit_SI1145::Adafruit_SI1145() {
 boolean Adafruit_SI1145::begin(void) {
   Wire.begin();
  
-  uint8_t id = read8(SI1145_REG_PARTID);
-  if (id != 0x45) return false; // look for SI1145
+  uint8_t id;
+  read8(SI1145_REG_PARTID, &id);
+  //if (id != 0x45) return false; // look for SI1145
+  if (id != 0x32) return false; // look for SI1132 instead of SI1145
   
   reset();
   
 
     /***********************************/
   // enable UVindex measurement coefficients!
-  write8(SI1145_REG_UCOEFF0, 0x29);
-  write8(SI1145_REG_UCOEFF1, 0x89);
-  write8(SI1145_REG_UCOEFF2, 0x02);
-  write8(SI1145_REG_UCOEFF3, 0x00);
+  uint8_t buf = 0x29;
+  write8(SI1145_REG_UCOEFF0, &buf);
+  buf = 0x89;
+  write8(SI1145_REG_UCOEFF1, &buf);
+  buf = 0x02;
+  write8(SI1145_REG_UCOEFF2, &buf);
+  buf = 0x00;
+  write8(SI1145_REG_UCOEFF3, &buf);
 
   // enable UV sensor
   writeParam(SI1145_PARAM_CHLIST, SI1145_PARAM_CHLIST_ENUV |
   SI1145_PARAM_CHLIST_ENALSIR | SI1145_PARAM_CHLIST_ENALSVIS |
   SI1145_PARAM_CHLIST_ENPS1);
   // enable interrupt on every sample
-  write8(SI1145_REG_INTCFG, SI1145_REG_INTCFG_INTOE);  
-  write8(SI1145_REG_IRQEN, SI1145_REG_IRQEN_ALSEVERYSAMPLE);  
+  buf = SI1145_REG_INTCFG_INTOE;
+  write8(SI1145_REG_INTCFG, &buf);
+  buf = SI1145_REG_IRQEN_ALSEVERYSAMPLE;
+  write8(SI1145_REG_IRQEN, &buf);
 
 /****************************** Prox Sense 1 */
 
   // program LED current
-  write8(SI1145_REG_PSLED21, 0x03); // 20mA for LED 1 only
+  buf = 0x03; // 20mA for LED 1 only
+  write8(SI1145_REG_PSLED21, &buf);
   writeParam(SI1145_PARAM_PS1ADCMUX, SI1145_PARAM_ADCMUX_LARGEIR);
   // prox sensor #1 uses LED #1
   writeParam(SI1145_PARAM_PSLED12SEL, SI1145_PARAM_PSLED12SEL_PS1LED1);
@@ -86,26 +105,34 @@ boolean Adafruit_SI1145::begin(void) {
 /************************/
 
   // measurement rate for auto
-  write8(SI1145_REG_MEASRATE0, 0xFF); // 255 * 31.25uS = 8ms
+  buf = 0xFF; // 255 * 31.25uS = 8ms
+  write8(SI1145_REG_MEASRATE0, &buf);
   
   // auto run
-  write8(SI1145_REG_COMMAND, SI1145_PSALS_AUTO);
+  buf = SI1145_PSALS_AUTO;
+  write8(SI1145_REG_COMMAND, &buf);
 
   return true;
 }
 
 void Adafruit_SI1145::reset() {
-  write8(SI1145_REG_MEASRATE0, 0);
-  write8(SI1145_REG_MEASRATE1, 0);
-  write8(SI1145_REG_IRQEN, 0);
-  write8(SI1145_REG_IRQMODE1, 0);
-  write8(SI1145_REG_IRQMODE2, 0);
-  write8(SI1145_REG_INTCFG, 0);
-  write8(SI1145_REG_IRQSTAT, 0xFF);
+  uint8_t buf = 0;
+  write8(SI1145_REG_MEASRATE0, &buf);
+  write8(SI1145_REG_MEASRATE1, &buf);
+  write8(SI1145_REG_IRQEN, &buf);
+  write8(SI1145_REG_IRQMODE1, &buf);
+  write8(SI1145_REG_IRQMODE2, &buf);
+  write8(SI1145_REG_INTCFG, &buf);
 
-  write8(SI1145_REG_COMMAND, SI1145_RESET);
+  buf = 0xFF;
+  write8(SI1145_REG_IRQSTAT, &buf);
+
+  buf = SI1145_RESET;
+  write8(SI1145_REG_COMMAND, &buf);
   delay(10);
-  write8(SI1145_REG_HWKEY, 0x17);
+
+  buf = 0x17;
+  write8(SI1145_REG_HWKEY, &buf);
   
   delay(10);
 }
@@ -115,22 +142,30 @@ void Adafruit_SI1145::reset() {
 
 // returns the UV index * 100 (divide by 100 to get the index)
 uint16_t Adafruit_SI1145::readUV(void) {
- return read16(0x2C); 
+  uint16_t val;
+  read16(0x2C, &val);
+  return val;
 }
 
 // returns visible+IR light levels
 uint16_t Adafruit_SI1145::readVisible(void) {
- return read16(0x22); 
+  uint16_t val;
+  read16(0x22, &val);
+  return val;
 }
 
 // returns IR light levels
 uint16_t Adafruit_SI1145::readIR(void) {
- return read16(0x24); 
+  uint16_t val;
+  read16(0x24, &val);
+  return val;
 }
 
 // returns "Proximity" - assumes an IR LED is attached to LED
 uint16_t Adafruit_SI1145::readProx(void) {
- return read16(0x26); 
+  uint16_t val;
+  read16(0x26, &val);
+  return val;
 }
 
 /*********************************************************************/
@@ -139,46 +174,22 @@ uint8_t Adafruit_SI1145::writeParam(uint8_t p, uint8_t v) {
   //Serial.print("Param 0x"); Serial.print(p, HEX);
   //Serial.print(" = 0x"); Serial.println(v, HEX);
   
-  write8(SI1145_REG_PARAMWR, v);
-  write8(SI1145_REG_COMMAND, p | SI1145_PARAM_SET);
-  return read8(SI1145_REG_PARAMRD);
+  write8(SI1145_REG_PARAMWR, &v);
+  v = p | SI1145_PARAM_SET; // Reusing variable v
+  write8(SI1145_REG_COMMAND, &v);
+
+  uint8_t data;
+  read8(SI1145_REG_PARAMRD, &data);
+  return data;
 }
 
 uint8_t Adafruit_SI1145::readParam(uint8_t p) {
-  write8(SI1145_REG_COMMAND, p | SI1145_PARAM_QUERY);
-  return read8(SI1145_REG_PARAMRD);
+  p |= SI1145_PARAM_QUERY;
+  write8(SI1145_REG_COMMAND, &p);
+
+  uint8_t data;
+  read8(SI1145_REG_PARAMRD, &data);
+  return data;
 }
 
 /*********************************************************************/
-
-uint8_t  Adafruit_SI1145::read8(uint8_t reg) {
-  uint16_t val;
-    Wire.beginTransmission(_addr);
-    Wire.write((uint8_t)reg);
-    Wire.endTransmission();
-
-    Wire.requestFrom((uint8_t)_addr, (uint8_t)1);  
-    return Wire.read();
-}
-
-uint16_t Adafruit_SI1145::read16(uint8_t a) {
-  uint16_t ret;
-
-  Wire.beginTransmission(_addr); // start transmission to device 
-  Wire.write(a); // sends register address to read from
-  Wire.endTransmission(); // end transmission
-  
-  Wire.requestFrom(_addr, (uint8_t)2);// send data n-bytes read
-  ret = Wire.read(); // receive DATA
-  ret |= (uint16_t)Wire.read() << 8; // receive DATA
-
-  return ret;
-}
-
-void Adafruit_SI1145::write8(uint8_t reg, uint8_t val) {
-
-  Wire.beginTransmission(_addr); // start transmission to device 
-  Wire.write(reg); // sends register address to write
-  Wire.write(val); // sends value
-  Wire.endTransmission(); // end transmission
-}

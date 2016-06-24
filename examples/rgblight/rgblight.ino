@@ -1,14 +1,11 @@
 /*
  * =====================================================================================
  *
- *       Filename:  pressure.ino
+ *       Filename:  rgblight.ino
  *
- *    Description:  Outputs the barometric pressure sensor readings in a JSON format
- *                  that can be read by the Ardusat Experiment Platform
+ *    Description:  Outputs the RGB light sensor readings in a JSON format that
+ *                  can be read by the Ardusat Experiment Platform
  *                  (http://experiments.ardusat.com).
- *
- *                  Set current altitude in feet and/or current sea level atmospheric
- *                  pressure to get meaningful altitude/pressure calculations.
  *
  *                  This example uses many third-party libraries available from
  *                  Adafruit (https://github.com/adafruit). These libraries are
@@ -17,14 +14,12 @@
  *                  http://www.apache.org/licenses/LICENSE-2.0
  *
  *        Version:  1.0
- *        Created:  02/12/2015
+ *        Created:  11/30/2015
  *       Revision:  none
  *       Compiler:  Arduino
  *
- *         Author:  Ben Peters (ben@ardusat.com)
+ *         Author:  Sam Olds (sam@ardusat.com)
  *   Organization:  Ardusat
- *         Edited:  8/25/2015
- *      Edited By:  Sam Olds (sam@ardusat.com)
  *
  * =====================================================================================
  */
@@ -46,10 +41,24 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
-float MY_ALTITUDE_FEET = 4300.0;    // My altitude in feet
-float seaLevelPressure = 1026.8;    // The assumed pressure (in hPa) at sea level
-float altitude;                     // My altitude in meters
-Pressure pressure;
+/* Default Sensor Configurations - To use different configuration, place a
+                                   "//" at the beginning of the next line and
+                                   remove the "//" at the beginning of the
+                                   configuration you want to use */
+RGBLight rgb; // => TCS34725_INTEGRATIONTIME_154MS, TCS34725_GAIN_1X
+
+/* TCS34725 - Useful outside or in very bright room */
+//RGBLightTCS rgb(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_1X);
+
+/* TCS34725 - Useful at night or in dark room */
+//RGBLightTCS rgb(TCS34725_INTEGRATIONTIME_700MS, TCS34725_GAIN_60X);
+
+/* ISL29125 - Useful in bright area */
+//RGBLightISL rgb(CFG1_10KLUX);
+
+/* ISL29125 - Useful in dark area */
+//RGBLightISL rgb(CFG1_375LUX);
+
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -63,9 +72,7 @@ void setup(void)
 {
   serialConnection.begin(9600);
 
-  pressure.begin();
-
-  altitude = convFeetToMeters(MY_ALTITUDE_FEET);
+  rgb.begin();
 
   /* We're ready to go! */
   serialConnection.println("");
@@ -82,50 +89,7 @@ void setup(void)
  */
 void loop(void)
 {
-  pressure.read();
-  float calculatedSeaLevelPressure = pressure.seaLevelPressureFromAltitude(altitude);
-  float calculatedAltitude = pressure.altitudeFromSeaLevelPressure(seaLevelPressure);
+  serialConnection.println(rgb.readToJSON("rgb"));
 
-  serialConnection.print("Sea level pressure, calculated from current pressure (");
-  serialConnection.print(pressure.pressure);
-  serialConnection.print(" hPa) and altitude (");
-  serialConnection.print(convMetersToFeet(altitude));
-  serialConnection.print(" ft)  = ");
-  serialConnection.print(calculatedSeaLevelPressure);
-  serialConnection.println(" hPa");
-
-  serialConnection.print("Altitude, calculated from current pressure (");
-  serialConnection.print(pressure.pressure);
-  serialConnection.print(" hPa) and sea level pressure (");
-  serialConnection.print(seaLevelPressure);
-  serialConnection.print(" hPa) = ");
-  serialConnection.print(convMetersToFeet(calculatedAltitude));
-  serialConnection.println(" ft");
-
-  serialConnection.println("");
-
-  serialConnection.println(pressure.toJSON("pressure"));
   delay(1000);
-}
-
-/*
- * ===  FUNCTION  ======================================================================
- *         Name:  convFeetToMeters
- *   Parameters:  feet
- *  Description:  This function converts the value of the parameter (in feet) to meters
- * =====================================================================================
- */
-float convFeetToMeters(float feet) {
-  return feet * 0.3048;
-}
-
-/*
- * ===  FUNCTION  ======================================================================
- *         Name:  convMetersToFeet
- *   Parameters:  meters
- *  Description:  This function converts the value of the parameter (in meters) to feet
- * =====================================================================================
- */
-float convMetersToFeet(float meters) {
-  return meters * 3.28084;
 }

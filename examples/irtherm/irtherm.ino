@@ -35,15 +35,15 @@
 
 /*-----------------------------------------------------------------------------
  *  Setup Software Serial to allow for both RF communication and USB communication
- *    RX is digital pin 10 (connect to TX/DOUT of RF Device)
- *    TX is digital pin 11 (connect to RX/DIN of RF Device)
+ *    RX is digital pin 8 (connect to TX/DOUT of RF Device)
+ *    TX is digital pin 9 (connect to RX/DIN of RF Device)
  *-----------------------------------------------------------------------------*/
 ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
-temperature_t temp;
+TemperatureMLX irtemp;
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -57,9 +57,7 @@ void setup(void)
 {
   serialConnection.begin(9600);
 
-  if (!beginInfraredTemperatureSensor()) {
-    serialConnection.println("Can't initialize IR temperature sensor! Check your wiring.");
-  }
+  irtemp.begin();
 
   /* We're ready to go! */
   serialConnection.println("");
@@ -76,8 +74,7 @@ void setup(void)
  */
 void loop(void)
 {
-  readInfraredTemperature(temp);
-  serialConnection.println(temperatureToJSON("infared", temp));
+  serialConnection.println(irtemp.readToJSON("irtemp"));
 
   delay(1000);
 }

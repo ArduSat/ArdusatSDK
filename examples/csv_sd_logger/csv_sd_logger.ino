@@ -1,11 +1,10 @@
 /*
  * =====================================================================================
  *
- *       Filename:  temperature.ino
+ *       Filename:  csv.ino
  *
- *    Description:  Outputs the temperature sensor readings in a JSON format that
- *                  can be read by the Ardusat Experiment Platform
- *                  (http://experiments.ardusat.com).
+ *    Description:  Outputs the values from two different sensors into text properly
+ *                  formatted for a CSV file.
  *
  *                  This example uses many third-party libraries available from
  *                  Adafruit (https://github.com/adafruit). These libraries are
@@ -14,14 +13,12 @@
  *                  http://www.apache.org/licenses/LICENSE-2.0
  *
  *        Version:  1.0
- *        Created:  10/29/2014
+ *        Created:  02/16/2016
  *       Revision:  none
  *       Compiler:  Arduino
  *
- *         Author:  Ben Peters (ben@ardusat.com)
+ *         Author:  Sam Olds (sam@ardusat.com)
  *   Organization:  Ardusat
- *         Edited:  8/25/2015
- *      Edited By:  Sam Olds (sam@ardusat.com)
  *
  * =====================================================================================
  */
@@ -43,6 +40,7 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
+Acceleration accel;
 Temperature temp;
 
 /*
@@ -57,10 +55,14 @@ void setup(void)
 {
   serialConnection.begin(9600);
 
+  accel.begin();
   temp.begin();
 
   /* We're ready to go! */
   serialConnection.println("");
+  serialConnection.print("timestamp (millis), name, ");
+  serialConnection.print("temperature (C), x acceleration (m/s^2), y acceleration (m/s^2), z acceleration (m/s^2), ");
+  serialConnection.println("checksum");
 }
 
 /*
@@ -74,7 +76,10 @@ void setup(void)
  */
 void loop(void)
 {
-  serialConnection.println(temp.readToJSON("ambient_temp"));
+  accel.read();
+  temp.read();
+  
+  serialConnection.println(valuesToCSV("reading", accel.header.timestamp, 4, temp.t, accel.x, accel.y, accel.z));
 
   delay(1000);
 }

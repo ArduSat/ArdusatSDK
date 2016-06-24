@@ -32,7 +32,7 @@ class ArdusatSerial : public Stream
                   bool softwareInverseLogic = false);
     ~ArdusatSerial();
 
-    void begin(unsigned long speed, bool setXbeeSpeed=false);
+    void begin(unsigned long speed);
     void end();
 
     virtual int peek();
@@ -50,5 +50,4 @@ class ArdusatSerial : public Stream
     operator bool();
 };
 
-void set_xbee_baud_rate(Stream *serial_interface, unsigned long speed);
 #endif

@@ -35,15 +35,15 @@
 
 /*-----------------------------------------------------------------------------
  *  Setup Software Serial to allow for both RF communication and USB communication
- *    RX is digital pin 10 (connect to TX/DOUT of RF Device)
- *    TX is digital pin 11 (connect to RX/DIN of RF Device)
+ *    RX is digital pin 8 (connect to TX/DOUT of RF Device)
+ *    TX is digital pin 9 (connect to RX/DIN of RF Device)
  *-----------------------------------------------------------------------------*/
 ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
-acceleration_t accel;
+Acceleration accel;
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -57,9 +57,7 @@ void setup(void)
 {
   serialConnection.begin(9600);
 
-  if (!beginAccelerationSensor()) {
-    serialConnection.println("Can't initialize IMU! Check your wiring.");
-  }
+  accel.begin();
 
   /* We're ready to go! */
   serialConnection.println("");
@@ -76,8 +74,7 @@ void setup(void)
  */
 void loop(void)
 {
-  readAcceleration(accel);
-  serialConnection.println(accelerationToJSON("acceleration", accel));
+  serialConnection.println(accel.readToJSON("acceleration"));
 
   delay(1000);
 }

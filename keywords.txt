@@ -1,0 +1,113 @@
+###############################################################################
+##  KEYWORD1 Classes, datatypes, and C++ keywords                            ##
+###############################################################################
+
+Acceleration	KEYWORD1
+Gyro	KEYWORD1
+Luminosity	KEYWORD1
+Magnetic	KEYWORD1
+Orientation	KEYWORD1
+Pressure	KEYWORD1
+RGBLight	KEYWORD1
+RGBLightTCS	KEYWORD1
+RGBLightISL	KEYWORD1
+Temperature	KEYWORD1
+TemperatureTMP	KEYWORD1
+TemperatureMLX	KEYWORD1
+UVLight	KEYWORD1
+UVLightML	KEYWORD1
+UVLightSI	KEYWORD1
+
+
+###############################################################################
+##  KEYWORD2 Methods and functions                                           ##
+###############################################################################
+
+begin	KEYWORD2
+read	KEYWORD2
+readToCSV	KEYWORD2
+readToJSON	KEYWORD2
+toCSV	KEYWORD2
+toJSON	KEYWORD2
+
+
+###############################################################################
+##  KEYWORD3 setup and loop functions, as well as the Serial keywords        ##
+###############################################################################
+
+ArdusatSerial	KEYWORD3
+
+
+###############################################################################
+##  LITERAL1 Constants                                                       ##
+###############################################################################
+
+LSM303_ACCEL_GAIN2G	LITERAL1
+LSM303_ACCEL_GAIN4G	LITERAL1
+LSM303_ACCEL_GAIN6G	LITERAL1
+LSM303_ACCEL_GAIN8G	LITERAL1
+LSM303_ACCEL_GAIN16G	LITERAL1
+
+0x00	LITERAL1
+0x10	LITERAL1
+0x20	LITERAL1
+
+TSL2561_INTEGRATIONTIME_13MS	LITERAL1
+TSL2561_INTEGRATIONTIME_101MS	LITERAL1
+TSL2561_INTEGRATIONTIME_402MS	LITERAL1
+
+TSL2561_GAIN_1X	LITERAL1
+TSL2561_GAIN_16X	LITERAL1
+
+LSM303_MAG_SCALE1_3GAUSS	LITERAL1
+LSM303_MAG_SCALE2GAUSS	LITERAL1
+LSM303_MAG_SCALE2_5GAUSS	LITERAL1
+LSM303_MAG_SCALE4GAUSS	LITERAL1
+LSM303_MAG_SCALE4_7GAUSS	LITERAL1
+LSM303_MAG_SCALE5_6GAUSS	LITERAL1
+LSM303_MAG_SCALE8GAUSS	LITERAL1
+LSM303_MAG_SCALE12GAUSS	LITERAL1
+
+BMP085_MODE_ULTRALOWPOWER	LITERAL1
+BMP085_MODE_STANDARD	LITERAL1
+BMP085_MODE_HIGHRES	LITERAL1
+BMP085_MODE_ULTRAHIGHRES	LITERAL1
+
+TCS34725_INTEGRATIONTIME_2_4MS	LITERAL1
+TCS34725_INTEGRATIONTIME_24MS	LITERAL1
+TCS34725_INTEGRATIONTIME_50MS	LITERAL1
+TCS34725_INTEGRATIONTIME_101MS	LITERAL1
+TCS34725_INTEGRATIONTIME_154MS	LITERAL1
+TCS34725_INTEGRATIONTIME_700MS	LITERAL1
+
+TCS34725_GAIN_1X	LITERAL1
+TCS34725_GAIN_4X	LITERAL1
+TCS34725_GAIN_16X	LITERAL1
+TCS34725_GAIN_60X	LITERAL1
+
+CFG1_375LUX	LITERAL1
+CFG1_10KLUX	LITERAL1
+
+DRIVER_ML8511_UV_PIN	LITERAL1
+
+DATA_UNIT_METER_PER_SECONDSQUARED	LITERAL1
+DATA_UNIT_RADIAN_PER_SECOND	LITERAL1
+DATA_UNIT_LUX	LITERAL1
+DATA_UNIT_MICROTESLA	LITERAL1
+DATA_UNIT_DEGREES	LITERAL1
+DATA_UNIT_HECTOPASCAL	LITERAL1
+DATA_UNIT_LUX	LITERAL1
+DATA_UNIT_DEGREES_CELSIUS	LITERAL1
+DATA_UNIT_MILLIWATT_PER_CMSQUARED	LITERAL1
+
+SERIAL_MODE_HARDWARE	LITERAL1
+SERIAL_MODE_SOFTWARE	LITERAL1
+SERIAL_MODE_HARDWARE_AND_SOFTWARE	LITERAL1
+
+
+###############################################################################
+##  LITERAL2 Built-in variables (unused by default)                          ##
+###############################################################################
+
+MANUAL_CONFIG	LITERAL2
+ARDUSAT_SPACEBOARD	LITERAL2
