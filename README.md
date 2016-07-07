@@ -21,8 +21,8 @@ If you're interested in using the SDK for logging data to an SD card, you'll nee
 thing with our other [Ardusat Logging SDK Library](http://github.com/ardusat/ardusatsdk-logging)
 
 
-## Downloaded and Used the SDK before June 20, 2016?
-If you want to use the latest SDK and you have existing Arduino sketches (from *before June 20,
+## Downloaded and Used the SDK before July 8, 2016?
+If you want to use the latest SDK and you have existing Arduino sketches (from *before July 8,
 2016*) that you would like to keep using, take a look at the
 [Transition Documentation](https://github.com/ArduSat/ArdusatSDK/wiki/SDK-Transition-Information)
 for how to update your sketches to work with the latest SDK.
@@ -321,7 +321,7 @@ void loop(void) {
 Output: Proper CSV format. This will be successfully imported into the Experiment Platform
         However, this will not work if you're streaming CSV data to the Experiment PLatform.
 ```cpp
-timestamp(milliseconds),Acceleration-x(m/s^2),Acceleration-y(m/s^2),Acceleration-z(m/s^2),Temperature(C)
+timestamp(milliseconds),accelerometerX(m/s^2),accelerometerY(m/s^2),accelerometerZ(m/s^2),ambientTemp(C)
 89,9.11,0.02,0.78,27.3
 123,9.10,0.08,0.73,27.2
 145,9.02,0.11,0.88,27.3
@@ -372,7 +372,7 @@ as integers, then rounds the value (s) and adds this to the sum of the name char
 Example checksum calculation:
 
 ```cpp
-int calculate_checksum(const char *sensorName, float value) {
+int calculateChecksum(const char *sensorName, float value) {
   int checksum = 0;
   int i, len;
 

@@ -74,7 +74,7 @@ void setup(void)
  */
 void loop(void)
 {
-  serialConnection.println(accel.readToJSON("acceleration"));
+  serialConnection.println(accel.readToJSON("accelerometer"));
 
   delay(1000);
 }

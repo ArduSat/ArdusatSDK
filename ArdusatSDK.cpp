@@ -27,16 +27,22 @@ const char unavailable_on_hardware_error_msg[] PROGMEM = "%s is not available wi
 const char spacekit_hardware_name[] PROGMEM = "Space Kit";
 const char spaceboard_hardware_name[] PROGMEM = "SpaceBoard";
 
-const char acceleration_sensor_name[] PROGMEM = "Acceleration";
-const char gyro_sensor_name[] PROGMEM = "Gyro";
-const char luminosity_sensor_name[] PROGMEM = "Luminosity";
-const char magnetic_sensor_name[] PROGMEM = "Magnetic";
-const char orientation_sensor_name[] PROGMEM = "Orientation";
-const char pressure_sensor_name[] PROGMEM = "BarometricPressure";
-const char temperature_sensor_name[] PROGMEM = "Temperature";
-const char irtemperature_sensor_name[] PROGMEM = "IRTemperature";
-const char rgblight_sensor_name[] PROGMEM = "RGBLight";
-const char uvlight_sensor_name[] PROGMEM = "UVLight";
+const char acceleration_sensor_name[] PROGMEM = "accelerometer";
+const char gyro_sensor_name[] PROGMEM = "gyro";
+const char luminosity_sensor_name[] PROGMEM = "luminosity";
+const char magnetic_sensor_name[] PROGMEM = "magnetic";
+const char orientation_sensor_name[] PROGMEM = "orientation";
+const char orientation_sensor_roll[] PROGMEM = "Roll";
+const char orientation_sensor_pitch[] PROGMEM = "Pitch";
+const char orientation_sensor_heading[] PROGMEM = "Heading";
+const char pressure_sensor_name[] PROGMEM = "pressure";
+const char temperature_sensor_name[] PROGMEM = "ambientTemp";
+const char irtemperature_sensor_name[] PROGMEM = "infraredTemp";
+const char rgblight_sensor_name[] PROGMEM = "rgb";
+const char rgblight_sensor_red[] PROGMEM = "Red";
+const char rgblight_sensor_green[] PROGMEM = "Green";
+const char rgblight_sensor_blue[] PROGMEM = "Blue";
+const char uvlight_sensor_name[] PROGMEM = "uv";
 
 const char CSV_TIMESTAMP[] PROGMEM = "timestamp(milliseconds)";
 const char CSV_CHECKSUM[] PROGMEM = "checksum";
@@ -96,6 +102,12 @@ const char * unit_to_str(unsigned char unit) {
       return "deg";
     case (DATA_UNIT_HECTOPASCAL):
       return "hPa";
+    case (DATA_UNIT_FEET):
+      return "ft";
+    case (DATA_UNIT_METERS):
+      return "m";
+    case (DATA_UNIT_MILLISECONDS):
+      return "ms";
     default:
       return "";
   };
@@ -147,7 +159,7 @@ void _writeErrorMessage(const char error_msg[] PROGMEM, const char sensorName[] 
 /*
  * Internal helper to do shared checksum logic
  */
-int _calculateCheckSumValue(const char *sensor_name, int num_vals, va_list values) {
+int _calculateChecksumValue(const char *sensor_name, int num_vals, va_list values) {
   int cs = 0;
   const char *c_ptr = sensor_name;
 
@@ -162,7 +174,7 @@ int _calculateCheckSumValue(const char *sensor_name, int num_vals, va_list value
   return cs;
 }
 
-/*
+/**
  * Calculates a checksum value for a given sensorName and value
  *
  * @param sensor_name name of sensor
@@ -171,10 +183,10 @@ int _calculateCheckSumValue(const char *sensor_name, int num_vals, va_list value
  *
  * @return checksum
  */
-int calculateCheckSum(const char *sensor_name, int num_vals, ...) {
+int calculateChecksum(const char *sensor_name, int num_vals, ...) {
   va_list values;
   va_start(values, num_vals);
-  int cs = _calculateCheckSumValue(sensor_name, num_vals, values);
+  int cs = _calculateChecksumValue(sensor_name, num_vals, values);
   va_end(values);
   return cs;
 }
@@ -227,7 +239,7 @@ const char * valuesToCSV(const char *sensorName, unsigned long timestamp, int nu
 
   if (_output_buf_len < OUTPUT_BUF_SIZE - 10) {
     va_start(args, numValues);
-    int cs = _calculateCheckSumValue(sensorName, numValues, args);
+    int cs = _calculateChecksumValue(sensorName, numValues, args);
     va_end(args);
     _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
     itoa(cs, _getOutBuf() + _output_buf_len, 10);
@@ -268,7 +280,7 @@ int _writeJSONValue(char *buf, const char *sensor_name, const char *unit, float 
   strcpy_P(format_str, json_format);
   _output_buf_len += sprintf(buf, format_str,
                              JSON_PREFIX, sensor_name, unit, num,
-                             calculateCheckSum(sensor_name, 1, value), JSON_SUFFIX);
+                             calculateChecksum(sensor_name, 1, value), JSON_SUFFIX);
   return _output_buf_len;
 }
 
@@ -487,7 +499,7 @@ int Acceleration::_bufCSVValues(void) {
   dtostrf(this->z, 2, 3, _getOutBuf() + _output_buf_len);
   _output_buf_len = strlen(_getOutBuf());
 
-  return calculateCheckSum(0, 3, this->x, this->y, this->z);
+  return calculateChecksum(0, 3, this->x, this->y, this->z);
 }
 
 /*
@@ -502,22 +514,19 @@ void Acceleration::_bufCSVHeaders(void) {
   // Write out the default sensor name
   memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
   _output_buf_len += name_len;
-  _getOutBuf()[_output_buf_len++] = '-';
-  _getOutBuf()[_output_buf_len++] = 'x';
+  _getOutBuf()[_output_buf_len++] = 'X';
   _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 
   _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
   memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
   _output_buf_len += name_len;
-  _getOutBuf()[_output_buf_len++] = '-';
-  _getOutBuf()[_output_buf_len++] = 'y';
+  _getOutBuf()[_output_buf_len++] = 'Y';
   _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 
   _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
   memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
   _output_buf_len += name_len;
-  _getOutBuf()[_output_buf_len++] = '-';
-  _getOutBuf()[_output_buf_len++] = 'z';
+  _getOutBuf()[_output_buf_len++] = 'Z';
   _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 }
 
@@ -629,7 +638,7 @@ int Gyro::_bufCSVValues(void) {
   dtostrf(this->z, 2, 3, _getOutBuf() + _output_buf_len);
   _output_buf_len = strlen(_getOutBuf());
 
-  return calculateCheckSum(0, 3, this->x, this->y, this->z);
+  return calculateChecksum(0, 3, this->x, this->y, this->z);
 }
 
 /*
@@ -644,22 +653,19 @@ void Gyro::_bufCSVHeaders(void) {
   // Write out the default sensor name
   memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
   _output_buf_len += name_len;
-  _getOutBuf()[_output_buf_len++] = '-';
-  _getOutBuf()[_output_buf_len++] = 'x';
+  _getOutBuf()[_output_buf_len++] = 'X';
   _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 
   _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
   memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
   _output_buf_len += name_len;
-  _getOutBuf()[_output_buf_len++] = '-';
-  _getOutBuf()[_output_buf_len++] = 'y';
+  _getOutBuf()[_output_buf_len++] = 'Y';
   _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 
   _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
   memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
   _output_buf_len += name_len;
-  _getOutBuf()[_output_buf_len++] = '-';
-  _getOutBuf()[_output_buf_len++] = 'z';
+  _getOutBuf()[_output_buf_len++] = 'Z';
   _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 }
 
@@ -839,7 +845,7 @@ int Luminosity::_bufCSVValues(void) {
   dtostrf(this->lux, 2, 3, _getOutBuf() + _output_buf_len);
   _output_buf_len = strlen(_getOutBuf());
 
-  return calculateCheckSum(0, 1, this->lux);
+  return calculateChecksum(0, 1, this->lux);
 }
 
 /*
@@ -968,7 +974,7 @@ int Magnetic::_bufCSVValues(void) {
   dtostrf(this->z, 2, 3, _getOutBuf() + _output_buf_len);
   _output_buf_len = strlen(_getOutBuf());
 
-  return calculateCheckSum(0, 3, this->x, this->y, this->z);
+  return calculateChecksum(0, 3, this->x, this->y, this->z);
 }
 
 /*
@@ -983,22 +989,19 @@ void Magnetic::_bufCSVHeaders(void) {
   // Write out the default sensor name
   memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
   _output_buf_len += name_len;
-  _getOutBuf()[_output_buf_len++] = '-';
-  _getOutBuf()[_output_buf_len++] = 'x';
+  _getOutBuf()[_output_buf_len++] = 'X';
   _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 
   _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
   memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
   _output_buf_len += name_len;
-  _getOutBuf()[_output_buf_len++] = '-';
-  _getOutBuf()[_output_buf_len++] = 'y';
+  _getOutBuf()[_output_buf_len++] = 'Y';
   _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 
   _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
   memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
   _output_buf_len += name_len;
-  _getOutBuf()[_output_buf_len++] = '-';
-  _getOutBuf()[_output_buf_len++] = 'z';
+  _getOutBuf()[_output_buf_len++] = 'Z';
   _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 }
 
@@ -1122,37 +1125,47 @@ int Orientation::_bufCSVValues(void) {
   dtostrf(this->heading, 2, 3, _getOutBuf() + _output_buf_len);
   _output_buf_len = strlen(_getOutBuf());
 
-  return calculateCheckSum(0, 3, this->roll, this->pitch, this->heading);
+  return calculateChecksum(0, 3, this->roll, this->pitch, this->heading);
 }
 
 /*
  * Adds information necessary for a proper CSV Header into the output buffer
  */
 void Orientation::_bufCSVHeaders(void) {
-  char sensorName[25];
+  char sensorName[25]; // "orientation"
+  char sensorRoll[5];  // "Roll"
+  char sensorPitch[6]; // "Pitch"
+  char sensorHead[8];  // "Heading"
   const char * unit = unit_to_str(this->header.unit);
   strcpy_P(sensorName, orientation_sensor_name);
+  strcpy_P(sensorRoll, orientation_sensor_roll);
+  strcpy_P(sensorPitch, orientation_sensor_pitch);
+  strcpy_P(sensorHead, orientation_sensor_heading);
+
   int name_len = strlen(sensorName);
+  int roll_len = strlen(sensorRoll);
+  int pitch_len = strlen(sensorPitch);
+  int head_len = strlen(sensorHead);
 
   // Write out the default sensor name
   memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
   _output_buf_len += name_len;
-  _getOutBuf()[_output_buf_len++] = '-';
-  _getOutBuf()[_output_buf_len++] = 'r';
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorRoll, roll_len);
+  _output_buf_len += roll_len;
   _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 
   _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
   memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
   _output_buf_len += name_len;
-  _getOutBuf()[_output_buf_len++] = '-';
-  _getOutBuf()[_output_buf_len++] = 'p';
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorPitch, pitch_len);
+  _output_buf_len += pitch_len;
   _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 
   _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
   memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
   _output_buf_len += name_len;
-  _getOutBuf()[_output_buf_len++] = '-';
-  _getOutBuf()[_output_buf_len++] = 'h';
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorHead, head_len);
+  _output_buf_len += head_len;
   _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 }
 
@@ -1239,7 +1252,7 @@ boolean Pressure::initialize(void) {
     _writeErrorMessage(unavailable_on_hardware_error_msg, pressure_sensor_name, spaceboard_hardware_name);
   }
 
-  return bmp180_init(this->bmp085_mode) && (!ARDUSAT_SPACEBOARD || MANUAL_CONFIG);
+  return bmp180_init(this->bmp085_mode);
 }
 
 /**
@@ -1297,7 +1310,7 @@ int Pressure::_bufCSVValues(void) {
   dtostrf(this->pressure, 2, 3, _getOutBuf() + _output_buf_len);
   _output_buf_len = strlen(_getOutBuf());
 
-  return calculateCheckSum(0, 1, this->pressure);
+  return calculateChecksum(0, 1, this->pressure);
 }
 
 /*
@@ -1359,7 +1372,7 @@ RGBLight::RGBLight(void) :
   tcsIt(TCS34725_INTEGRATIONTIME_154MS),
   tcsGain(TCS34725_GAIN_1X)
 {
-  this->initializeHeader(SENSORID_TCS34725, DATA_UNIT_LUX, rgblight_sensor_name);
+  this->initializeHeader(SENSORID_TCS34725, DATA_UNIT_NONE, rgblight_sensor_name);
 }
 
 /**
@@ -1370,7 +1383,7 @@ RGBLight::RGBLight(tcs34725IntegrationTime_t tcsIt, tcs34725Gain_t tcsGain) :
   tcsIt(tcsIt),
   tcsGain(tcsGain)
 {
-  this->initializeHeader(SENSORID_TCS34725, DATA_UNIT_LUX, rgblight_sensor_name);
+  this->initializeHeader(SENSORID_TCS34725, DATA_UNIT_NONE, rgblight_sensor_name);
 }
 
 /**
@@ -1385,7 +1398,7 @@ boolean RGBLight::initialize(void) {
     _writeErrorMessage(unavailable_on_hardware_error_msg, rgblight_sensor_name, spacekit_hardware_name);
   }
 
-  return tcs34725_init(tcsIt, tcsGain) && (ARDUSAT_SPACEBOARD || MANUAL_CONFIG);
+  return tcs34725_init(tcsIt, tcsGain);
 }
 
 /**
@@ -1415,37 +1428,47 @@ int RGBLight::_bufCSVValues(void) {
   dtostrf(this->blue, 2, 3, _getOutBuf() + _output_buf_len);
   _output_buf_len = strlen(_getOutBuf());
 
-  return calculateCheckSum(0, 3, this->red, this->green, this->blue);
+  return calculateChecksum(0, 3, this->red, this->green, this->blue);
 }
 
 /*
  * Adds information necessary for a proper CSV Header into the output buffer
  */
 void RGBLight::_bufCSVHeaders(void) {
-  char sensorName[25];
+  char sensorName[25]; // "rgb"
+  char sensorRed[4];   // "Red"
+  char sensorGreen[6]; // "Green"
+  char sensorBlue[5];  // "Blue"
   const char * unit = unit_to_str(this->header.unit);
   strcpy_P(sensorName, rgblight_sensor_name);
+  strcpy_P(sensorRed, rgblight_sensor_red);
+  strcpy_P(sensorGreen, rgblight_sensor_green);
+  strcpy_P(sensorBlue, rgblight_sensor_blue);
+
   int name_len = strlen(sensorName);
+  int red_len = strlen(sensorRed);
+  int green_len = strlen(sensorGreen);
+  int blue_len = strlen(sensorBlue);
 
   // Write out the default sensor name
   memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
   _output_buf_len += name_len;
-  _getOutBuf()[_output_buf_len++] = '-';
-  _getOutBuf()[_output_buf_len++] = 'r';
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorRed, red_len);
+  _output_buf_len += red_len;
   _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 
   _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
   memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
   _output_buf_len += name_len;
-  _getOutBuf()[_output_buf_len++] = '-';
-  _getOutBuf()[_output_buf_len++] = 'g';
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorGreen, green_len);
+  _output_buf_len += green_len;
   _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 
   _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;
   memcpy(&(_getOutBuf()[_output_buf_len]), sensorName, name_len);
   _output_buf_len += name_len;
-  _getOutBuf()[_output_buf_len++] = '-';
-  _getOutBuf()[_output_buf_len++] = 'b';
+  memcpy(&(_getOutBuf()[_output_buf_len]), sensorBlue, blue_len);
+  _output_buf_len += blue_len;
   _bufSensorHeaderUnit(unit_to_str(this->header.unit));
 }
 
@@ -1613,7 +1636,7 @@ RGBLightTCS::RGBLightTCS(tcs34725Gain_t tcsGain) :
 RGBLightISL::RGBLightISL(void) :
   islIntensity(CFG1_10KLUX)
 {
-  this->initializeHeader(SENSORID_ISL29125, DATA_UNIT_LUX, rgblight_sensor_name);
+  this->initializeHeader(SENSORID_ISL29125, DATA_UNIT_NONE, rgblight_sensor_name);
 }
 
 /**
@@ -1634,7 +1657,7 @@ RGBLightISL::RGBLightISL(void) :
 RGBLightISL::RGBLightISL(uint8_t islIntensity) :
   islIntensity(islIntensity)
 {
-  this->initializeHeader(SENSORID_ISL29125, DATA_UNIT_LUX, rgblight_sensor_name);
+  this->initializeHeader(SENSORID_ISL29125, DATA_UNIT_NONE, rgblight_sensor_name);
 }
 
 /**
@@ -1649,7 +1672,7 @@ boolean RGBLightISL::initialize(void) {
     _writeErrorMessage(unavailable_on_hardware_error_msg, rgblight_sensor_name, spacekit_hardware_name);
   }
 
-  return isl29125_init(islIntensity) && (ARDUSAT_SPACEBOARD || MANUAL_CONFIG);
+  return isl29125_init(islIntensity);
 }
 
 /**
@@ -1713,7 +1736,7 @@ int Temperature::_bufCSVValues(void) {
   dtostrf(this->t, 2, 3, _getOutBuf() + _output_buf_len);
   _output_buf_len = strlen(_getOutBuf());
 
-  return calculateCheckSum(0, 1, this->t);
+  return calculateChecksum(0, 1, this->t);
 }
 
 /*
@@ -1859,7 +1882,7 @@ int UVLight::_bufCSVValues(void) {
   dtostrf(this->uvindex, 2, 3, _getOutBuf() + _output_buf_len);
   _output_buf_len = strlen(_getOutBuf());
 
-  return calculateCheckSum(0, 1, this->uvindex);
+  return calculateChecksum(0, 1, this->uvindex);
 }
 
 /*
@@ -1987,6 +2010,7 @@ boolean UVLightSI::readSensor(void) {
 CSVWriter::CSVWriter(ArdusatSerial & serialConnection) :
   serialConnection(&serialConnection),
   includeChecksum(false),
+  startTime(0),
   numSensors(0)
 {
 }
@@ -2021,13 +2045,25 @@ boolean CSVWriter::registerSensor(Sensor & sensor) {
 }
 
 /**
+ * @brief   Sets the initial logging start time to be added to all subsequent timestamps
+ * @ingroup csvwriter
+ * @param   startTime The time in milliseconds that the logging is expected to begin
+ * @retval  true Succesful setting of the start time
+ * @retval  false Error setting the start time
+ */
+boolean CSVWriter::setStartTime(unsigned long startTime) {
+  this->startTime = startTime;
+  return true;
+}
+
+/**
  * @brief   Builds a header to print at the top of a CSV file
  * @ingroup csvwriter
  * @return  string in the format of "timestamp(unit),sensor_name(unit),...,checksum"
  */
 void CSVWriter::serialPrintHeader(void) {
   int i = 0;
-  char tempBuf[20];
+  char tempBuf[30];
   Sensor * sensor;
 
   _resetOutBuf(); // Flush the buffer
@@ -2081,7 +2117,10 @@ void CSVWriter::serialPrintRow(void) {
   _resetOutBuf();
 
   // Add timestamp to beginning of row
-  unsigned long timestamp = millis();
+  // Note: millis is divided by 1000 because it appears that the Experiment
+  //       Platform doesn't handle timestamps different from Unix Time in
+  //       Seconds very well.
+  unsigned long timestamp = this->startTime + (millis() / 1000);
   ultoa(timestamp, _getOutBuf(), 10);
   _output_buf_len = strlen(_getOutBuf());
   _getOutBuf()[_output_buf_len++] = CSV_SEPARATOR;

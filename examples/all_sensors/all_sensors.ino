@@ -100,7 +100,7 @@ void loop(void)
   serialConnection.println(ambient.readToJSON("ambientTemp"));
 
   // Read Gyroscope
-  serialConnection.println(gyro.readToJSON("gyroscope"));
+  serialConnection.println(gyro.readToJSON("gyro"));
 
   // Read MLX Infrared temp sensor
   serialConnection.println(infrared.readToJSON("infraredTemp"));

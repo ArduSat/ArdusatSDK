@@ -74,7 +74,7 @@ void setup(void)
  */
 void loop(void)
 {
-  serialConnection.println(mag.readToJSON("mag"));
+  serialConnection.println(mag.readToJSON("magnetic"));
 
   delay(1000);
 }

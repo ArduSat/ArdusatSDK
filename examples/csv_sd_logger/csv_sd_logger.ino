@@ -51,6 +51,10 @@ UVLightML uv;
 
 CSVWriter csv(serialConnection);
 
+// Go to http://epochconverter.com and replace the following number with the
+// large number at the top of the page.
+const unsigned long NOW = 1468233000;
+
 /*
  * ===  FUNCTION  ======================================================================
  *         Name:  setup
@@ -71,6 +75,8 @@ void setup(void)
   mag.begin();
   rgb.begin();
   uv.begin();
+
+  csv.setStartTime(NOW);
 
   csv.registerSensor(accel);
   csv.registerSensor(ambient);

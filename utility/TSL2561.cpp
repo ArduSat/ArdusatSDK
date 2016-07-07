@@ -412,7 +412,7 @@ uint32_t TSL2561::calculateLux(uint16_t broadband, uint16_t ir)
 
 boolean TSL2561::IsSensorSaturated(const uint16_t &broadband, const uint16_t &ir)
 {
-	boolean ReturnValue = false;
+  boolean ReturnValue = false;
 
   /* Make sure the sensor isn't saturated! */
   uint16_t clipThreshold;

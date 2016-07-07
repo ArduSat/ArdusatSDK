@@ -62,7 +62,10 @@ typedef enum {
   DATA_UNIT_RADIAN = 8,
   DATA_UNIT_MILLIWATT_PER_CMSQUARED = 9,
   DATA_UNIT_DEGREES = 10,
-  DATA_UNIT_HECTOPASCAL = 11
+  DATA_UNIT_HECTOPASCAL = 11,
+  DATA_UNIT_FEET = 12,
+  DATA_UNIT_METERS = 13,
+  DATA_UNIT_MILLISECONDS = 14
 } data_unit_t;
 
 /**
@@ -92,6 +95,11 @@ const int MAX_SENSORS = 15;
  * Get a string representation of a unit constant
  */
 const char * unit_to_str(unsigned char unit);
+
+/**
+ * Calculates a checksum value for a given sensorName and value
+ */
+int calculateChecksum(const char *sensor_name, int num_vals, ...);
 
 /**
  * creates a string representation of the data in a CSV format that can be used with
@@ -654,6 +662,7 @@ class CSVWriter {
     ArdusatSerial * serialConnection;
     Sensor * sensors[MAX_SENSORS];
     boolean includeChecksum;
+    unsigned long startTime;
     int numSensors;
 
   public:
@@ -661,6 +670,7 @@ class CSVWriter {
     CSVWriter(ArdusatSerial & serialConnection, boolean includeChecksum);
 
     boolean registerSensor(Sensor & sensor);
+    boolean setStartTime(unsigned long startTime);
     void serialPrintHeader(void);
     void serialPrintRow(void);
 };
