@@ -44,8 +44,13 @@
 #define DRIVER_MLX90614_ADDR            0x5A  /* Melexis Thermopile single pixel */
 #define DRIVER_TSL2561_ADDR             0x39  /* TAOS Lux Light Visible/IR sensor */
 //#define DRIVER_TSL2591_ADDR           0x39  /* TAOS Lux High DR Visible/IR sensor (Not available in Kit or Spaceboard) */
-#define DRIVER_ML8511_UV_PIN            A0
-#define DRIVER_ML8511_REF_PIN           A1
+#ifdef __AVR__
+  #define DRIVER_ML8511_UV_PIN            A0
+  #define DRIVER_ML8511_REF_PIN           A1
+#elif defined(ESP32)
+  #define DRIVER_ML8511_UV_PIN            36
+  #define DRIVER_ML8511_REF_PIN           37
+#endif
 #define DRIVER_ML8511_ADDR              0x51  /* Lapis UV light sensor through LTC2451 */
 #define DRIVER_LSM303_ADDR              0x1E  /* ST 3-axis accelerometer & magnetometer */
 //#define DRIVER_L3GD20_ADDR            0x6B  /* ST 3-axis digital gyroscope (Already defined by 'L3GD20_ADDRESS') */

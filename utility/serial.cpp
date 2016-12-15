@@ -13,20 +13,29 @@
 
 const char no_software_params_err_msg[] PROGMEM = "You specified a software serial mode but didn't specify transmit/recieve pins!";
 
-#define send_to_serial(function) \
-  if (_mode == SERIAL_MODE_HARDWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) { \
-    Serial.function; \
-  } \
-  if (_soft_serial && (_mode == SERIAL_MODE_SOFTWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE)) { \
-    _soft_serial->function; \
-  }
+#ifdef __AVR__
+  #define send_to_serial(function) \
+    if (_mode == SERIAL_MODE_HARDWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) { \
+      Serial.function; \
+    } \
+    if (_soft_serial && (_mode == SERIAL_MODE_SOFTWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE)) { \
+      _soft_serial->function; \
+    }
+#elif defined(ESP32)
+    #define send_to_serial(function) Serial.function;
+#endif
 
-#define return_serial_function(fxn) \
-  if (_mode == SERIAL_MODE_SOFTWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) { \
-    return _soft_serial->fxn; \
-  } else { \
-    return Serial.fxn; \
-  }
+
+#ifdef __AVR__
+  #define return_serial_function(fxn) \
+    if (_mode == SERIAL_MODE_SOFTWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) { \
+      return _soft_serial->fxn; \
+    } else { \
+      return Serial.fxn; \
+    }
+#elif defined(ESP32)
+  #define return_serial_function(fxn) return Serial.fxn;
+#endif
 
 /**
  * If only a mode is specified to the constructor, we need to be using hardware serial.
@@ -46,19 +55,22 @@ ArdusatSerial::ArdusatSerial(serialMode mode)
 ArdusatSerial::ArdusatSerial(serialMode mode, unsigned char softwareReceivePin,
                              unsigned char softwareTransmitPin, bool softwareInverseLogic)
 {
+#ifdef __AVR__
   if (mode == SERIAL_MODE_SOFTWARE || mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
     _soft_serial = new SoftwareSerial(softwareReceivePin, softwareTransmitPin,
                                       softwareInverseLogic);
   }
-
+#endif
   _mode = mode;
 }
 
 ArdusatSerial::~ArdusatSerial()
 {
+#ifdef __AVR__
   if (_soft_serial != NULL) {
     delete _soft_serial;
   }
+#endif
 }
 
 /**
@@ -71,6 +83,7 @@ ArdusatSerial::~ArdusatSerial()
  */
 void ArdusatSerial::begin(unsigned long baud)
 {
+#ifdef __AVR__
   if (_mode == SERIAL_MODE_HARDWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
     Serial.begin(baud);
   }
@@ -79,6 +92,9 @@ void ArdusatSerial::begin(unsigned long baud)
     _soft_serial->end();
     _soft_serial->begin(baud);
   }
+#elif defined(ESP32)
+  Serial.begin(baud);
+#endif
 }
 
 void ArdusatSerial::end()
@@ -109,6 +125,7 @@ void ArdusatSerial::flush()
 size_t ArdusatSerial::write(unsigned char b) {
   size_t ret = 1;
 
+#ifdef __AVR__
   if (_soft_serial != NULL && 
       ( _mode == SERIAL_MODE_SOFTWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE)) {
     ret = ret & _soft_serial->write(b);
@@ -117,6 +134,8 @@ size_t ArdusatSerial::write(unsigned char b) {
   if (_mode == SERIAL_MODE_HARDWARE || _mode == SERIAL_MODE_HARDWARE_AND_SOFTWARE) {
     ret = ret & Serial.write(b);
   }
-
+#elif defined(ESP32)
+  ret = ret & Serial.write(b);
+#endif
   return ret;
 }

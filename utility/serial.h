@@ -12,8 +12,6 @@
 #include <inttypes.h>
 #include <Stream.h>
 
-#include "SoftwareSerial.h"
-
 typedef enum {
   SERIAL_MODE_HARDWARE=0,
   SERIAL_MODE_SOFTWARE,
@@ -23,7 +21,9 @@ typedef enum {
 class ArdusatSerial : public Stream
 {
   private:
+#ifdef __AVR__
     SoftwareSerial *_soft_serial; 
+#endif
     serialMode _mode;
 
   public:

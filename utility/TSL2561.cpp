@@ -37,8 +37,12 @@
  * Modified by Sam Olds (Ardusat) to use common i2c read/write utility
  */
 
-#include <avr/pgmspace.h>
-#include <util/delay.h>
+#ifdef __AVR__
+  #include <avr/pgmspace.h>
+  #include <util/delay.h>
+#elif defined(ESP8266) || defined(ESP32)
+  #include <pgmspace.h>
+#endif
 #include <stdlib.h>
 
 #include "TSL2561.h"

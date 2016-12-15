@@ -14,7 +14,11 @@
 
 #include <Arduino.h>
 #include <utility/drivers.h>
-#include <avr/pgmspace.h>
+#ifdef __AVR__
+  #include <avr/pgmspace.h>
+#elif defined(ESP8266) || defined(ESP32)
+  #include <pgmspace.h>
+#endif
 #include <utility/serial.h>
 
 /**
