@@ -936,13 +936,14 @@ boolean tcs34725_init(tcs34725IntegrationTime_t it, tcs34725Gain_t gain) {
   return init;
 }
 
-void tcs34725_getRGB(float *red, float *green, float *blue) {
+void tcs34725_getRGB(float *red, float *green, float *blue, float *white) {
   uint16_t r, g, b, clear;
 
   tcs34725.getRawData(&r, &g, &b, &clear);
   *red = r;
   *green = g;
   *blue = b;
+  *white = clear;
 }
 
 

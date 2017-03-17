@@ -403,6 +403,7 @@ class RGBLight: public Sensor {
     float red;
     float green;
     float blue;
+    float white;
     RGBLight(void);
 
     const char * toCSV(const char * sensorName);

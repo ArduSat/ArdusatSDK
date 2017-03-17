@@ -180,7 +180,7 @@ void isl29125_getRGB(float * red, float * green, float * blue);
  * https://learn.adafruit.com/adafruit-color-sensors
  */
 boolean tcs34725_init(tcs34725IntegrationTime_t it, tcs34725Gain_t gain);
-void tcs34725_getRGB(float * red, float * green, float * blue);
+void tcs34725_getRGB(float * red, float * green, float * blue, float * white);
 
 /**
  * SI1132 UV/Light sensor uses the SI1145 driver provided by Adafruit.

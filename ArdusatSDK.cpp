@@ -1140,7 +1140,7 @@ boolean RGBLight::initialize(void) {
  * @retval false Failed to read
  */
 boolean RGBLight::readSensor(void) {
-  tcs34725_getRGB(&(this->red), &(this->green), &(this->blue));
+  tcs34725_getRGB(&(this->red), &(this->green), &(this->blue), &(this->white));
   return true;
 }
 
