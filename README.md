@@ -170,6 +170,7 @@ Pressure     | DATA_UNIT_HECTOPASCAL             | "hPa"
 RGBLight     | DATA_UNIT_LUX                     | "lux"
 Temperature  | DATA_UNIT_DEGREES_CELSIUS         | "C"
 UVLight      | DATA_UNIT_MILLIWATT_PER_CMSQUARED | "mW/cm^2"
+None         | DATA_UNIT_NONE                    | ""
 
 
 #### Sensor Notes
