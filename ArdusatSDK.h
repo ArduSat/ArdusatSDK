@@ -31,6 +31,23 @@ extern boolean MANUAL_CONFIG;
  */
 extern boolean ARDUSAT_SPACEBOARD;
 
+extern const char spacekit_hardware_name[];
+extern const char spaceboard_hardware_name[];
+
+extern const char acceleration_sensor_name[];
+extern const char gyro_sensor_name[];
+extern const char luminosity_sensor_name[];
+extern const char magnetic_sensor_name[];
+extern const char orientation_sensor_name[];
+extern const char pressure_sensor_name[];
+extern const char temperature_sensor_name[];
+extern const char irtemperature_sensor_name[];
+extern const char rgblight_sensor_name[];
+extern const char uvlight_sensor_name[];
+
+extern const char CSV_TIMESTAMP[];
+extern const char CSV_CHECKSUM[];
+
 /**
  * Unique numeric id for each physical sensor
  */
