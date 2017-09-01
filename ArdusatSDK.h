@@ -383,7 +383,7 @@ class Pressure: public Sensor {
  * @brief Encapsulates all functionality related to the RGBLight Sensor
  *
  * This class can be used to initialize, further configure, read, and print
- * data receieved from the either the TCS34725 board (default) or the ISL29125
+ * data receieved from the TCS34725 board
  * board
  *
  * @note No RGBLight Sensors are provided with the Space Kit
@@ -439,23 +439,6 @@ class RGBLightTCS: public RGBLight {
     RGBLightTCS(tcs34725Gain_t tcsGain, tcs34725IntegrationTime_t tcsIt);
     RGBLightTCS(tcs34725IntegrationTime_t tcsIt);
     RGBLightTCS(tcs34725Gain_t tcsGain);
-};
-
-/**
- * @class RGBLightISL
- * @ingroup rgblight
- *
- * @brief Encapsulates all functionality related to the ISL29125 RGBLight Sensor
- */
-class RGBLightISL: public RGBLight {
-  protected:
-    uint8_t islIntensity;
-    boolean initialize(void);
-    boolean readSensor(void);
-
-  public:
-    RGBLightISL(void);
-    RGBLightISL(uint8_t islIntensity);
 };
 
 
@@ -537,7 +520,7 @@ class TemperatureMLX: public Temperature {
  * @brief Encapsulates all functionality related to the UVLight Sensor
  *
  * This class can be used to initialize, further configure, read, and print
- * data receieved from either the ML8511 board (default) or the SI1132 board
+ * data receieved from the ML8511 board
  *
  * Example Usage:
  * @code
@@ -584,21 +567,6 @@ class UVLightML: public UVLight {
   public:
     UVLightML(void);
     UVLightML(int pin);
-};
-
-/**
- * @class UVLightSI
- * @ingroup uvlight
- *
- * @brief Encapsulates all functionality related to the SI1132 UVLight Sensor
- */
-class UVLightSI: public UVLight {
-  protected:
-    boolean initialize(void);
-    boolean readSensor(void);
-
-  public:
-    UVLightSI(void);
 };
 
 #endif /* ARDUSATSDK_H_ */

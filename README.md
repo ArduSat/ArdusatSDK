@@ -56,18 +56,14 @@ Orientation    | Derived from Acceleration and Magnetic | `Acceleration & accel,
 Pressure       | BMP180                   | `None`
 RGBLight       | TCS34725 (Default)       | `None`
 RGBLightTCS    | TCS34725                 | `None`
-RGBLightISL    | ISL29125                 | `None`
 Temperature    | TMP102 (Default)         | `None`
 TemperatureTMP | TMP102                   | `None`
 TemperatureMLX | MLX90614 (IR)            | `None`
 UVLight        | ML8511 (Default)         | `None`
 UVLightML      | ML8511                   | `None`
-UVLightSI      | SI1132                   | `None`
 
 ```cpp
 UVLight uv;   // --> uv is now a sensor object that reads from the ML8511 Sensor
-UVLightML uv; // --> uv is now a sensor object that reads from the ML8511 Sensor
-UVLightSI uv; // --> uv is now a sensor object that reads from the SI1132 Sensor
 ```
 
 Note that the Orientation object is not technically a sensor, but rather a value

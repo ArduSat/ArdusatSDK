@@ -18,29 +18,12 @@ static config_lsm303_mag_t _lsm303_d_mag_config;
 static config_l3gd20_t _l3gd20_config;
 
 /**
- * Check to see if both the ISL29125 and TCS34725 RGB Light Sensors
- * exists. They are only included with the spaceboard, not the space
- * kit, so if they do exist, the user has a spaceboard.
+ * We used to be able to see if there's a spaceboard attached by checking
+ * for both the ISL29125 and TCS34725 RGB Light Sensors; however, the ISL29125
+ * has now been removed, so we must assume we're using a spaceboard.
  */
 void catchSpaceboard() {
-  // Only need to check once, as `catchSpaceboard` is called by all
-  // sensor `begin` functions
-  if (!ARDUSAT_SPACEBOARD && !MANUAL_CONFIG) {
-    uint8_t islData;
-    uint8_t tcsData;
-    Wire.begin();
-
-    // Here, we are checking to see if the sensor replies with the
-    // correct response at its expected address on the spaceboard
-    readFromRegAddr(DRIVER_SPACEBOARD_ISL29125_ADDR, 0x00, &islData, 1, BIG_ENDIAN);
-    readFromRegAddr(DRIVER_SPACEBOARD_TCS34725_ADDR, 0x80 | 0x12, &tcsData, 1, BIG_ENDIAN);
-
-    // Checking the responses from the identify registers of each
-    // sensor to make sure it's what we expect for both
-    if (islData == 0x7D && (tcsData == 0x44 || tcsData == 0x10)) {
-      ARDUSAT_SPACEBOARD = true;
-    }
-  }
+  ARDUSAT_SPACEBOARD = true;
 }
 
 /*
@@ -903,28 +886,6 @@ float tsl2561_getLux() {
 
 
 /*
- * ISL29125 RGB Light Sensor
- */
-SFE_ISL29125 isl29125 = SFE_ISL29125(DRIVER_SPACEBOARD_ISL29125_ADDR);
-
-// intensity == CFG1_375LUX if dark
-//              CFG1_10KLUX if bright (default)
-boolean isl29125_init(uint8_t intensity) {
-  boolean initialized = isl29125.init();
-  if (initialized && (intensity == CFG1_375LUX || intensity == CFG1_10KLUX)) {
-    initialized = isl29125.config(CFG1_MODE_RGB | intensity, CFG2_IR_ADJUST_HIGH, CFG_DEFAULT);
-  }
-  return initialized;
-}
-
-void isl29125_getRGB(float *red, float *green, float *blue) {
-  *red = isl29125.readRed();
-  *green = isl29125.readGreen();
-  *blue = isl29125.readBlue();
-}
-
-
-/*
  * TCS34725 RGB Light Sensor
  */
 Adafruit_TCS34725 tcs34725 = Adafruit_TCS34725();
@@ -945,20 +906,3 @@ void tcs34725_getRGB(float *red, float *green, float *blue) {
   *blue = b;
 }
 
-
-/*
- * SI1132 UV Light Sensor
- */
-Adafruit_SI1145 si1132_uv = Adafruit_SI1145();
-
-boolean si1132_init() {
-  return si1132_uv.begin();
-}
-
-float si1132_getUVIndex() {
-  float UVindex = si1132_uv.readUV();
-
-  // the index is multiplied by 100 so to get the integer index, divide by 100
-  UVindex /= 100.0;
-  return UVindex;
-}

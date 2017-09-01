@@ -53,12 +53,6 @@ RGBLight rgb; // => TCS34725_INTEGRATIONTIME_154MS, TCS34725_GAIN_1X
 /* TCS34725 - Useful at night or in dark room */
 //RGBLightTCS rgb(TCS34725_INTEGRATIONTIME_700MS, TCS34725_GAIN_60X);
 
-/* ISL29125 - Useful in bright area */
-//RGBLightISL rgb(CFG1_10KLUX);
-
-/* ISL29125 - Useful in dark area */
-//RGBLightISL rgb(CFG1_375LUX);
-
 
 /*
  * ===  FUNCTION  ======================================================================

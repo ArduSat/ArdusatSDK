@@ -15,11 +15,9 @@
 #include <Arduino.h>
 #include <utility/mlx90614.h>
 #include <utility/Adafruit_L3GD20_U.h>
-#include <utility/Adafruit_SI1145.h>
 #include <utility/Adafruit_TCS34725.h>
 #include <utility/BMP180.h>
 #include <utility/ML8511_ADC.h>
-#include <utility/SparkFunISL29125.h>
 #include <utility/TSL2561.h>
 #include <utility/common_utils.h>
 #include <utility/pololu_LSM303.h>
@@ -37,8 +35,6 @@
 #define DRIVER_SPACEBOARD_TSL2561_ADDR  0x49  /* TAOS Lux Light Visible/IR sensor */
 #define DRIVER_SPACEBOARD_TCS34725_ADDR 0x29  /* TAOS Color Light Sensor */
 #define DRIVER_SPACEBOARD_TMP102_ADDR   0x4B  /* Texas Instrument Temperature */
-#define DRIVER_SPACEBOARD_SI1132_ADDR   0x14  /* Ultraviolet Index and Ambient light sensor */
-#define DRIVER_SPACEBOARD_ISL29125_ADDR 0x44  /* Digital RGB color sensor */
 
 /* Breakout Kit and Spaceboard Sensor Addresses */
 #define DRIVER_MLX90614_ADDR            0x5A  /* Melexis Thermopile single pixel */
@@ -51,7 +47,6 @@
 //#define DRIVER_L3GD20_ADDR            0x6B  /* ST 3-axis digital gyroscope (Already defined by 'L3GD20_ADDRESS') */
 #define DRIVER_TMP102_ADDR              0x48  /* Texas Instrument Temperature */
 #define DRIVER_BMP180_ADDR              0x77  /* Barometric Pressure (Not available on Spaceboard) */
-#define DRIVER_SI1132_ADDR              0x60  /* Ultraviolet Index and Ambient light sensor */
 
 
 /* Constants */
@@ -167,29 +162,12 @@ boolean tsl2561_init(tsl2561IntegrationTime_t intTime, tsl2561Gain_t gain);
 float tsl2561_getLux();
 
 /**
- * ISL29125 RGB Sensor
- *
- * http://www.sparkfun.com/products/12829
- */
-boolean isl29125_init(uint8_t intensity);
-void isl29125_getRGB(float * red, float * green, float * blue);
-
-/**
  * TCS34725 RGB Sensor
  *
  * https://learn.adafruit.com/adafruit-color-sensors
  */
 boolean tcs34725_init(tcs34725IntegrationTime_t it, tcs34725Gain_t gain);
 void tcs34725_getRGB(float * red, float * green, float * blue);
-
-/**
- * SI1132 UV/Light sensor uses the SI1145 driver provided by Adafruit.
- *
- * https://www.silabs.com/Support%20Documents/TechnicalDocs/Si1132.pdf
- * https://learn.adafruit.com/adafruit-si1145-breakout-board-uv-ir-visible-sensor/overview
- */
-boolean si1132_init();
-float si1132_getUVIndex();
 
 #ifdef __cplusplus
 } // extern "C"

@@ -54,9 +54,7 @@ Luminosity lum;
 Magnetic mag;
 Pressure pressure;
 RGBLightTCS rgb;
-RGBLightISL rgb_ISL29125;
 UVLightML uv;
-UVLightSI uv_SI1132;
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -81,9 +79,7 @@ void setup(void)
   mag.begin();
   pressure.begin();
   rgb.begin();
-  rgb_ISL29125.begin();
   uv.begin();
-  uv_SI1132.begin();
 }
 
 /*
@@ -121,14 +117,8 @@ void loop(void)
   // Read TCS34725 RGB (Default)
   serialConnection.println(rgb.readToJSON("rgb"));
 
-  // Read ISL29125 RGB
-  serialConnection.println(rgb_ISL29125.readToJSON("rgb_ISL29125"));
-
   // Read ML8511 UV (Default)
   serialConnection.println(uv.readToJSON("uv"));
-
-  // Read SI1132 UV
-  serialConnection.println(uv_SI1132.readToJSON("uv_SI1132"));
 
   delay(READ_INTERVAL);
 }
