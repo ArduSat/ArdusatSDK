@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  indoor_luminosity.ino
+ *       Filename:  luminosity.ino
  *
  *    Description:  Outputs the luminosity sensor readings in a JSON format that
  *                  can be read by the Ardusat Experiment Platform
@@ -85,7 +85,7 @@ void setup(void)
  */
 void loop(void)
 {
-  serialConnection.println(lum.readToJSON("lum"));
+  serialConnection.println(lum.readToJSON("luminosity"));
 
   delay(1000);
 }

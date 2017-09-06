@@ -52,9 +52,7 @@ Gyro gyro;
 TemperatureMLX infrared;
 Luminosity lum;
 Magnetic mag;
-Pressure pressure;
 RGBLightTCS rgb;
-RGBLightISL rgb_ISL29125;
 UVLightML uv;
 UVLightSI uv_SI1132;
 
@@ -79,9 +77,7 @@ void setup(void)
   infrared.begin();
   lum.begin();
   mag.begin();
-  pressure.begin();
   rgb.begin();
-  rgb_ISL29125.begin();
   uv.begin();
   uv_SI1132.begin();
 }
@@ -103,7 +99,7 @@ void loop(void)
   // Read Temp from TMP102 (default in celcius)
   serialConnection.println(ambient.readToJSON("ambientTemp"));
 
-  // Read Gyro
+  // Read Gyroscope
   serialConnection.println(gyro.readToJSON("gyro"));
 
   // Read MLX Infrared temp sensor
@@ -115,14 +111,8 @@ void loop(void)
   // Read Magnetometer
   serialConnection.println(mag.readToJSON("magnetic"));
 
-  // Read Barometric Pressure
-  serialConnection.println(pressure.readToJSON("pressure"));
-
   // Read TCS34725 RGB (Default)
   serialConnection.println(rgb.readToJSON("rgb"));
-
-  // Read ISL29125 RGB
-  serialConnection.println(rgb_ISL29125.readToJSON("rgb_ISL29125"));
 
   // Read ML8511 UV (Default)
   serialConnection.println(uv.readToJSON("uv"));

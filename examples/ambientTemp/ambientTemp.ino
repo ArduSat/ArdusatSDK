@@ -1,10 +1,10 @@
 /*
  * =====================================================================================
  *
- *       Filename:  irtherm.ino
+ *       Filename:  ambientTemp.ino
  *
- *    Description:  Outputs the infrared thermometer sensor readings in a JSON format
- *                  that can be read by the Ardusat Experiment Platform
+ *    Description:  Outputs the temperature sensor readings in a JSON format that
+ *                  can be read by the Ardusat Experiment Platform
  *                  (http://experiments.ardusat.com).
  *
  *                  This example uses many third-party libraries available from
@@ -43,7 +43,7 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
 /*-----------------------------------------------------------------------------
  *  Constant Definitions
  *-----------------------------------------------------------------------------*/
-TemperatureMLX irtemp;
+Temperature temp;
 
 /*
  * ===  FUNCTION  ======================================================================
@@ -57,7 +57,7 @@ void setup(void)
 {
   serialConnection.begin(9600);
 
-  irtemp.begin();
+  temp.begin();
 
   /* We're ready to go! */
   serialConnection.println("");
@@ -74,7 +74,7 @@ void setup(void)
  */
 void loop(void)
 {
-  serialConnection.println(irtemp.readToJSON("irtemp"));
+  serialConnection.println(temp.readToJSON("ambientTemp"));
 
   delay(1000);
 }
