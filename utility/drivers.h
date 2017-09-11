@@ -23,6 +23,8 @@
 #include <utility/TSL2561.h>
 #include <utility/common_utils.h>
 #include <utility/pololu_LSM303.h>
+#include <utility/Adafruit_SSD1306.h>
+#include <utility/Adafruit_GFX.h>
 
 
 /**
@@ -52,7 +54,7 @@
 #define DRIVER_TMP102_ADDR              0x48  /* Texas Instrument Temperature */
 #define DRIVER_BMP180_ADDR              0x77  /* Barometric Pressure (Not available on Spaceboard) */
 #define DRIVER_SI1132_ADDR              0x60  /* Ultraviolet Index and Ambient light sensor */
-
+#define DRIVER_SSD1306_ADDR             0x3C  /* SSD1306 OLED Display (128x32 pixel) */
 
 /* Constants */
 #define SENSORS_GRAVITY_EARTH           (9.80665F)              /* Earth's gravity in m/s^2 */
