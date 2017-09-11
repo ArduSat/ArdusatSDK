@@ -123,6 +123,11 @@ const char * valuesToJSON(const char *sensorName, unsigned char unit, int numVal
 const char * valueToJSON(const char *sensorName, unsigned char unit, float value);
 
 
+class Display : public Adafruit_SSD1306 {
+  public:
+    Display() : Adafruit_SSD1306() {}
+};
+
 /**************************************************************************//**
  * @class Sensor
  * @defgroup sensor
