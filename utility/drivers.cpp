@@ -23,24 +23,7 @@ static config_l3gd20_t _l3gd20_config;
  * kit, so if they do exist, the user has a spaceboard.
  */
 void catchSpaceboard() {
-  // Only need to check once, as `catchSpaceboard` is called by all
-  // sensor `begin` functions
-  if (!ARDUSAT_SPACEBOARD && !MANUAL_CONFIG) {
-    uint8_t islData;
-    uint8_t tcsData;
-    Wire.begin();
-
-    // Here, we are checking to see if the sensor replies with the
-    // correct response at its expected address on the spaceboard
-    readFromRegAddr(DRIVER_SPACEBOARD_ISL29125_ADDR, 0x00, &islData, 1, BIG_ENDIAN);
-    readFromRegAddr(DRIVER_SPACEBOARD_TCS34725_ADDR, 0x80 | 0x12, &tcsData, 1, BIG_ENDIAN);
-
-    // Checking the responses from the identify registers of each
-    // sensor to make sure it's what we expect for both
-    if (islData == 0x7D && (tcsData == 0x44 || tcsData == 0x10)) {
-      ARDUSAT_SPACEBOARD = true;
-    }
-  }
+  ARDUSAT_SPACEBOARD = true;
 }
 
 /*
@@ -838,13 +821,78 @@ float mlx90614_getTempCelsius() {
   return _mlx90614_readObjectTempC();
 }
 
+void tmp102_openPointerRegister(uint8_t pointerReg)
+{ 
+  uint8_t address;
+    
+  if (ARDUSAT_SPACEBOARD) {
+    address = DRIVER_SPACEBOARD_TMP102_ADDR;
+  } else {
+    address = DRIVER_TMP102_ADDR;
+  }
+
+  Wire.beginTransmission(address); // Connect to TMP102
+  Wire.write(pointerReg); // Open specified register
+  Wire.endTransmission(); // Close communication with TMP102
+}
+
+uint8_t tmp102_readRegister(bool registerNumber){  
+    uint8_t registerByte[2];	// We'll store the data from the registers here
+    uint8_t address;
+    
+    if (ARDUSAT_SPACEBOARD) {
+      address = DRIVER_SPACEBOARD_TMP102_ADDR;
+    } else {
+      address = DRIVER_TMP102_ADDR;
+    }
+    
+    // Read current configuration register value
+    Wire.requestFrom(address, 2); 	// Read two bytes from TMP102
+    Wire.endTransmission();
+    registerByte[0] = (Wire.read());	// Read first byte
+    registerByte[1] = (Wire.read());	// Read second byte
+    
+    return registerByte[registerNumber];
+  }
+  
+void tmp102_wakeup(void)
+{
+  uint8_t registerByte; // Store the data from the register here
+  uint8_t address;
+
+  if (ARDUSAT_SPACEBOARD) {
+    address = DRIVER_SPACEBOARD_TMP102_ADDR;
+  } else {
+    address = DRIVER_TMP102_ADDR;
+  }
+
+  // Change pointer address to configuration register (1)
+  tmp102_openPointerRegister(0x01);
+  
+  // Read current configuration register value
+  registerByte = tmp102_readRegister(0);
+
+  registerByte &= 0xFE;	// Clear SD (bit 0 of first byte)
+
+  // Set configuration registers
+  Wire.beginTransmission(address);
+  Wire.write(0x01);	// Point to configuration register
+  Wire.write(registerByte);	    // Write first byte
+  Wire.endTransmission(); 	    // Close communication with TMP102
+}
+
 /*
  * TMP102 Temperature
  */
 boolean tmp102_init() {
   Wire.begin();
+
+  tmp102_wakeup();
   return true;
 }
+
+
+
 
 float tmp102_getTempCelsius() {
   int16_t val;
