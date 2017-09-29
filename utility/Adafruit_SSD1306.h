@@ -45,7 +45,6 @@ All text above, and the splash screen must be included in any redistribution
   typedef uint32_t PortMask;
 #endif
 
-#include <SPI.h>
 #include <utility/Adafruit_GFX.h>
 
 extern uint8_t buffer[];
@@ -172,9 +171,7 @@ class Adafruit_SSD1306 : public Adafruit_GFX {
 
  private:
   int8_t _i2caddr, _vccstate, sid, sclk, dc, rst, cs;
-  void fastSPIwrite(uint8_t c);
 
-  boolean hwSPI;
 #ifdef HAVE_PORTREG
   PortReg *mosiport, *clkport, *csport, *dcport;
   PortMask mosipinmask, clkpinmask, cspinmask, dcpinmask;

@@ -36,3 +36,4 @@ decode_binary
 
 # Development files
 *.swp
+.DS_Store

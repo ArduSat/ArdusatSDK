@@ -13,6 +13,7 @@
 #define ARDUSATSDK_H_
 
 #include <Arduino.h>
+#include <Wire.h>
 #include <utility/drivers.h>
 #include <avr/pgmspace.h>
 #include <utility/serial.h>
