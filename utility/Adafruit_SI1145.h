@@ -21,7 +21,6 @@
 #else
  #include "WProgram.h"
 #endif
-#include <Wire.h>
 
 /* COMMANDS */
 #define SI1145_PARAM_QUERY 0x80
