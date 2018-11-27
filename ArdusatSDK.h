@@ -238,7 +238,7 @@ class Gyro: public Sensor {
  * @brief Encapsulates all functionality related to the Luminosity Sensor
  *
  * This class can be used to initialize, further configure, read, and print
- * data receieved from the TSL2561 board
+ * data receieved from the TCS34725 board
  *
  * Example Usage:
  * @code
@@ -249,8 +249,8 @@ class Gyro: public Sensor {
  *****************************************************************************/
 class Luminosity: public Sensor {
   protected:
-    tsl2561Gain_t gain;
-    tsl2561IntegrationTime_t intTime;
+    tcs34725Gain_t gain;
+    tcs34725IntegrationTime_t intTime;
 
     boolean initialize(void);
     boolean readSensor(void);
@@ -258,10 +258,10 @@ class Luminosity: public Sensor {
   public:
     float lux;
     Luminosity(void);
-    Luminosity(tsl2561IntegrationTime_t intTime, tsl2561Gain_t gain);
-    Luminosity(tsl2561Gain_t gain, tsl2561IntegrationTime_t intTime);
-    Luminosity(tsl2561IntegrationTime_t intTime);
-    Luminosity(tsl2561Gain_t gain);
+    Luminosity(tcs34725IntegrationTime_t intTime, tcs34725Gain_t gain);
+    Luminosity(tcs34725Gain_t gain, tcs34725IntegrationTime_t intTime);
+    Luminosity(tcs34725IntegrationTime_t intTime);
+    Luminosity(tcs34725Gain_t gain);
 
     const char * toCSV(const char * sensorName);
     const char * toJSON(const char * sensorName);

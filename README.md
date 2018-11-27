@@ -50,7 +50,7 @@ Sensor Class | Sensors | Required Constructor Arguments
 --- | --- | ---
 Acceleration   | LSM303 (9DOF breakout)   | `None`
 Gyro           | L3GD20 (9DOF breakout)   | `None`
-Luminosity     | TSL2561                  | `None`
+Luminosity     | TCS34725                 | `None`
 Magnetic       | LSM303 (9DOF breakout)   | `None`
 Orientation    | Derived from Acceleration and Magnetic | `Acceleration & accel, Magnetic & mag` (Existing Accel and Mag objects)
 Pressure       | BMP180                   | `None`
@@ -127,7 +127,7 @@ Sensor Class | Data Fields | Optional Constructor Parameters (for advanced confi
 --- | --- | ---
 Acceleration   | `float x`, `float y`, `float z`              | `lsm303_accel_gain_e gGain`
 Gyro           | `float x`, `float y`, `float z`              | `uint8_t range`
-Luminosity     | `float lux`                                  | `tsl2561IntegrationTime_t intTime`, `tsl2561Gain_t gain`
+Luminosity     | `float lux`                                  | `tcs34725IntegrationTime_t intTime`, `tcs34725Gain_t gain`
 Magnetic       | `float x`, `float y`, `float z`              | `lsm303_mag_scale_e gaussScale`
 Orientation    | `float roll`, `float pitch`, `float heading` | `None`
 Pressure       | `float pressure`                             | `bmp085_mode_t mode`
@@ -148,8 +148,8 @@ Constructor Configuration Parameter Type | Acceptable Values | Sensor Class
 --- | --- | ---
 `lsm303_accel_gain_e gGain` | `LSM303_ACCEL_GAIN2G`, `LSM303_ACCEL_GAIN4G`, `LSM303_ACCEL_GAIN6G`, `LSM303_ACCEL_GAIN8G` (Default), `LSM303_ACCEL_GAIN16G` | Acceleration
 `uint8_t range` | `0x00` (SENSITIVITY_250DPS), `0x10` (SENSITIVITY_500DPS), `0x20` (SENSITIVITY_2000DPS) (Default) | Gyro
-`tsl2561IntegrationTime_t intTime` | `TSL2561_INTEGRATIONTIME_13MS` (Default), `TSL2561_INTEGRATIONTIME_101MS`, `TSL2561_INTEGRATIONTIME_402MS` | Luminosity
-`tsl2561Gain_t gain` | `TSL2561_GAIN_1X` (Default), `TSL2561_GAIN_16X` | Luminosity
+`tcs34725IntegrationTime_t intTime` | `TCS34725_INTEGRATIONTIME_2_4MS`, `TCS34725_INTEGRATIONTIME_24MS` (Default), `TCS34725_INTEGRATIONTIME_50MS`, `TCS34725_INTEGRATIONTIME_101MS`, `TCS34725_INTEGRATIONTIME_154MS`, `TCS34725_INTEGRATIONTIME_700MS` | Luminosity
+`tcs34725Gain_t gain` | `TCS34725_GAIN_1X`, `TCS34725_GAIN_4X`, `TCS34725_GAIN_16X` (Default), `TCS34725_GAIN_60X` | Luminosity
 `lsm303_mag_scale_e gaussScale` | `LSM303_MAG_SCALE1_3GAUSS`, `LSM303_MAG_SCALE2GAUSS`, `LSM303_MAG_SCALE2_5GAUSS`, `LSM303_MAG_SCALE4GAUSS` (Default), `LSM303_MAG_SCALE4_7GAUSS`, `LSM303_MAG_SCALE5_6GAUSS`, `LSM303_MAG_SCALE8GAUSS`, `LSM303_MAG_SCALE12GAUSS` | Magnetic
 `bmp085_mode_t mode` | `BMP085_MODE_ULTRALOWPOWER`, `BMP085_MODE_STANDARD`, `BMP085_MODE_HIGHRES`, `BMP085_MODE_ULTRAHIGHRES` (Default) | Pressure
 `tcs34725IntegrationTime_t it` | `TCS34725_INTEGRATIONTIME_2_4MS`, `TCS34725_INTEGRATIONTIME_24MS`, `TCS34725_INTEGRATIONTIME_50MS`, `TCS34725_INTEGRATIONTIME_101MS`, `TCS34725_INTEGRATIONTIME_154MS` (Default), `TCS34725_INTEGRATIONTIME_700MS` | RGBLightTCS

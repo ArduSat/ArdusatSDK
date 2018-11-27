@@ -634,107 +634,122 @@ const char * Gyro::toJSON(const char * sensorName) {
  * @endcode
  *****************************************************************************/
 Luminosity::Luminosity(void) :
-  gain(TSL2561_GAIN_1X),
-  intTime(TSL2561_INTEGRATIONTIME_13MS)
+  gain(TCS34725_GAIN_16X),
+  intTime(TCS34725_INTEGRATIONTIME_24MS)
 {
-  this->initializeHeader(SENSORID_TSL2561, DATA_UNIT_LUX, luminosity_sensor_name);
+  this->initializeHeader(SENSORID_TCS34725, DATA_UNIT_LUX, luminosity_sensor_name);
 }
 
 /**
  * @brief   Sets the integration time and gain configuration variables and constructs an object
  * @ingroup luminosity
  *
- * @param intTime Advanced configuration for TSL2561 integration time
- *     - TSL2561_INTEGRATIONTIME_13MS (Default)
- *     - TSL2561_INTEGRATIONTIME_101MS
- *     - TSL2561_INTEGRATIONTIME_402MS
- * @param gain Advanced configuration for TSL2561 gain
- *     - TSL2561_GAIN_1X (Default)
- *     - TSL2561_GAIN_16X
+ * @param intTime Advanced configuration for TCS34725 integration time
+ *     - TCS34725_INTEGRATIONTIME_2_4MS
+ *     - TCS34725_INTEGRATIONTIME_24MS (Default)
+ *     - TCS34725_INTEGRATIONTIME_50MS
+ *     - TCS34725_INTEGRATIONTIME_101MS
+ *     - TCS34725_INTEGRATIONTIME_154MS
+ *     - TCS34725_INTEGRATIONTIME_700MS
+ * @param gain Advanced configuration for TCS34725 gain
+ *     - TCS34725_GAIN_1X
+ *     - TCS34725_GAIN_4X
+ *     - TCS34725_GAIN_16X (Default)
+ *     - TCS34725_GAIN_60X
  *
  * Example Usage:
  * @code
- *     Luminosity lum(TSL2561_INTEGRATIONTIME_101MS, TSL2561_GAIN_16X);
+ *     Luminosity lum(TCS34725_INTEGRATIONTIME_101MS, TCS34725_GAIN_16X);
  *     lum.begin();                           // Initialize sensor
  *     Serial.println(lum.readToJSON("lum")); // Read and print values in JSON
  * @endcode
  */
-Luminosity::Luminosity(tsl2561IntegrationTime_t intTime, tsl2561Gain_t gain) :
+Luminosity::Luminosity(tcs34725IntegrationTime_t intTime, tcs34725Gain_t gain) :
   gain(gain),
   intTime(intTime)
 {
-  this->initializeHeader(SENSORID_TSL2561, DATA_UNIT_LUX, luminosity_sensor_name);
+  this->initializeHeader(SENSORID_TCS34725, DATA_UNIT_LUX, luminosity_sensor_name);
 }
 
 /**
  * @brief   Sets the gain and integration time configuration variables and constructs an object
  * @ingroup luminosity
  *
- * @param gain Advanced configuration for TSL2561 gain
- *     - TSL2561_GAIN_1X (Default)
- *     - TSL2561_GAIN_16X
- * @param intTime Advanced configuration for TSL2561 integration time
- *     - TSL2561_INTEGRATIONTIME_13MS (Default)
- *     - TSL2561_INTEGRATIONTIME_101MS
- *     - TSL2561_INTEGRATIONTIME_402MS
+ * @param gain Advanced configuration for TCS34725 gain
+ *     - TCS34725_GAIN_1X
+ *     - TCS34725_GAIN_4X
+ *     - TCS34725_GAIN_16X (Default)
+ *     - TCS34725_GAIN_60X
+ * @param intTime Advanced configuration for TCS34725 integration time
+ *     - TCS34725_INTEGRATIONTIME_2_4MS
+ *     - TCS34725_INTEGRATIONTIME_24MS (Default)
+ *     - TCS34725_INTEGRATIONTIME_50MS
+ *     - TCS34725_INTEGRATIONTIME_101MS
+ *     - TCS34725_INTEGRATIONTIME_154MS
+ *     - TCS34725_INTEGRATIONTIME_700MS
  *
  * Example Usage:
  * @code
- *     Luminosity lum(TSL2561_GAIN_16X, TSL2561_INTEGRATIONTIME_101MS);
+ *     Luminosity lum(TCS34725_GAIN_16X, TCS34725_INTEGRATIONTIME_101MS);
  *     lum.begin();                           // Initialize sensor
  *     Serial.println(lum.readToJSON("lum")); // Read and print values in JSON
  * @endcode
  */
-Luminosity::Luminosity(tsl2561Gain_t gain, tsl2561IntegrationTime_t intTime) :
+Luminosity::Luminosity(tcs34725Gain_t gain, tcs34725IntegrationTime_t intTime) :
   gain(gain),
   intTime(intTime)
 {
-  this->initializeHeader(SENSORID_TSL2561, DATA_UNIT_LUX, luminosity_sensor_name);
+  this->initializeHeader(SENSORID_TCS34725, DATA_UNIT_LUX, luminosity_sensor_name);
 }
 
 /**
  * @brief   Sets the integration time configuration variable and constructs an object
  * @ingroup luminosity
  *
- * @param intTime Advanced configuration for TSL2561 integration time
- *     - TSL2561_INTEGRATIONTIME_13MS (Default)
- *     - TSL2561_INTEGRATIONTIME_101MS
- *     - TSL2561_INTEGRATIONTIME_402MS
+ * @param intTime Advanced configuration for TCS34725 integration time
+ *     - TCS34725_INTEGRATIONTIME_2_4MS
+ *     - TCS34725_INTEGRATIONTIME_24MS (Default)
+ *     - TCS34725_INTEGRATIONTIME_50MS
+ *     - TCS34725_INTEGRATIONTIME_101MS
+ *     - TCS34725_INTEGRATIONTIME_154MS
+ *     - TCS34725_INTEGRATIONTIME_700MS
  *
  * Example Usage:
  * @code
- *     Luminosity lum(TSL2561_INTEGRATIONTIME_101MS); // Instantiate sensor object
- *     lum.begin();                                   // Initialize sensor
- *     Serial.println(lum.readToJSON("lum"));         // Read and print values in JSON
+ *     Luminosity lum(TCS34725_INTEGRATIONTIME_101MS); // Instantiate sensor object
+ *     lum.begin();                                    // Initialize sensor
+ *     Serial.println(lum.readToJSON("lum"));          // Read and print values in JSON
  * @endcode
  */
-Luminosity::Luminosity(tsl2561IntegrationTime_t intTime) :
-  gain(TSL2561_GAIN_1X),
+Luminosity::Luminosity(tcs34725IntegrationTime_t intTime) :
+  gain(TCS34725_GAIN_16X),
   intTime(intTime)
 {
-  this->initializeHeader(SENSORID_TSL2561, DATA_UNIT_LUX, luminosity_sensor_name);
+  this->initializeHeader(SENSORID_TCS34725, DATA_UNIT_LUX, luminosity_sensor_name);
 }
 
 /**
  * @brief   Sets the gain configuration variable and constructs an object
  * @ingroup luminosity
  *
- * @param gain Advanced configuration for TSL2561 gain
- *     - TSL2561_GAIN_1X (Default)
- *     - TSL2561_GAIN_16X
+ * @param gain Advanced configuration for TCS34725 gain
+ *     - TCS34725_GAIN_1X
+ *     - TCS34725_GAIN_4X
+ *     - TCS34725_GAIN_16X (Default)
+ *     - TCS34725_GAIN_60X
  *
  * Example Usage:
  * @code
- *     Luminosity lum(TSL2561_GAIN_16X);      // Instantiate sensor object
+ *     Luminosity lum(TCS34725_GAIN_16X);     // Instantiate sensor object
  *     lum.begin();                           // Initialize sensor
  *     Serial.println(lum.readToJSON("lum")); // Read and print values in JSON
  * @endcode
  */
-Luminosity::Luminosity(tsl2561Gain_t gain) :
+Luminosity::Luminosity(tcs34725Gain_t gain) :
   gain(gain),
-  intTime(TSL2561_INTEGRATIONTIME_13MS)
+  intTime(TCS34725_INTEGRATIONTIME_24MS)
 {
-  this->initializeHeader(SENSORID_TSL2561, DATA_UNIT_LUX, luminosity_sensor_name);
+  this->initializeHeader(SENSORID_TCS34725, DATA_UNIT_LUX, luminosity_sensor_name);
 }
 
 /**
@@ -745,7 +760,7 @@ Luminosity::Luminosity(tsl2561Gain_t gain) :
  * @retval false Failed to initialize
  */
 boolean Luminosity::initialize(void) {
-  return tsl2561_init(this->intTime, this->gain);
+  return tcs34725_init(this->intTime, this->gain);
 }
 
 /**
@@ -756,7 +771,7 @@ boolean Luminosity::initialize(void) {
  * @retval false Failed to read
  */
 boolean Luminosity::readSensor(void) {
-  this->lux = tsl2561_getLux();
+  this->lux = tcs34725_getLux();
   return true;
 }
 

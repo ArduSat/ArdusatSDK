@@ -109,7 +109,7 @@ void loop(void)
   // Read MLX Infrared temp sensor
   serialConnection.println(infrared.readToJSON("infraredTemp"));
 
-  // Read TSL2561 Luminosity
+  // Read TCS34725 Luminosity
   serialConnection.println(lum.readToJSON("luminosity"));
 
   // Read Magnetometer
