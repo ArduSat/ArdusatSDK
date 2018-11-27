@@ -993,6 +993,12 @@ void tcs34725_getRGB(float *red, float *green, float *blue) {
   *blue = b;
 }
 
+float tcs34725_getLux() {
+  uint16_t r, g, b, clear;
+  
+  tcs34725.getRawData(&r, &g, &b, &clear);
+  return (float)tcs34725.calculateLux(r, g, b);
+}
 
 /*
  * SI1132 UV Light Sensor

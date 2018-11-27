@@ -8,7 +8,7 @@ Display display;
 
 Acceleration acc;
 Gyro         gyr;
-Luminosity   lum(TSL2561_INTEGRATIONTIME_13MS);
+Luminosity   lum;
 RGBLightTCS  rgb(TCS34725_INTEGRATIONTIME_24MS);
 Magnetic     mag;
 Temperature  tmp;

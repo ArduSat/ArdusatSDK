@@ -47,13 +47,13 @@ ArdusatSerial serialConnection(SERIAL_MODE_HARDWARE_AND_SOFTWARE, 8, 9);
                                    "//" at the beginning of the next line and
                                    remove the "//" at the beginning of the
                                    configuration you want to use */
-Luminosity lum; // => TSL2561_INTEGRATIONTIME_13MS, TSL2561_GAIN_1X
+Luminosity lum; // => TCS34725_INTEGRATIONTIME_24MS, TCS34725_GAIN_16X
 
 /* Useful outside or in very bright room */
-//Luminosity lum(TSL2561_INTEGRATIONTIME_13MS, TSL2561_GAIN_1X);
+//Luminosity lum(TCS34725_INTEGRATIONTIME_24MS, TCS34725_GAIN_1X);
 
 /* Useful at night or in dark room */
-//Luminosity lum(TSL2561_INTEGRATIONTIME_402MS, TSL2561_GAIN_16X);
+//Luminosity lum(TCS34725_INTEGRATIONTIME_154MS, TSL2561_GAIN_60X);
 
 
 /*

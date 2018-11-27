@@ -183,6 +183,7 @@ void isl29125_getRGB(float * red, float * green, float * blue);
  */
 boolean tcs34725_init(tcs34725IntegrationTime_t it, tcs34725Gain_t gain);
 void tcs34725_getRGB(float * red, float * green, float * blue);
+float tcs34725_getLux();
 
 /**
  * SI1132 UV/Light sensor uses the SI1145 driver provided by Adafruit.
