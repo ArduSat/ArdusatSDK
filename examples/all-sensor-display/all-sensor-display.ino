@@ -19,7 +19,7 @@ enum SENSORSTATE {
 
   GYRO,         // gyroscope      (L3GD20_ADDRESS = 0x6B)
 
-  LUMINOSITY,   // luminosity     (DRIVER_SPACEBOARD_TSL2561_ADDR = 0x49)
+  LUMINOSITY,   // luminosity     (DRIVER_SPACEBOARD_TSL2561_ADDR = 0x49  pre v1.5 spaceboard)
 
   RGBLIGHT,     // red, green, blue light sensor
                 //                (DRIVER_SPACEBOARD_TCS34725_ADDR = 0x29)
@@ -119,18 +119,17 @@ void setup() {
   // First thing, check for expected I2C spaceboard sensors, and OLED display
   oledFound = i2cDeviceFoundAt(OLED_I2C);
   accMagFound = i2cDeviceFoundAt(DRIVER_LSM303_ADDR);
-  lumFound = i2cDeviceFoundAt(DRIVER_SPACEBOARD_TSL2561_ADDR);
   rgbFound = i2cDeviceFoundAt(DRIVER_SPACEBOARD_TCS34725_ADDR);
   gyrFound = i2cDeviceFoundAt(L3GD20_ADDRESS);
   tmpFound = i2cDeviceFoundAt(DRIVER_SPACEBOARD_TMP102_ADDR);
   uvlFound = i2cDeviceFoundAt(DRIVER_ML8511_ADDR);
 
   allSensorsFound =
-    accMagFound && lumFound && rgbFound &&
+    accMagFound && rgbFound &&
     gyrFound && tmpFound && uvlFound;
 
   noSensorFound =
-    !accMagFound && !lumFound && !rgbFound &&
+    !accMagFound && !rgbFound &&
     !gyrFound && !tmpFound && !uvlFound;
 
   if (oledFound) {
@@ -191,9 +190,6 @@ void setup() {
       // At least one sensor was not found
       if (!accMagFound) {
         printMessage2_P(acceleration_sensor_name, msg_sensor_not_found);
-      }
-      if (!lumFound) {
-        printMessage2_P(luminosity_sensor_name, msg_sensor_not_found);
       }
       if (!rgbFound) {
         printMessage2_P(rgblight_sensor_name, msg_sensor_not_found);
@@ -352,6 +348,3 @@ void loop() {
 
   delay(10);
 }
-
-
-
