@@ -784,15 +784,23 @@ float ml8511_getUV(int pin)
  * MLX90614 IR Temperature
  */
 float _mlx90614_readTemp(uint8_t reg) {
-  uint32_t data;
+  uint16_t data;
 
-  // Reads 3 bytes, but the third byte is a Packet Error Code (PEC)
-  // and is unused.
-  readFromRegAddr(DRIVER_MLX90614_ADDR, reg, &data, 3, LITTLE_ENDIAN);
-  float temp = (data & 0xFFFF); // Get rid of PEC byte from read
+  // Send register address to read from
+  Wire.beginTransmission(DRIVER_MLX90614_ADDR);
+  Wire.write(reg);
+  Wire.endTransmission(false);
+  
+  Wire.requestFrom(DRIVER_MLX90614_ADDR, (uint8_t)3); // send data n-bytes read
+  data = Wire.read(); // receive DATA
+  data |= Wire.read() << 8; // receive DATA
+  Wire.read(); // Ignore error correction byte
+
+  float temp = (float)data;
 
   temp *= .02;
   temp -= 273.15;
+
   return temp;
 }
 
